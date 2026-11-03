@@ -5,6 +5,7 @@
 **Target:** Minecraft Bedrock 26.60 (1.26.60)
 **Official modules:** `@minecraft/server 2.11.0`, `@minecraft/server-ui 2.3.0`
 **Experiments required:** none
+**Device checklists:** [`DEVICE_TESTING.md`](DEVICE_TESTING.md) — iPhone, PS5 and public-server test plans
 
 ---
 
@@ -13,9 +14,9 @@
 | Command | Result |
 |---|---|
 | `npm run typecheck` | **Passed.** The pack scripts were checked against the official 2.11.0 / 2.3.0 TypeScript definitions. |
-| `npm test` | **Passed.** 13 tests: 12 unit/static tests + 1 integration test that exercised **76 native form flows** through mocked Minecraft APIs. |
+| `npm test` | **Passed.** 13 tests: 12 unit/static tests + 1 integration test that exercised **81 native form flows** through mocked Minecraft APIs, including a leave/rejoin settings reload and an ATLAS1 import. |
 | `npm run build` | **Passed.** Produced `ATLAS.mcaddon` with **43 files / 56.5 KiB** (45 ZIP entries including pack roots). |
-| `npm run validate` | **Passed.** Manifest, UUID, path, texture, language, import and ZIP checks. |
+| `npm run validate` | **Passed.** Manifest, UUID, version, path, texture, language, import and ZIP checks. |
 
 Environment: Linux, Node.js 24.22.1, TypeScript 5.9.3, esbuild 0.25.12. The mock harness is not Minecraft.
 
@@ -28,6 +29,7 @@ Environment: Linux, Node.js 24.22.1, TypeScript 5.9.3, esbuild 0.25.12. The mock
 - Both `manifest.json` files are valid JSON and use `format_version: 2`.
 - Five UUIDs are valid v4 and unique: two pack headers, one data module, one script module, one resources module.
 - `min_engine_version` is exactly `[1, 26, 60]`.
+- `package.json`, both manifest headers, all manifest modules and the runtime `ADDON_VERSION` agree on **1.1.0**.
 - Behavior Pack has `data` + `script` modules; script language is `javascript`; entry is `scripts/main.js` and the file exists.
 - Resource Pack has a `resources` module.
 - Dependencies use stable `@minecraft/server 2.11.0` and `@minecraft/server-ui 2.3.0`; no beta/preview versions.
@@ -90,6 +92,8 @@ Covered by `test/core.test.js`:
 22. Diagnostics shows the real API/product versions and feature status.
 23. Export produces an `ATLAS2-...` code and sends it to chat.
 24. Import applies a valid Arabic/Emerald code.
+25. A legacy `ATLAS1-...` code imports through the real Settings → Import form, restores the original 20 toggles and keeps the 1.1.0 panels at their defaults.
+26. Leaving and rejoining reloads a distinct stored settings state from player storage instead of reusing the old cache.
 
 No mocked warnings or form errors remained at the end of the run. That verifies control flow, not Minecraft rendering.
 
@@ -109,9 +113,11 @@ No mocked warnings or form errors remained at the end of the run. That verifies 
 | Totem counter | **Works** | Main inventory plus offhand, counted by item type and stack amount. |
 | Low durability alert | **Works, scoped** | Equipped armor and the currently held item. Threshold is configurable, warning fires once per low episode, sound is optional. Stored tools that are not held are not scanned. |
 | HUD editor | **Works** | Panel/armor-piece toggles, accent colour, durability threshold/sound, compact/detailed mode, reset. Changes save immediately. |
+| Settings persistence | **Verified in harness; device check pending** | Every change writes to the player's dynamic properties. The harness clears the cache on leave and reloads the saved values on rejoin. A real world close/reopen with **Save & Quit** still needs device verification. |
+| Legacy ATLAS1 import | **Verified in harness; device check pending** | The Import form accepts `ATLAS1-...`, restores the original 20 toggles and saves them as the current schema; new panels keep defaults and the next export is `ATLAS2-...`. |
 | Font size / transparency / per-element position | **Unsupported** | Not exposed by the Script API; not represented by fake controls. |
 | PS5 controller buttons | **Unverified / unsupported** | No API exposes PS5 button states. Movement vector and game-action events are device-independent in theory but were not tested on PS5. |
-| Public servers (e.g. Mega10) | **Unverified** | Activation, custom commands, locator bar and UI availability depend on the server. No server was tested. |
+| Public servers (e.g. Mega10) | **Unverified; world-bound** | The pack must be installed in the world; a client cannot inject it into someone else's server. If it is installed, the server may block commands, the locator bar or storage. No server was tested. |
 | Existing HUD / Visual / PvP / Utilities / Settings | **Preserved** | Previous features, themes, languages, waypoints, combat stats, import/export and diagnostics remain and are covered by the tests above. |
 
 ---
@@ -133,6 +139,9 @@ The following were **not** executed in this environment because Minecraft Bedroc
 - Multiplayer synchronisation and performance under many players.
 - Behaviour on Minecraft versions other than 26.60.
 - The custom item and the custom command on the real iOS/PS5 chat/input path.
+- Closing and reopening a real world, including **Save & Quit** and player dynamic-property persistence on iOS/PS5.
+- Entering an actual old `ATLAS1-...` code on a device keyboard.
+- Importing `ATLAS.mcaddon` on PS5, or joining a packed world/Realm from PS5.
 - Mega10 or any other public server.
 - Whether a long HUD line wraps or is truncated on a narrow screen; disable unused panels if it does.
 
@@ -140,39 +149,15 @@ No claim is made that these were tested.
 
 ---
 
-## 7. Manual test checklist
+## 7. Device test checklists
 
-Use Minecraft Bedrock **26.60+**. Test on iPhone first; repeat on PS5 only if your setup allows importing packs.
+The detailed, step-by-step plans are in [`DEVICE_TESTING.md`](DEVICE_TESTING.md):
 
-- [ ] Open `ATLAS.mcaddon` in Files → Share → Minecraft; both packs appear in the import list.
-- [ ] Activate **ATLAS CLIENT** (behavior) and **ATLAS CLIENT Resources** (resource) in world settings.
-- [ ] Confirm no experiments are enabled.
-- [ ] Enter world: ATLAS title/chat appears; ATLAS item is in the inventory.
-- [ ] Use the ATLAS item → main menu opens.
-- [ ] Close the menu and reopen with `/atlas:menu` (cheats off).
-- [ ] Walk with keyboard/left stick; verify W/A/S/D light correctly.
-- [ ] Attack a mob/block and interact with a block; verify CPS and LMB/RMB update, and that clicking empty air does not invent a click.
-- [ ] Equip helmet, chestplate, leggings and boots; verify real durability and percentages.
-- [ ] Damage armor; verify values update and low pieces turn red.
-- [ ] Use **HUD → HUD editor** to hide one armor piece, change colour, change the durability threshold, and reset the layout.
-- [ ] Apply a potion; verify name, level and remaining time; wait for expiry and verify it disappears.
-- [ ] Put totems in the inventory and offhand; verify the count and updates after moving them.
-- [ ] Bring armor/held item below the threshold; verify one warning and the optional sound.
-- [ ] Toggle each HUD element; verify the action-bar line changes.
-- [ ] Switch all four themes; verify HUD/form accents and locator marker colour.
-- [ ] Switch to Arabic; check every screen for readable RTL text and no overlap.
-- [ ] Add a waypoint; verify distance/direction and locator marker.
-- [ ] Rename, move, track, untrack and delete a waypoint; verify persistence after leaving/rejoining.
-- [ ] Take damage below the alert threshold; verify title/sound only once.
-- [ ] Die; verify the death point appears and kills/deaths update.
-- [ ] Open combat log; verify stats and recent events.
-- [ ] Export settings, then import the `ATLAS2-...` code; verify theme/language/toggles/colour/threshold return.
-- [ ] Reset settings; verify defaults.
-- [ ] Open Diagnostics; verify scripts OK, item OK, locator supported.
-- [ ] Enable Content Log GUI and confirm there are no ATLAS errors.
-- [ ] On PS5, check movement indicators and menu controls without assuming untested behaviour.
+- **iPhone:** install, activation, startup, HUD/input, armor/effects/totems, waypoints, Arabic, settings persistence, legacy ATLAS1 import and diagnostics.
+- **PS5:** join a packed world if local import is unavailable, controller navigation, movement vector, action indicators, readability and persistence.
+- **Public servers:** which features can work when the world owns the pack, and why nothing runs on a server that does not contain it.
 
-If any item fails, attach the Content Log output. Do not assume the automated tests prove in-game behaviour.
+Do not start the device pass until these automated checks pass. During the pass, fill in the result template and attach the Content Log for any failure. A feature that was not exercised stays **not tested**; the mock harness does not prove in-game rendering or device input.
 
 ---
 

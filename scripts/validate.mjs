@@ -10,14 +10,19 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { unzipSync } from "fflate";
+import {
+  ADDON_VERSION,
+  SCRIPT_MODULES,
+  TARGET_GAME_VERSION,
+} from "../src/ATLAS/BP/scripts/config.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const BP = path.join(ROOT, "src/ATLAS/BP");
 const RP = path.join(ROOT, "src/ATLAS/RP");
 const ARTIFACT = path.join(ROOT, "ATLAS.mcaddon");
-const TARGET_GAME = [1, 26, 60];
-const SERVER_VERSION = "2.11.0";
-const SERVER_UI_VERSION = "2.3.0";
+const TARGET_GAME = TARGET_GAME_VERSION;
+const SERVER_VERSION = SCRIPT_MODULES.server;
+const SERVER_UI_VERSION = SCRIPT_MODULES.serverUi;
 
 const errors = [];
 const checks = [];
@@ -71,6 +76,18 @@ function pngInfo(file) {
 
 const bpManifest = readJson(path.join(BP, "manifest.json"));
 const rpManifest = readJson(path.join(RP, "manifest.json"));
+const packageJson = readJson(path.join(ROOT, "package.json"));
+const expectedVersion = String(ADDON_VERSION).split(".").map(Number);
+
+if (packageJson?.version !== ADDON_VERSION) {
+  fail(`package.json version must be ${ADDON_VERSION}, got ${packageJson?.version}`);
+}
+if (
+  expectedVersion.length !== 3 ||
+  !expectedVersion.every((value) => Number.isInteger(value) && value >= 0)
+) {
+  fail(`ADDON_VERSION must be a three-integer version, got ${ADDON_VERSION}`);
+}
 
 const allUuids = new Set();
 function checkManifest(manifest, label, expectedType) {
@@ -81,6 +98,9 @@ function checkManifest(manifest, label, expectedType) {
   if (allUuids.has(manifest.header.uuid)) fail(`${label}: duplicate UUID ${manifest.header.uuid}`);
   allUuids.add(manifest.header.uuid);
   stableVersion(manifest.header.version, `${label} header.version`);
+  if (JSON.stringify(manifest.header.version) !== JSON.stringify(expectedVersion)) {
+    fail(`${label}: header.version must match ADDON_VERSION ${ADDON_VERSION}`);
+  }
   if (JSON.stringify(manifest.header.min_engine_version) !== JSON.stringify(TARGET_GAME)) {
     fail(
       `${label}: min_engine_version must be [${TARGET_GAME.join(", ")}], got ${JSON.stringify(manifest.header.min_engine_version)}`,
@@ -97,6 +117,9 @@ function checkManifest(manifest, label, expectedType) {
     if (allUuids.has(module.uuid)) fail(`${label}: duplicate module UUID ${module.uuid}`);
     allUuids.add(module.uuid);
     stableVersion(module.version, `${label} module.version`);
+    if (JSON.stringify(module.version) !== JSON.stringify(expectedVersion)) {
+      fail(`${label}: module.version must match ADDON_VERSION ${ADDON_VERSION}`);
+    }
     if (module.type === "script") {
       if (module.language !== "javascript") fail(`${label}: script language must be javascript`);
       if (module.entry !== "scripts/main.js") fail(`${label}: script entry must be scripts/main.js`);
@@ -145,7 +168,7 @@ if (rpManifest) {
     fail("RP: behavior-pack dependency version does not match");
   }
 }
-ok(`manifests parsed, ${allUuids.size} unique UUIDs`);
+ok(`manifests parsed, ${allUuids.size} unique UUIDs, version ${ADDON_VERSION}`);
 
 // Item definition and texture wiring.
 const itemFile = path.join(BP, "items/atlas_client.json");

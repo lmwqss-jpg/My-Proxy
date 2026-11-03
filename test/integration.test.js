@@ -23,6 +23,8 @@ import {
   state,
 } from "./mocks/state.js";
 import { normalizeSettings, settingsToCode } from "../src/ATLAS/BP/scripts/settings.js";
+import { LANGUAGE_IDS, THEME_IDS, TOGGLE_PATHS } from "../src/ATLAS/BP/scripts/config.js";
+import { getPath, toBase36 } from "../src/ATLAS/BP/scripts/util.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -40,6 +42,22 @@ const click = (pattern) => (form) => {
 
 const modal = (...values) => () => ({ canceled: false, formValues: values });
 const close = () => ({ canceled: true, cancelationReason: "UserClosed" });
+
+function legacySettingsCode(settings) {
+  const value = normalizeSettings(settings);
+  const themeIndex = THEME_IDS.indexOf(value.theme);
+  const languageIndex = LANGUAGE_IDS.indexOf(value.language);
+  let mask = 0;
+  TOGGLE_PATHS.slice(0, 20).forEach((path, index) => {
+    if (getPath(value, path) === true) mask += 2 ** index;
+  });
+  const body = `${themeIndex}${languageIndex}${toBase36(value.hud.interval - 5, 1)}${toBase36(value.pvp.alertThreshold - 2, 1)}${toBase36(mask, 4)}`;
+  let checksum = 0;
+  for (const character of body) {
+    checksum = (checksum + character.charCodeAt(0)) % 1296;
+  }
+  return `ATLAS1-${body}${toBase36(checksum, 2)}`;
+}
 
 function queue(...responses) {
   state.uiQueue.push(...responses);
@@ -433,6 +451,77 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.equal(imported.theme, "emerald");
     assert.equal(imported.language, "ar");
     assert.ok(state.forms.some((form) => form.buttons?.some((b) => /الإعدادات/.test(b))));
+
+    // A legacy ATLAS1 code imports through the same form and is saved as the
+    // current schema. Toggles added in 1.1.0 keep their defaults.
+    const legacy = normalizeSettings({
+      theme: "violet",
+      language: "ar",
+      hud: { coords: false, compact: false },
+      pvp: { alertThreshold: 8 },
+    });
+    const legacyCode = legacySettingsCode(legacy);
+    assert.match(legacyCode, /^ATLAS1-[0-9a-z]{10}$/);
+    queue(
+      click(/الإعدادات/),
+      click(/استيراد/),
+      modal(legacyCode),
+      click(/رجوع|Back/),
+      click(/إغلاق|Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    const legacyImported = JSON.parse(player.dynamic.get("atlas:settings"));
+    assert.equal(legacyImported.theme, "violet");
+    assert.equal(legacyImported.language, "ar");
+    assert.equal(legacyImported.hud.coords, false);
+    assert.equal(legacyImported.hud.compact, false);
+    assert.equal(legacyImported.pvp.alertThreshold, 8);
+    assert.equal(legacyImported.hud.durabilityAlert, true);
+    assert.ok(player.messages.some((message) => /تم استيراد الإعدادات/.test(message)));
+    assert.match(player.actionBars.at(-1) ?? "", /الصحة/);
+
+    // Snapshot the values written by the UI, then leave and change the stored
+    // JSON to a distinct state. A rejoin must read that storage instead of
+    // reusing the old in-memory cache. This is the data path used when a world
+    // is closed and opened again.
+    const savedDynamic = new Map(player.dynamic);
+    const savedBeforeLeave = JSON.parse(savedDynamic.get("atlas:settings"));
+    assert.equal(savedBeforeLeave.theme, "violet");
+    assert.equal(savedBeforeLeave.language, "ar");
+    assert.equal(savedBeforeLeave.hud.coords, false);
+    assert.equal(savedBeforeLeave.pvp.alertThreshold, 8);
+    const waypointCount = JSON.parse(state.worldProps.get("atlas:waypoints")).length;
+    emit("playerLeave", { playerId: player.id, playerName: player.name });
+    player.isValid = false;
+    const leavingIndex = state.players.indexOf(player);
+    if (leavingIndex >= 0) state.players.splice(leavingIndex, 1);
+    const reopenedSettings = normalizeSettings({
+      ...savedBeforeLeave,
+      theme: "ember",
+      language: "en",
+      hud: { ...savedBeforeLeave.hud, coords: true, interval: 20 },
+    });
+    savedDynamic.set("atlas:settings", JSON.stringify(reopenedSettings));
+    const returning = new Player(player.id, player.name);
+    for (const [key, value] of savedDynamic) returning.dynamic.set(key, value);
+    state.players.push(returning);
+    emit("playerSpawn", { player: returning, initialSpawn: true });
+    advanceTicks(30);
+    await settle();
+    assertClean();
+    const reloaded = JSON.parse(returning.dynamic.get("atlas:settings"));
+    assert.equal(reloaded.theme, "ember");
+    assert.equal(reloaded.language, "en");
+    assert.equal(reloaded.hud.coords, true);
+    assert.equal(reloaded.hud.compact, false);
+    assert.equal(reloaded.hud.interval, 20);
+    assert.equal(reloaded.pvp.alertThreshold, 8);
+    assert.equal(reloaded.hud.durabilityAlert, true);
+    assert.match(returning.actionBars.at(-1) ?? "", /Health/);
+    assert.match(returning.actionBars.at(-1) ?? "", /20\/20/);
+    assert.equal(JSON.parse(state.worldProps.get("atlas:waypoints")).length, waypointCount);
 
     originalWarn(`Integration harness complete: ${state.forms.length} forms exercised.`);
   } finally {

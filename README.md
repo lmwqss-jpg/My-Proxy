@@ -6,6 +6,8 @@
 **المنصة الأساسية / Primary platform:** iPhone — Minecraft Bedrock 26.60+
 **PS5:** الكود يستخدم واجهات مستقلة عن الجهاز، لكن **لم يُختبر على PS5**. لا تدّعي هذه النسخة توافقاً مؤكداً مع PS5.
 **التجارب / Experiments:** لا يحتاج أي تفعيل
+**دليل الاختبار الفعلي / Device test plan:** [`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md)
+**حالة الاختبار:** لم يُختبر بعد على iPhone أو PS5 أو داخل Minecraft أو على Mega10. الدليل يحتوي قوائم iPhone وPS5 ومصفوفة السيرفرات، وليس نتائج نجاح.
 
 ---
 
@@ -176,6 +178,8 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 - من **Settings → Import settings code** الصق/اكتب الرمز ثم اضغط Apply.
 - الحافظة (Clipboard) غير متاحة للإضافات، لذلك لا يوجد زر «نسخ» آلي.
 - الرمز لا ينقل المواقع ولا الإحصائيات؛ هي بيانات عالم/لاعب منفصلة.
+- **التوافق الخلفي:** رموز `ATLAS1-...` القديمة ما زالت مقبولة. تستعيد الثيم واللغة والحدود والتبديلات العشرين القديمة، بينما تأخذ لوحات 1.1.0 القيم الافتراضية. بعد استيرادها يصبح التصدير `ATLAS2-...`.
+- **الحفظ:** كل تغيير يُحفظ فوراً في Dynamic Properties الخاصة باللاعب. للتحقق بعد إغلاق العالم استخدم **Save & Quit** ثم أعد فتح العالم؛ راجع قسم حفظ الإعدادات في دليل الاختبار.
 
 ---
 
@@ -197,9 +201,10 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 
 ### PS5 والسيرفرات العامة
 
-- **PS5:** لم يُختبر الاستيراد أو التشغيل أو الإدخال على PS5. لا توجد واجهة لقراءة أزرار يد PS5؛ WASD تعكس متجه الحركة (العصا اليسرى)، ومؤشرا LMB/RMB يعكسان أحداث اللعبة، وليسا أزراراً فيزيائية.
-- **Mega10 أو أي سيرفر عام:** الإضافة تعمل من جهة العميل عبر الحزم المفعّلة في العالم، لكن السيرفر قد يمنع الحزم المخصصة أو `/atlas:menu` أو شريط التحديد، وقد تختلف قواعد السيرفر. لا يوجد في ATLAS أي أتمتة قتال أو نقر تلقائي. لم يُختبر المشروع على Mega10.
-- **الواجهة النصية** تظهر لكل لاعب حسب إعداداته المحفوظة على اللاعب/العالم، ولا تعتمد على تعديل واجهة السيرفر.
+- **PS5:** لم يُختبر الاستيراد أو التشغيل أو الإدخال على PS5. لا توجد واجهة لقراءة أزرار يد PS5؛ WASD تعكس متجه الحركة (العصا اليسرى)، ومؤشرا LMB/RMB يعكسان أحداث اللعبة، وليسا أزراراً فيزيائية. إذا كانت PS5 لا تسمح بفتح ملف محلي، فجرّب الانضمام إلى عالم/Realm تكون فيه الحزمتان مفعّلتان؛ هذا أيضاً غير مُختبر.
+- **طبيعة الإضافات:** الإضافات مرتبطة بالعالم، وليست تعديلاً على جهاز اللاعب. لا تستطيع نسخة مفعّلة على iPhone حقن HUD أو أوامر في عالم سيرفر عام لا يملك الحزمة.
+- **Mega10 أو أي سيرفر عام:** إذا لم تكن الحزمة مثبتة ومفعّلة في العالم، فلن تعمل أي ميزة. وإذا كانت مثبتة، فقد يمنع السيرفر الحزم المخصصة أو `/atlas:menu` أو شريط التحديد أو حفظ البيانات. لا يوجد في ATLAS أي أتمتة قتال أو نقر تلقائي. لم يُختبر المشروع على Mega10.
+- **الواجهة النصية** تظهر فقط عندما تعمل الحزمة في العالم؛ الإعدادات محفوظة لكل لاعب/عالم وليست تعديلاً لواجهة السيرفر.
 
 ---
 
@@ -216,7 +221,7 @@ npm run build        # ينتج ATLAS.mcaddon
 npm run validate     # يفحص الحزم والـ ZIP
 ```
 
-الاختبارات الآلية تغطي بنية الحزم والمنطق و**76 مسار واجهة** في محاكي APIs، لكنها **لا تغني عن التجربة داخل Minecraft**. لم يتم اختبار هذه النسخة على iPhone أو PS5 أو داخل Minecraft في بيئة البناء الحالية. راجع [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) للتقرير الدقيق وقائمة الاختبار اليدوي.
+الاختبارات الآلية تغطي بنية الحزم والمنطق و**81 مسار واجهة** في محاكي APIs، كما تتحقق من حفظ الإعدادات بعد خروج اللاعب وعودته ومن استيراد رموز `ATLAS1` القديمة. لكنها **لا تغني عن التجربة داخل Minecraft**. لم يتم اختبار هذه النسخة على iPhone أو PS5 أو داخل Minecraft في بيئة البناء الحالية. راجع [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) للتقرير الآلي، و[`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) لقوائم iPhone وPS5 والسيرفرات.
 
 ### بنية المستودع
 
@@ -228,7 +233,8 @@ scripts/build.mjs             بناء ملف mcaddon
 scripts/validate.mjs          فحص manifests/UUID/المسارات/ZIP
 scripts/generate-assets.mjs   توليد الأيقونات (PNG) بشكل ثابت
 test/                         اختبارات Node + محاكي Minecraft
-docs/TEST_REPORT.md           تقرير الاختبار والتوافق
+docs/TEST_REPORT.md           تقرير الاختبار الآلي والتوافق
+docs/DEVICE_TESTING.md        قوائم اختبار iPhone وPS5 والسيرفرات
 ```
 
 المجلد الرئيسي للمشروع هو `ATLAS` داخل `src/`. يحتوي الـ mcaddon على مجلدين في الجذر: `ATLAS_BP/` و`ATLAS_RP/`، وكل منهما يحتوي `manifest.json` مباشرة. لا توجد مجلدات متداخلة ولا ملفات إضافية؛ هذا هو الشكل الذي يقبله مستورد Minecraft، ووضع الحزم داخل مجلد ATLAS إضافي في الـ ZIP قد يمنع الاستيراد.
@@ -273,16 +279,17 @@ If nothing appears: verify Minecraft 26.60+, verify the behavior pack is active 
 - **Visual:** player details, world details, text health bar, combat stats, official locator-bar waypoints.
 - **PvP:** combat health, low-health alert with threshold/sound/screen warning, automatic death point, persisted kills/deaths/K/D, session damage and recent combat log. No combat automation.
 - **Utilities:** add/list/rename/move/delete waypoints, distances and directions, HUD tracking, death point, restore item. Up to 30 world-shared waypoints.
-- **Settings:** four themes, English/Arabic, HUD controls, short `ATLAS2-...` settings export/import code (legacy `ATLAS1-...` accepted), reset, diagnostics, official-limits help.
+- **Settings:** four themes, English/Arabic, HUD controls, short `ATLAS2-...` settings export/import code (legacy `ATLAS1-...` accepted), reset, diagnostics, official-limits help. Legacy codes restore the original 20 toggles while 1.1.0 panels keep their defaults; settings are written to player dynamic properties on every change.
 
 ### Testing
 
-`npm run typecheck`, `npm test` (13 tests and 76 mock UI flows), `npm run build`, and `npm run validate` pass. The archive is a single `ATLAS.mcaddon`. **It has not been tested on an iPhone, PS5 or inside Minecraft in this environment**; see `docs/TEST_REPORT.md` for the exact scope and the manual checklist.
+`npm run typecheck`, `npm test` (13 tests and 81 mock UI flows), `npm run build`, and `npm run validate` pass. The archive is a single `ATLAS.mcaddon`. The harness also covers settings reload after a leave/rejoin and legacy `ATLAS1` import. **It has not been tested on an iPhone, PS5 or inside Minecraft in this environment**; see `docs/TEST_REPORT.md` for the exact scope and `docs/DEVICE_TESTING.md` for the iPhone/PS5/server checklists.
 
 ### PS5 and public servers
 
-- **PS5:** import, rendering and controller input were not tested. WASD follows the movement vector (left stick on a controller); LMB/RMB are game-action indicators, not physical mouse buttons.
-- **Mega10 / public servers:** the add-on runs client-side through the activated packs, but a server may block custom packs, `/atlas:menu` or the locator bar, and server rules still apply. No combat or click automation is included. Mega10 was not tested.
+- **PS5:** import, rendering and controller input were not tested. WASD follows the movement vector (left stick on a controller); LMB/RMB are game-action indicators, not physical mouse buttons. If PS5 cannot open a local file, joining a world/Realm that already has the packs active is the only possible path, and it is also unverified.
+- **World-bound packs:** Bedrock add-ons belong to the world, not the player's device. A pack activated on an iPhone cannot inject a HUD or commands into a public server world that does not contain it.
+- **Mega10 / public servers:** if the world does not have the pack installed and active, no ATLAS feature runs. If it does, the server may still block custom packs, `/atlas:menu`, the locator bar or data storage, and server rules apply. No combat or click automation is included. Mega10 was not tested.
 
 ### Attribution
 
