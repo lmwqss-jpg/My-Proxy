@@ -1,0 +1,27 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "ATLAS CLIENT Resources",
+    "description": "Icons and item textures for ATLAS CLIENT.",
+    "uuid": "6f7b2107-421b-480f-9a07-3acdf805714d",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 26, 60],
+    "metadata": {
+      "authors": ["ATLAS"]
+    }
+  },
+  "modules": [
+    {
+      "description": "ATLAS CLIENT resources",
+      "type": "resources",
+      "uuid": "a11e5d69-2653-4a35-8cda-02eb51514b46",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "45ec3030-7e82-4b27-b1bc-006fc4d14de5",
+      "version": [1, 0, 0]
+    }
+  ]
+}
