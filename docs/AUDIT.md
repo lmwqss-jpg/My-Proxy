@@ -1,8 +1,8 @@
-# ATLAS CLIENT — Technical Audit (1.3.0)
+# ATLAS CLIENT — Technical Audit (1.4.0)
 
 **Repository:** `lmwqss-jpg/My-Proxy`
-**Audited version:** 1.2.0 working tree, before the 1.3.0 changes
-**Delivered version:** 1.3.0
+**Audited version:** 1.3.0 working tree, before the 1.4.0 changes
+**Delivered version:** 1.4.0
 **Target:** Minecraft Bedrock 26.60 / `[1, 26, 60]`, stable Script API
 **Automated audit:** `npm run typecheck`, `npm test`, `npm run build`, `npm run validate`
 
@@ -23,11 +23,14 @@ src/ATLAS/BP/scripts/hud.js       HUD loop, alerts, live snapshot
 src/ATLAS/BP/scripts/hudData.js   armor, effects, totems
 src/ATLAS/BP/scripts/hudFormat.js pure action-bar text composition
 src/ATLAS/BP/scripts/input.js     movement vector, observed CPS/LMB/RMB
+src/ATLAS/BP/scripts/containers.js interaction-based container log model
 src/ATLAS/BP/scripts/store.js     dynamic-property persistence
 src/ATLAS/BP/scripts/settings.js  validation and ATLAS2/ATLAS1 codes
 src/ATLAS/BP/scripts/waypoints.js waypoint model and 30-item limit
 src/ATLAS/BP/scripts/locator.js   official locator-bar markers
 src/ATLAS/BP/scripts/ui/          native ActionForm/ModalForm screens
+src/ATLAS/BP/scripts/ui/statusScreens.js HOME/PLAYER/MOVEMENT/ARMOR/ITEMS/POTIONS/TOTEMS
+src/ATLAS/BP/scripts/ui/espchestScreen.js ESPCHEST log, detail and clear screens
 src/ATLAS/RP/manifest.json        Resource Pack: textures and language file
 scripts/build.mjs                 produces ATLAS.mcaddon
 scripts/validate.mjs              static pack/archive validator
@@ -48,12 +51,13 @@ The pack has no website, no external runtime and no client injection. Everything
 5. **HUD surface.** The only persistent text surface available to official add-ons is `Player.onScreenDisplay.setActionBar`. The HUD is composed as a colour-coded string and refreshed at a configurable 5–40 tick interval.
 6. **Input.** W/A/S/D comes from `Player.inputInfo.getMovementVector()`. CPS and LMB/RMB come from real game events (`entityHitEntity`, `entityHitBlock`, block/entity interaction, item use). No input is simulated.
 7. **Persistence.** Settings, combat totals and the last death are player dynamic properties; waypoints are world dynamic properties. Settings are validated and normalised on every read.
-8. **UI.** All menus are native Bedrock forms. There is no Ore UI modification, no clickable HUD widget and no ESC capture.
+8. **UI.** All menus are native Bedrock forms. There is no Ore UI modification, no clickable HUD widget and no ESC capture. The 1.4.0 main menu exposes HOME, ESPCHEST, HUD, VISUAL, PLAYER, MOVEMENT, ARMOR, ITEMS, POTIONS, TOTEMS, COMBAT, WAYPOINTS, SETTINGS, DIAGNOSTICS and ABOUT.
+9. **Container log.** ESPCHEST is interaction-based. `playerInteractWithBlock` records known container blocks with real coordinates in per-player dynamic properties; the screen never scans hidden blocks or contents.
 9. **Entry points.** The ATLAS item (`atlas:client_token`) and `/atlas:menu` (permission `Any`, `cheatsRequired: false`). `/scriptevent atlas:menu` remains an optional cheats-only fallback.
 
 ---
 
-## 3. Feature inventory after 1.3.0
+## 3. Feature inventory after 1.4.0
 
 | Area | Implemented | Verification level |
 |---|---|---|
@@ -73,6 +77,9 @@ The pack has no website, no external runtime and no client injection. Everything
 | Kills/deaths/K/D persisted; session damage/history | Yes | Harness |
 | Themes, English/Arabic, HUD editor, settings import/export, diagnostics | Yes | Unit + harness |
 | ATLAS2 codes and legacy ATLAS1 import | Yes | Unit + harness |
+| ESPCHEST interaction log (20 per player) | Yes; no hidden-container scanning | Unit + harness |
+| HOME / PLAYER / MOVEMENT / ARMOR / ITEMS / POTIONS / TOTEMS screens | Yes, real API values and controls | Harness |
+| Main-menu navigation for all 15 sections | Yes | Harness (198 forms) |
 | PS5 / iPhone / Mega10 | Not tested | — |
 
 ---
@@ -98,20 +105,16 @@ The remaining risk is not in the archive shape: it is whether the pack is activa
 
 ---
 
-## 5. 1.3.0 changes and rationale
+## 5. 1.4.0 changes and rationale
 
-1. **Session information** — the HUD previously showed only server/diagnostic ticks. A real per-player session timer is now available as an opt-in `hud.session` element. It resets on leave/rejoin and is separate from world uptime.
-2. **Honest degradation** — optional reads (health, view direction, dimension, world day/time, difficulty, player count, level, game mode) are wrapped individually. If one API is unavailable, only its element disappears. The HUD no longer renders a fabricated `0/20` health value or a fake north compass when the data is missing.
-3. **Faster totem refresh** — inventory-change events request a HUD rebuild at most once per 5 ticks, so the totem count does not wait for a 40-tick interval but bursts of drag/transfer events cannot force a rebuild every tick.
-4. **HUD editor coverage** — the session timer and the Visual/PvP action-bar elements are reachable from the same editor as the live panels.
-5. **Diagnostics** — shows the actual player session duration and labels `system.currentTick` correctly as server ticks.
-6. **Home summary** — the main menu shows the player name, world day and online count where available.
-7. **Compatibility** — the new toggle is appended to the existing ATLAS2 bit layout. Old ATLAS2 and ATLAS1 codes still import; new toggles stay off because their previous bit value was zero.
-8. **Documentation** — installation, troubleshooting, changelog, limitations and this audit are now separate maintained documents.
+1. **Complete menu structure** — HOME, ESPCHEST, HUD, VISUAL, PLAYER, MOVEMENT, ARMOR, ITEMS, POTIONS, TOTEMS, COMBAT, WAYPOINTS, SETTINGS, DIAGNOSTICS and ABOUT are separate native screens. Existing HUD, Visual, PvP/Combat, Waypoints/Utilities, Settings and diagnostics behavior is preserved.
+2. **ESPCHEST as a real feature** — because the API cannot discover hidden containers or read contents through walls, the implementation logs only containers the player actually opens. It stores type, dimension, coordinates and last-seen time per player, deduplicates the same block, caps the log at 20 and supports remove/clear. The screen states the limitation directly.
+3. **Status screens** — player, movement, armor, items, potions and totems screens read the same live collectors as the HUD and expose the matching toggles. Unavailable components are shown as unavailable rather than fabricated.
+4. **Offhand item information** — `collectEquipment` now also returns the offhand item for the ITEMS screen; the HUD behavior is unchanged.
+5. **Hardening** — container recording is guarded per event, the new status screens handle missing equipment/inventory APIs, and container detail keeps a real distance/direction even if view-direction access fails.
+6. **Tests and validation** — a 14th unit test covers the container model; the integration harness now checks all 15 menu sections, command/event registration counts, duplicate menu protection, container dedupe/remove/clear, per-section controls and the armor threshold modal. Validation parses every JSON file and checks version 1.4.0 across the package, manifests and runtime.
 
-No working feature was removed, and no unsupported feature was added.
-
----
+The 1.1.0–1.3.0 HUD/input/status/settings work described in the changelog remains in place. No working feature was removed.
 
 ## 6. Unsupported by the official platform
 
@@ -125,6 +128,6 @@ The following remain impossible for an ordinary Bedrock add-on and are documente
 - Raw keyboard, mouse or controller button streams.
 - Counting clicks that the game does not report (for example clicks into empty air).
 - Reading all stored tools for durability (only equipped armor and the held item are visible).
-- X-ray, ESP through walls, aimbot, auto-clicker or combat automation.
+- X-ray, ESP through walls, hidden-container scanning or reading container contents, aimbot, auto-clicker or combat automation. ESPCHEST is only a log of containers the player opened.
 
 PS5 compatibility is not claimed. The code is device-independent, but local import, controller navigation, Arabic shaping and real rendering were not exercised on a PS5.

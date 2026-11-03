@@ -1,6 +1,6 @@
 # ATLAS CLIENT — Troubleshooting
 
-**Version:** 1.3.0
+**Version:** 1.4.0
 **Log prefix:** `[ATLAS]`
 **First check:** Minecraft is 26.60 / `1.26.60` or newer and the Behavior Pack is active in the world.
 
@@ -16,8 +16,8 @@
 4. Look for these lines, in order:
 
 ```text
-[ATLAS] Scripts loaded: v1.3.0 | target Minecraft 1.26.60 | server 2.11.0 | ui 2.3.0
-[ATLAS] Event handlers registered: 9.
+[ATLAS] Scripts loaded: v1.4.0 | target Minecraft 1.26.60 | server 2.11.0 | ui 2.3.0
+[ATLAS] Event handlers registered: 10.
 [ATLAS] HUD tick loop started.
 [ATLAS] Custom command /atlas:menu registered (no cheats required).
 [ATLAS] Boot sequence complete. Waiting for world load.
@@ -35,7 +35,7 @@ If the first line never appears, the script module did not load. Check the pack 
 | Game version | Update to 26.60 or newer. The manifest requires `min_engine_version [1, 26, 60]`. |
 | Correct file | Use `ATLAS.mcaddon` from the project root or release. Do not rename a ZIP by hand. |
 | Archive shape | `ATLAS_BP/manifest.json` and `ATLAS_RP/manifest.json` must be at the roots, not inside an extra folder. Run `npm run validate`. |
-| Duplicate UUID | Remove older ATLAS packs with the same UUID, then import 1.3.0 again. |
+| Duplicate UUID | Remove older ATLAS packs with the same UUID, then import 1.4.0 again. |
 | Device import | On PS5, local file import may not exist. Joining a world/Realm that already has the packs is the only alternative, and it is unverified. |
 | Bedrock Arab | The Bedrock Arab import workflow was not tested. A file picker accepting the file is not proof of a successful import. |
 
@@ -47,13 +47,13 @@ If the first line never appears, the script module did not load. Check the pack 
 2. Check that no experiment is required. ATLAS uses stable APIs only.
 3. Confirm the item is in the inventory, or type `/atlas:menu`.
 4. Check the Content Log for `[ATLAS] Scripts loaded`.
-5. If the item is missing, open **Utilities → Restore ATLAS item** or use `/atlas:menu`.
+5. If the item is missing, open **Waypoints → Restore ATLAS item** or use `/atlas:menu`.
 6. If the item and command both fail, the Behavior Pack or its script module did not load. Send the first `[ATLAS]` or `[Scripting]` error line from the Content Log.
 
-### “Scripts v1.3.0 are running” does not appear
+### “Scripts v1.4.0 are running” does not appear
 
-- The player already received that announcement for version 1.3.0. It is shown once per player/version.
-- The world may still have an older pack active. Remove the old packs and activate 1.3.0.
+- The player already received that announcement for version 1.4.0. It is shown once per player/version.
+- The world may still have an older pack active. Remove the old packs and activate 1.4.0.
 - If no `[ATLAS]` log lines exist, the script module did not start.
 
 ### `/atlas:menu` is missing
@@ -78,7 +78,7 @@ The optional `/scriptevent atlas:menu` requires cheats and is not a replacement 
 
 ### Coordinates, health or compass missing
 
-1.3.0 hides an element when the API cannot provide a real value. It does not show `0/20`, `null` or a fake north. If all three are missing while other elements remain, check the Content Log for an API error. In normal survival play these values come from `Player`, `minecraft:health` and `getViewDirection()`.
+1.4.0 hides an element when the API cannot provide a real value. It does not show `0/20`, `null` or a fake north. If all three are missing while other elements remain, check the Content Log for an API error. In normal survival play these values come from `Player`, `minecraft:health` and `getViewDirection()`.
 
 ### WASD does not light up
 
@@ -101,12 +101,25 @@ The slot is empty, or the item has no readable `minecraft:durability` component.
 ### Totem count does not change
 
 - Totems in the main inventory and offhand are counted. Shulker boxes and other containers are not scanned.
-- Inventory changes force an immediate HUD rebuild in 1.3.0. If the count still looks wrong, rejoin and check again.
+- Inventory changes force an immediate HUD rebuild in 1.4.0. If the count still looks wrong, rejoin and check again.
 - On servers that block inventory access, the counter hides rather than showing a false zero.
 
 ### Potion durations look wrong
 
 Durations are real ticks from `Player.getEffects()`. Infinite effects show `∞`. A server can change or remove effects; the HUD follows the API result. If effects cannot be read, the panel is hidden.
+
+### ESPCHEST shows nothing
+
+- ESPCHEST records only containers you actually open/interact with. Opening a chest, barrel, shulker box, furnace, hopper, dropper, dispenser, brewing stand, crafter or decorated pot adds an entry.
+- No entry means no container interaction has been recorded for this player yet.
+- It does not scan through walls, unloaded chunks or hidden containers. That limit is intentional, not a bug.
+- If the log cannot be saved, ATLAS reports a storage error; the screen never invents entries.
+
+### A section is missing from the menu
+
+- The installed pack may still be 1.3.0 or older. Import 1.4.0, remove the old pack from the world, and reactivate it.
+- Check `Scripts v1.4.0 are running` in chat or `[ATLAS] Scripts loaded: v1.4.0` in Content Log.
+- The 1.4.0 menu is: HOME, ESPCHEST, HUD, VISUAL, PLAYER, MOVEMENT, ARMOR, ITEMS, POTIONS, TOTEMS, COMBAT, WAYPOINTS, SETTINGS, DIAGNOSTICS, ABOUT.
 
 ### Low-durability alert repeats or does not fire
 
@@ -177,7 +190,7 @@ Device:
 Minecraft version:
 World / Realm / server:
 Pack versions visible in world settings:
-Does [ATLAS] Scripts loaded: v1.3.0 appear?
+Does [ATLAS] Scripts loaded: v1.4.0 appear?
 Content Log lines starting with [ATLAS] or [Scripting]:
 Steps to reproduce:
 Expected result:

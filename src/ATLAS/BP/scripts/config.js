@@ -5,7 +5,7 @@
  * settings and data model can be tested with plain Node.js.
  */
 
-export const ADDON_VERSION = "1.3.0";
+export const ADDON_VERSION = "1.4.0";
 
 export const MENU_ITEM_ID = "atlas:client_token";
 
@@ -26,12 +26,14 @@ export const STORAGE_KEYS = Object.freeze({
   lastDeath: "atlas:last_death",
   welcomed: "atlas:welcomed",
   bootVersion: "atlas:boot_version",
+  containers: "atlas:containers",
 });
 
 export const LIMITS = Object.freeze({
   waypoints: 30,
   waypointNameLength: 40,
   historyEntries: 5,
+  containers: 20,
   settingsCodeLength: 32,
 });
 

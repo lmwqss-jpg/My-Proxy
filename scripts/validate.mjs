@@ -185,6 +185,16 @@ if (rpManifest) {
 }
 ok(`manifests parsed, ${allUuids.size} unique UUIDs, version ${ADDON_VERSION}`);
 
+// Every JSON file in both packs must parse, not only the manifests.
+let jsonCount = 0;
+for (const root of [BP, RP]) {
+  for (const relative of walk(root).filter((file) => file.endsWith(".json"))) {
+    readJson(path.join(root, relative));
+    jsonCount += 1;
+  }
+}
+ok(`${jsonCount} JSON files parsed`);
+
 // Item definition and texture wiring.
 const itemFile = path.join(BP, "items/atlas_client.json");
 const item = readJson(itemFile);

@@ -12,12 +12,14 @@ import {
   clearSettingsCache,
   getBootVersion,
   getCombatStats,
+  getContainerLog,
   getSettings,
   getWaypoints,
   hasWelcomed,
   markBootVersion,
   markWelcomed,
   saveCombatStats,
+  saveContainerLog,
   saveWaypoints,
 } from "./store.js";
 import { ensureMenuItem } from "./items.js";
@@ -37,6 +39,7 @@ import { t } from "./i18n.js";
 import { ADDON_VERSION, MENU_ITEM_ID } from "./config.js";
 import { upsertDeathWaypoint } from "./waypoints.js";
 import { initInputTracking, forgetInputState } from "./input.js";
+import { isContainerBlock, recordContainer } from "./containers.js";
 
 function guarded(name, callback) {
   return (...args) => {
@@ -172,6 +175,33 @@ function handleHurt(event) {
   }
 }
 
+/**
+ * ESPCHEST log. Only a real interaction with a container is recorded; this
+ * never scans for hidden containers or reads contents through walls.
+ */
+function handleContainerOpen(event) {
+  if (!event?.isFirstEvent) return;
+  const block = event.block;
+  const player = event.player;
+  if (!block || !player?.isValid || !isContainerBlock(block.typeId)) return;
+  const location = block.location;
+  if (!location) return;
+  let dimensionId = null;
+  try {
+    dimensionId = block.dimension?.id ?? player.dimension.id;
+  } catch {
+    return;
+  }
+  const result = recordContainer(getContainerLog(player), {
+    typeId: block.typeId,
+    dimensionId,
+    x: location.x,
+    y: location.y,
+    z: location.z,
+  });
+  if (result.entry) saveContainerLog(player, result.list);
+}
+
 function handleItemUse(event) {
   if (event.itemStack?.typeId !== MENU_ITEM_ID) return;
   openMenu(event.source);
@@ -217,6 +247,7 @@ export function initEvents() {
     }),
   );
   track(on(world.afterEvents.itemUse, "itemUse", handleItemUse));
+  track(on(world.afterEvents.playerInteractWithBlock, "playerInteractWithBlock", handleContainerOpen));
   track(on(world.afterEvents.entityDie, "entityDie", handleDeath));
   track(on(world.afterEvents.entityHurt, "entityHurt", handleHurt));
   track(

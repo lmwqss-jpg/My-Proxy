@@ -1,6 +1,6 @@
 # ATLAS CLIENT — Minecraft Bedrock
 
-**الإصدار / Version:** 1.3.0
+**الإصدار / Version:** 1.4.0
 **ملف التثبيت / Install file:** `ATLAS.mcaddon`
 **الهدف / Target:** Minecraft Bedrock **26.60 (1.26.60)** أو أحدث
 **المنصة الأساسية / Primary platform:** PS5 — **لم يُختبر بعد / not tested**
@@ -9,7 +9,7 @@
 **التجارب / Experiments:** لا يحتاج أي تفعيل
 **دليل التثبيت:** [`docs/INSTALL.md`](docs/INSTALL.md) · **حل المشاكل:** [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) · **القيود:** [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) · **التدقيق:** [`docs/AUDIT.md`](docs/AUDIT.md) · **السجل:** [`docs/CHANGELOG.md`](docs/CHANGELOG.md)
 **دليل الاختبار الفعلي / Device test plan:** [`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md)
-**حالة الاختبار:** `npm run check` يمر بالكامل لنسخة 1.3.0: typecheck، و13 اختباراً، و**85 مسار واجهة**، وبناء وأرشيف وتحقق. **لم يُختبر 1.3.0 داخل Minecraft أو على iPhone أو PS5 أو Mega10.** النسخة 1.2.0 سبق أن حمّلت سكربتاتها وأحداثها التسعة والأمر و`worldLoad` على Bedrock Dedicated Server 1.26.60.6؛ هذا لا يُثبت عمل الواجهة أو الاستيراد على جهاز حقيقي.
+**حالة الاختبار:** `npm run check` يمر بالكامل لنسخة 1.4.0: typecheck، و14 اختباراً، و**198 مسار واجهة**، وبناء وأرشيف وتحقق (6 فحوص). **لم يُختبر 1.4.0 داخل Minecraft أو على iPhone أو PS5 أو Mega10.** النسخة 1.2.0 سبق أن حمّلت سكربتاتها وأحداثها التسعة والأمر و`worldLoad` على Bedrock Dedicated Server 1.26.60.6؛ هذا لا يُثبت عمل الواجهة أو الاستيراد على جهاز حقيقي.
 
 ---
 
@@ -29,6 +29,7 @@
 | عداد CPS لكل نقرة | لا توجد واجهة لنقرات الهواء | يُحسب فقط ما تسجله اللعبة: هجوم، تفاعل، أو استخدام عنصر |
 | تغيير خلفية نوافذ اللعبة أو Ore UI | غير متاح رسمياً | ثيمات للنصوص والألوان وشريط HUD وعلامات المواقع فقط |
 | نسخ رمز الإعدادات آلياً | لا توفر الإضافات وصولاً إلى الحافظة | يظهر الرمز في النموذج ويمكن إرساله إلى الدردشة أو كتابته يدوياً |
+| كشف الحاويات عبر الجدران أو قراءة محتواها المخفي (ESPchest) | غير متاح للإضافات، ومحاولته تعني عرض بيانات غير حقيقية | قسم **ESPCHEST** يسجل فقط الحاويات التي تفتحها فعلاً، مع النوع والموقع والمسافة، دون كشف مخفي |
 
 **لا توجد في هذه الإضافة:** X-ray، ESP، رؤية خلف الجدران، Aimbot، Auto Clicker، أو أي أتمتة قتال.
 **لا تحتاج** إلى «Beta APIs» أو أي تجربة أخرى.
@@ -70,8 +71,8 @@
 - **إصدار Minecraft أقدم من 26.60:** ملف `manifest.json` يطلب `min_engine_version` مساوياً لـ `[1, 26, 60]`، لذلك لن تُحمّل الحزمة على إصدار أقدم.
 - **إصدار API غير موجود:** الحزم تعتمد على `@minecraft/server 2.11.0` و`@minecraft/server-ui 2.3.0` (إصدارات مستقرة في 26.60).
 - **أخطاء تحميل أخرى:** فعّل **Settings → Creator → Content Log GUI**، ثم افتح العالم وابحث عن `[ATLAS] Scripts loaded`. يجب أن ترى أيضاً `Event handlers registered` و`Custom command /atlas:menu registered` و`World loaded`. إذا توقف السجل قبلها فالسكربت لم يُحمّل؛ تحقق من إصدار اللعبة وتفعيل Behavior Pack.
-- **نسخة قديمة عالقة:** إذا كنت جرّبت 1.0.0 أو 1.1.0 أو 1.2.0، احذف الحزمتين القديمتين من العالم أولاً. النسخة الجديدة 1.3.0 لها نفس UUID لكن رقم إصدار أعلى، لذا يستبدلها Minecraft عند الاستيراد.
-- **الأداة مفقودة لكن السكربت يعمل:** استخدم `/atlas:menu`، أو من القائمة **Utilities → Restore ATLAS item**.
+- **نسخة قديمة عالقة:** إذا كنت جرّبت 1.0.0 أو 1.1.0 أو 1.2.0 أو 1.3.0، احذف الحزمتين القديمتين من العالم أولاً. النسخة الجديدة 1.4.0 لها نفس UUID لكن رقم إصدار أعلى، لذا يستبدلها Minecraft عند الاستيراد.
+- **الأداة مفقودة لكن السكربت يعمل:** استخدم `/atlas:menu`، أو من القائمة **Waypoints → Restore ATLAS item**.
 - **الأمر غير موجود:** إذا لم يظهر `/atlas:menu` في الإكمال التلقائي، فالBehavior Pack غير مفعّل أو السكربت لم يُحمّل؛ راجع Content Log.
 
 ---
@@ -100,6 +101,24 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 
 ## 3. الأقسام
 
+القائمة الرئيسية تحتوي: **HOME، ESPCHEST، HUD، VISUAL، PLAYER، MOVEMENT، ARMOR، ITEMS، POTIONS، TOTEMS، COMBAT، WAYPOINTS، SETTINGS، DIAGNOSTICS، ABOUT**. كل قسم يفتح شاشة مستقلة ويعود إلى القائمة الرئيسية.
+
+### HOME
+
+- ملخص حي: الاسم، الصحة، الإحداثيات، البُعد، والموقع المتتبع.
+- معاينة نصية لسطر HUD الحالي.
+- اختصار إلى محرر HUD.
+- تبديل مؤقت الجلسة.
+- زر «تشغيل جميع عناصر HUD» (يغيّر عناصر HUD فقط).
+
+### ESPCHEST
+
+- سجل حقيقي للحاويات التي **تفتحها فعلاً** ضمن المدى العادي.
+- يعرض نوع الحاوية، الإحداثيات، البُعد، والمسافة والاتجاه إلى موقعك.
+- يمكن حذف سجل واحد أو مسح السجل كله مع تأكيد.
+- السجل لكل لاعب، وبحد أقصى **20 حاوية**؛ إعادة فتح الحاوية نفسها تحدّث سجلها ولا تكرره.
+- لا يقرأ المحتويات، ولا يكتشف حاويات مخفية، ولا يرى عبر الجدران. الحاويات غير المحمّلة أو البعيدة لا تظهر.
+
 ### HUD
 
 - الإحداثيات XYZ (مع خيار إحداثيات دقيقة).
@@ -127,7 +146,7 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 
 > **حدود CPS:** عداد CPS حقيقي لكنه **جزئي**: يحسب النقرات التي تولّد أحداثاً في اللعبة (هجوم/تفاعل/استخدام). النقر في الهواء أو النقرات التي لا تسجلها اللعبة لا تظهر. لا يوجد أي توليد نقرات أو أتمتة قتال.
 
-### Visual
+### VISUAL
 
 - تفاصيل اللاعب: المستوى ونمط اللعب.
 - تفاصيل العالم: عدد اللاعبين والصعوبة.
@@ -137,7 +156,47 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 - كل عناصر Visual تُضاف إلى **سطر شريط الإجراءات نفسه**؛ لا توجد لوحة منفصلة لأن الإضافات لا تستطيع إنشاء HUD مخصص.
 - لا يوجد X-ray أو ESP أو رؤية خلف الجدران.
 
-### PvP
+### PLAYER
+
+- الاسم، الصحة الحقيقية، الإحداثيات، البُعد، نمط اللعب، المستوى، ومدة الجلسة.
+- القتلات والوفيات ونسبة K/D من الإحصائيات المحفوظة.
+- تبديل عناصر الاسم والصحة والإحداثيات وتفاصيل اللاعب وإحصائيات القتال في HUD.
+- القيم غير المتاحة تظهر «غير متاح» ولا تُخترع.
+
+### MOVEMENT
+
+- حالة W/A/S/D الحية من متجه الحركة.
+- عدد CPS الحقيقي ومؤشرا LMB/RMB من أحداث اللعبة.
+- تشغيل/إيقاف كل من WASD وCPS ومؤشرات النقر.
+- يوضح الفرق بين الحركة وأحداث اللعب؛ لا يدّعي قراءة ضغطات لوحة المفاتيح أو الفأرة.
+
+### ARMOR
+
+- قطع الدروع الأربع، نوع كل قطعة، المتانة المتبقية/القصوى والنسبة.
+- تشغيل/إيقاف واجهة الدروع وكل قطعة على حدة.
+- خيار عرض أقصى متانة، وتنبيه المتانة وصوته.
+- تغيير حد تنبيه المتانة من الشاشة نفسها.
+
+### ITEMS
+
+- العنصر في اليد الرئيسية واليد الثانية ونوعه ومتانته إن كانت متاحة.
+- عدد توتيم الخلود الحقيقي.
+- تشغيل/إيقاف عداد التوتيم وخيار أقصى متانة الدروع.
+- يوضح أن الفحص يقتصر على الحقيبة الرئيسية واليد الثانية، ولا يشمل صناديق الشالكير أو الحاويات.
+
+### POTIONS
+
+- التأثيرات النشطة، الاسم، المستوى، والوقت المتبقي.
+- التأثيرات اللانهائية تظهر `∞`، وتختفي المنتهية تلقائياً.
+- تشغيل/إيقاف واجهة الجرعات.
+
+### TOTEMS
+
+- عدد توتيم الخلود في الحقيبة الرئيسية واليد الثانية.
+- تشغيل/إيقاف عداد التوتيم.
+- إذا تعذر الوصول إلى الحقيبة تظهر «غير متاح» وليس صفراً.
+
+### COMBAT
 
 - صحة القتال في HUD.
 - تنبيه انخفاض الصحة مع حد قابل للضبط (2–19)، وصوت، وتحذير على الشاشة. التنبيه يُطلق مرة واحدة عند كل نزول تحت الحد.
@@ -146,7 +205,7 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 - إعادة ضبط إحصائيات القتال.
 - **لا يوجد** Aimbot أو Auto Clicker أو أتمتة قتال.
 
-### Utilities
+### WAYPOINTS
 
 - إضافة الموقع الحالي كموقع محفوظ.
 - عرض قائمة المواقع والمسافة إلى كل موقع.
@@ -160,7 +219,7 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 - الحد الأقصى: **30 موقعاً لكل عالم**. المواقع مخزنة في العالم، وتُشارك بين اللاعبين في العالم نفسه.
 - المواقع تظهر أيضاً في شريط التحديد الرسمي عند تفعيل Visual → Locator bar waypoints.
 
-### Settings
+### SETTINGS
 
 - أربعة ثيمات: **Atlas Blue / Emerald / Violet / Ember**.
 - اللغتان: **العربية / English**.
@@ -168,8 +227,8 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 - حفظ فوري لكل تغيير، مع زر «حفظ الآن».
 - تصدير/استيراد رمز إعدادات قصير، مثل `ATLAS2-...`، يحتوي الثيم واللغة والتبديلات ومعدل التحديث وحدّي التنبيه ولون HUD. الرموز القديمة `ATLAS1-...` ما زالت مقبولة. لا يحتوي المواقع.
 - إعادة ضبط كل الإعدادات.
-- **Diagnostics:** حالة السكربت، إصدارات API، وجود الأداة، دعم شريط التحديد، عدد المواقع واللاعبين، ومدة الجلسة الحقيقية مقابل تكات الخادم.
-- **About:** ملخص الحدود الرسمية.
+- **DIAGNOSTICS:** حالة السكربت، إصدارات API، وجود الأداة، دعم شريط التحديد، عدد المواقع واللاعبين، ومدة الجلسة الحقيقية مقابل تكات الخادم.
+- **ABOUT:** ملخص الحدود الرسمية وإصدار الإضافة.
 
 ---
 
@@ -210,7 +269,7 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 | `min_engine_version` | `[1, 26, 60]` |
 | Experiments | لا شيء |
 | Script entry | `scripts/main.js` |
-| إصدار الإضافة | 1.3.0 |
+| إصدار الإضافة | 1.4.0 |
 | Behavior Pack UUID | `45ec3030-7e82-4b27-b1bc-006fc4d14de5` |
 | Resource Pack UUID | `6f7b2107-421b-480f-9a07-3acdf805714d` |
 
@@ -238,7 +297,7 @@ npm run build        # ينتج ATLAS.mcaddon
 npm run validate     # يفحص الحزم والـ ZIP
 ```
 
-الاختبارات الآلية تغطي بنية الحزم والمنطق و**85 مسار واجهة** في محاكي APIs، كما تتحقق من حفظ الإعدادات بعد خروج اللاعب وعودته، واستيراد رموز `ATLAS1` القديمة، وتوافق رموز `ATLAS2` القديمة، وتدهور HUD عند غياب API اختياري. لكنها **لا تغني عن التجربة داخل Minecraft**. لم يتم اختبار 1.3.0 على iPhone أو PS5 أو داخل Minecraft في بيئة البناء الحالية. راجع [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) للتقرير الآلي، و[`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) لقوائم iPhone وPS5 والسيرفرات.
+الاختبارات الآلية تغطي بنية الحزم والمنطق و**198 مسار واجهة** في محاكي APIs، كما تتحقق من حفظ الإعدادات بعد خروج اللاعب وعودته، واستيراد رموز `ATLAS1` القديمة، وتوافق رموز `ATLAS2` القديمة، وتدهور HUD عند غياب API اختياري. لكنها **لا تغني عن التجربة داخل Minecraft**. لم يتم اختبار 1.4.0 على iPhone أو PS5 أو داخل Minecraft في بيئة البناء الحالية. راجع [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) للتقرير الآلي، و[`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) لقوائم iPhone وPS5 والسيرفرات.
 
 ### بنية المستودع
 
@@ -252,7 +311,7 @@ scripts/generate-assets.mjs   توليد الأيقونات (PNG) بشكل ثا�
 test/                         اختبارات Node + محاكي Minecraft
 docs/TEST_REPORT.md           تقرير الاختبار الآلي والتوافق
 docs/DEVICE_TESTING.md        قوائم اختبار iPhone وPS5 والسيرفرات
-docs/AUDIT.md                 التدقيق التقني وقرارات 1.3.0
+docs/AUDIT.md                 التدقيق التقني وقرارات 1.4.0
 docs/INSTALL.md               دليل التثبيت لكل منصة
 docs/TROUBLESHOOTING.md       حل مشاكل التحميل وHUD والإعدادات
 docs/CHANGELOG.md             سجل الإصدارات
@@ -292,15 +351,17 @@ The add-on contains no X-ray, ESP, aimbot, auto-clicker, or combat automation.
 6. Do not enable experiments. Cheats are not required for `/atlas:menu`.
 7. Enter the world and use the ATLAS item, or type `/atlas:menu` in chat.
 
-If nothing appears: verify Minecraft 26.60+, verify the behavior pack is active in the world, enable **Settings → Creator → Content Log GUI**, and look for `[ATLAS] Scripts loaded`. If the item is missing, use `/atlas:menu` or **Utilities → Restore ATLAS item**. The optional `/scriptevent atlas:menu` requires cheats.
+If nothing appears: verify Minecraft 26.60+, verify the behavior pack is active in the world, enable **Settings → Creator → Content Log GUI**, and look for `[ATLAS] Scripts loaded`. If the item is missing, use `/atlas:menu` or **Waypoints → Restore ATLAS item**. The optional `/scriptevent atlas:menu` requires cheats.
 
 ### Features
 
 - **HUD:** coordinates, health, player name, world day/time, dimension, compass, tracked waypoint; opt-in session timer; WASD movement panel; observed CPS and LMB/RMB indicators; real armor durability with percentages and per-piece toggles; active potion effects with remaining time; totem count; low-durability alert for equipped armor and the held item; compact/detailed modes; 5–40 tick refresh (default 5); per-element ON/OFF. Missing optional APIs remove only their own element instead of showing fake values.
 - **HUD editor:** panel, armor-piece, Visual and PvP HUD switches; accent colour for the whole HUD line; durability alert threshold/sound; session toggle; and HUD reset. Unsupported positioning/size/transparency controls are intentionally not shown.
+- **HOME / PLAYER / MOVEMENT / ARMOR / ITEMS / POTIONS / TOTEMS:** real status screens. Each shows only values the API returns and includes the toggles for its own HUD elements.
+- **ESPCHEST:** a per-player log of containers actually opened, with type, position, distance and direction. It is not a wall scanner and never reads hidden contents.
 - **Visual:** player details, world details, text health bar, combat stats, official locator-bar waypoints.
-- **PvP:** combat health, low-health alert with threshold/sound/screen warning, automatic death point, persisted kills/deaths/K/D, session damage and recent combat log. No combat automation.
-- **Utilities:** add/list/rename/move/delete waypoints, distances and directions, HUD tracking, death point, restore item. Up to 30 world-shared waypoints.
+- **Combat:** combat health, low-health alert with threshold/sound/screen warning, automatic death point, persisted kills/deaths/K/D, session damage and recent combat log. No combat automation.
+- **Waypoints:** add/list/rename/move/delete waypoints, distances and directions, HUD tracking, death point, restore item. Up to 30 world-shared waypoints.
 - **Settings:** four themes, English/Arabic, HUD controls, short `ATLAS2-...` settings export/import code (legacy `ATLAS1-...` and older `ATLAS2` codes accepted), reset, diagnostics with real session duration, and official-limits help. Legacy codes restore their original toggles while newer panels keep their defaults; settings are written to player dynamic properties on every change.
 
 ### Documentation
@@ -308,13 +369,13 @@ If nothing appears: verify Minecraft 26.60+, verify the behavior pack is active 
 - [`docs/INSTALL.md`](docs/INSTALL.md) — iPhone, desktop, BDS, PS5 and update instructions
 - [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) — import, startup, HUD, input and persistence problems
 - [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) — unsupported, partially supported and untested items
-- [`docs/AUDIT.md`](docs/AUDIT.md) — architecture and the 1.3.0 technical audit
+- [`docs/AUDIT.md`](docs/AUDIT.md) — architecture and the 1.4.0 technical audit
 - [`docs/CHANGELOG.md`](docs/CHANGELOG.md) — version history
 - [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) and [`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) — automated evidence and device checklists
 
 ### Testing
 
-`npm run typecheck`, `npm test` (13 tests and 85 mock UI flows), `npm run build`, and `npm run validate` pass for 1.3.0. The archive is a single `ATLAS.mcaddon`. The harness also covers settings reload after a leave/rejoin, legacy `ATLAS1` and older `ATLAS2` import, session timing, coalesced inventory refresh and graceful degradation when an optional API is unavailable. **1.3.0 was not tested inside Minecraft, on iPhone, PS5 or Mega10.** The 1.2.0 scripts, nine event registrations, `/atlas:menu` and `worldLoad` were observed on Bedrock Dedicated Server 1.26.60.6 without script errors; that proved startup only and did not render a player UI. See `docs/TEST_REPORT.md` for the exact scope and `docs/DEVICE_TESTING.md` for the iPhone/PS5/server checklists.
+`npm run typecheck`, `npm test` (14 tests and 198 mock UI flows), `npm run build`, and `npm run validate` pass for 1.4.0. The archive is a single `ATLAS.mcaddon`. The harness also covers settings reload after a leave/rejoin, legacy `ATLAS1` and older `ATLAS2` import, session timing, coalesced inventory refresh and graceful degradation when an optional API is unavailable. **1.4.0 was not tested inside Minecraft, on iPhone, PS5 or Mega10.** The 1.2.0 scripts, nine event registrations, `/atlas:menu` and `worldLoad` were observed on Bedrock Dedicated Server 1.26.60.6 without script errors; that proved startup only and did not render a player UI. See `docs/TEST_REPORT.md` for the exact scope and `docs/DEVICE_TESTING.md` for the iPhone/PS5/server checklists.
 
 ### PS5 and public servers
 

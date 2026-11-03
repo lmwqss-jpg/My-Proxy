@@ -7,11 +7,14 @@ import { world } from "@minecraft/server";
 import { LIMITS, STORAGE_KEYS } from "./config.js";
 import { normalizeSettings } from "./settings.js";
 import { parseWaypoints, serializeWaypoints } from "./waypoints.js";
+import { parseContainers, serializeContainers } from "./containers.js";
 
 /** @type {Map<string, any>} */
 const settingsCache = new Map();
 /** @type {Map<string, any>} */
 const combatCache = new Map();
+/** @type {Map<string, any[]>} */
+const containerCache = new Map();
 /** @type {any[] | null} */
 let waypointCache = null;
 let waypointStorageWarned = false;
@@ -59,6 +62,7 @@ export function saveSettings(player, settings) {
 export function clearSettingsCache(playerId) {
   settingsCache.delete(playerId);
   combatCache.delete(playerId);
+  containerCache.delete(playerId);
 }
 
 export function getWaypoints() {
@@ -86,6 +90,34 @@ export function saveWaypoints(list) {
     return null;
   }
   waypointCache = normalized;
+  return normalized;
+}
+
+/** Containers this player has actually opened/interacted with. */
+export function getContainerLog(player) {
+  if (containerCache.has(player.id)) return parseContainers(containerCache.get(player.id));
+  let stored = null;
+  let readable = true;
+  try {
+    stored = parseJson(player.getDynamicProperty(STORAGE_KEYS.containers));
+  } catch (error) {
+    readable = false;
+    console.warn(`[ATLAS] Could not read container log: ${error}`);
+  }
+  const list = parseContainers(stored);
+  if (readable) containerCache.set(player.id, list);
+  return parseContainers(list);
+}
+
+export function saveContainerLog(player, list) {
+  const normalized = parseContainers(list);
+  try {
+    player.setDynamicProperty(STORAGE_KEYS.containers, serializeContainers(normalized));
+  } catch (error) {
+    console.warn(`[ATLAS] Could not save container log: ${error}`);
+    return null;
+  }
+  containerCache.set(player.id, normalized);
   return normalized;
 }
 

@@ -4,6 +4,44 @@ All notable changes to ATLAS CLIENT are recorded here. The archive is a single `
 
 ---
 
+## 1.4.0 — full-testing release
+
+### Added
+
+- Complete main-menu sections: **HOME, ESPCHEST, HUD, VISUAL, PLAYER, MOVEMENT, ARMOR, ITEMS, POTIONS, TOTEMS, COMBAT, WAYPOINTS, SETTINGS, DIAGNOSTICS, ABOUT**.
+- **ESPCHEST** container log: records only containers the player actually opens, with type, dimension, coordinates, distance and direction. Deduplicates the same block, keeps 20 entries per player, and supports remove/clear. It is not a wall scanner and does not read contents.
+- HOME summary and quick controls, PLAYER status, MOVEMENT input state, ARMOR detail and threshold, ITEMS hands/totems, POTIONS effect list and TOTEMS counter.
+- Offhand item information for the ITEMS screen.
+- Validator now parses every JSON file in both packs.
+- Tests for all 15 menu sections, command/event registration counts, duplicate menu protection, container dedupe/remove/clear, per-section controls and the armor threshold modal.
+
+### Fixed
+
+- ITEMS now shows `Not available` instead of `Empty` when the equippable API cannot be read.
+- Container detail no longer fails when the view-direction API is unavailable; distance and cardinal direction remain real.
+- Removed a non-container block from the recognized container list.
+
+### Changed
+
+- Internal section titles now use the requested names: **Combat** and **Waypoints** (the existing PvP/Utilities screens and behavior are preserved).
+- Version bumped to **1.4.0** in both manifests, modules, dependencies, `package.json` and the runtime.
+
+### Compatibility
+
+- Settings codes remain `ATLAS2-...`; legacy `ATLAS1-...` and older `ATLAS2` codes still import.
+- Existing HUD, input, armor, effects, totems, waypoints, combat, themes, Arabic/English, diagnostics and import/export behavior is preserved.
+- No experiments, no new pack UUIDs, no beta APIs.
+
+### Verification
+
+- `npm run typecheck` — passed.
+- `npm test` — 14 tests passed, including 198 mocked form flows.
+- `npm run build` — produced a 45-file `ATLAS.mcaddon` (67.9 KiB).
+- `npm run validate` — passed 6 checks, including every JSON file, manifests, UUIDs, textures, imports and ZIP contents.
+- **Not tested inside Minecraft, on iPhone, on PS5 or on Mega10.** See [`TEST_REPORT.md`](TEST_REPORT.md).
+
+---
+
 ## 1.3.0 — development release
 
 ### Added

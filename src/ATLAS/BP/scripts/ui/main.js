@@ -15,6 +15,8 @@ import {
 import { getSettings } from "../store.js";
 import { t } from "../i18n.js";
 import { getTheme } from "../themes.js";
+import "./statusScreens.js";
+import "./espchestScreen.js";
 import "./hudScreen.js";
 import "./hudEditorScreen.js";
 import "./visualScreen.js";
@@ -37,12 +39,34 @@ function homeSummary(player, language) {
   return lines.join("\n");
 }
 
+/** The order here is the visible main-menu order. */
+function sectionsFor(language) {
+  return [
+    { id: "home", title: t(language, "home.title"), desc: t(language, "menu.homeDesc"), icon: ICONS.hud },
+    { id: "espchest", title: t(language, "espchest.title"), desc: t(language, "menu.espchestDesc"), icon: ICONS.utilities },
+    { id: "hud", title: t(language, "hud.title"), desc: t(language, "menu.hudDesc"), icon: ICONS.hud },
+    { id: "visual", title: t(language, "visual.title"), desc: t(language, "menu.visualDesc"), icon: ICONS.visual },
+    { id: "player", title: t(language, "player.title"), desc: t(language, "menu.playerDesc"), icon: ICONS.visual },
+    { id: "movement", title: t(language, "movement.title"), desc: t(language, "menu.movementDesc"), icon: ICONS.hud },
+    { id: "armor", title: t(language, "armor.title"), desc: t(language, "menu.armorDesc"), icon: ICONS.hud },
+    { id: "items", title: t(language, "items.title"), desc: t(language, "menu.itemsDesc"), icon: ICONS.utilities },
+    { id: "potions", title: t(language, "potions.title"), desc: t(language, "menu.potionsDesc"), icon: ICONS.visual },
+    { id: "totems", title: t(language, "totems.title"), desc: t(language, "menu.totemsDesc"), icon: ICONS.utilities },
+    { id: "pvp", title: t(language, "pvp.title"), desc: t(language, "menu.pvpDesc"), icon: ICONS.pvp },
+    { id: "utilities", title: t(language, "utilities.title"), desc: t(language, "menu.utilitiesDesc"), icon: ICONS.utilities },
+    { id: "settings", title: t(language, "settings.title"), desc: t(language, "menu.settingsDesc"), icon: ICONS.settings },
+    { id: "settings.diagnostics", title: t(language, "diag.title"), desc: t(language, "menu.diagnosticsDesc"), icon: ICONS.settings },
+    { id: "settings.about", title: t(language, "settings.aboutTitle"), desc: t(language, "menu.aboutDesc"), icon: ICONS.settings },
+  ];
+}
+
 async function mainScreen(player) {
   while (true) {
     if (!player.isValid) return;
     const settings = getSettings(player);
     const language = settings.language;
     const theme = getTheme(settings.theme);
+    const sections = sectionsFor(language);
     const body = [
       `§7${t(language, "menu.subtitle")}`,
       emptyLine(),
@@ -55,50 +79,20 @@ async function mainScreen(player) {
     ].join("\n");
     const form = new ActionFormData()
       .title(`${theme.bright}§lATLAS CLIENT`)
-      .body(body)
-      .button(
-        sectionButton(settings, t(language, "hud.title"), t(language, "menu.hudDesc")),
-        ICONS.hud,
-      )
-      .button(
-        sectionButton(settings, t(language, "visual.title"), t(language, "menu.visualDesc")),
-        ICONS.visual,
-      )
-      .button(
-        sectionButton(settings, t(language, "pvp.title"), t(language, "menu.pvpDesc")),
-        ICONS.pvp,
-      )
-      .button(
-        sectionButton(settings, t(language, "utilities.title"), t(language, "menu.utilitiesDesc")),
-        ICONS.utilities,
-      )
-      .button(
-        sectionButton(settings, t(language, "settings.title"), t(language, "menu.settingsDesc")),
-        ICONS.settings,
-      )
-      .button(`§8${t(language, "menu.close")}`, ICONS.close);
+      .body(body);
+    for (const section of sections) {
+      form.button(
+        sectionButton(settings, section.title, section.desc),
+        section.icon,
+      );
+    }
+    form.button(`§8${t(language, "menu.close")}`, ICONS.close);
 
     const response = await safeShow(player, () => form);
     if (!response || response.canceled) return;
-    switch (response.selection) {
-      case 0:
-        await openScreen("hud", player);
-        break;
-      case 1:
-        await openScreen("visual", player);
-        break;
-      case 2:
-        await openScreen("pvp", player);
-        break;
-      case 3:
-        await openScreen("utilities", player);
-        break;
-      case 4:
-        await openScreen("settings", player);
-        break;
-      default:
-        return;
-    }
+    const index = response.selection ?? -1;
+    if (index < 0 || index >= sections.length) return;
+    await openScreen(sections[index].id, player);
   }
 }
 

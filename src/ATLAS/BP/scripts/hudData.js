@@ -95,7 +95,24 @@ export function collectEquipment(player) {
     mainhand = null;
   }
 
-  return { armor, mainhand };
+  let offhand = null;
+  try {
+    const item = equippable.getEquipment(EQUIPMENT_SLOTS.offhand);
+    offhand = item
+      ? {
+          key: "offhand",
+          label: "O",
+          nameKey: "hud.piece.offhand",
+          empty: false,
+          typeId: item.typeId,
+          durability: durabilityOf(item),
+        }
+      : null;
+  } catch {
+    offhand = null;
+  }
+
+  return { armor, mainhand, offhand };
 }
 
 /** Active effects with their real remaining duration in ticks. */

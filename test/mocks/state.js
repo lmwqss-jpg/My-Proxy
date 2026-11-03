@@ -18,6 +18,7 @@ function createState() {
     startupHandlers: [],
     startupFired: false,
     commands: new Map(),
+    commandRegistrations: 0,
     events: {
       playerSpawn: [],
       playerLeave: [],
@@ -61,6 +62,7 @@ export function resetState() {
   state.tasks.length = 0;
   state.timeouts.length = 0;
   state.commands.clear();
+  state.commandRegistrations = 0;
   state.startupFired = false;
   state.errors.length = 0;
   state.warnings.length = 0;
@@ -77,6 +79,7 @@ export function fireStartup() {
   state.startupFired = true;
   const registry = {
     registerCommand(spec, callback) {
+      state.commandRegistrations += 1;
       state.commands.set(spec.name, { spec, callback });
     },
     registerEnum() {},

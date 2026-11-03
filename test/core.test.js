@@ -50,6 +50,16 @@ import {
   waypointDisplayName,
 } from "../src/ATLAS/BP/scripts/waypoints.js";
 import {
+  containerKey,
+  containerLabel,
+  isContainerBlock,
+  normalizeContainerEntry,
+  parseContainers,
+  recordContainer,
+  removeContainer,
+  serializeContainers,
+} from "../src/ATLAS/BP/scripts/containers.js";
+import {
   buildHudPreview,
   buildHudSegments,
   dimensionLabel,
@@ -623,4 +633,68 @@ test("tracked waypoint handles dimensions and labels", () => {
   assert.equal(dimensionLabel("minecraft:the_end", "en"), "The End");
   assert.equal(dimensionLabel("minecraft:nether", "ar"), "العالم السفلي");
   assert.equal(dimensionLabel("custom:dim", "en"), "custom:dim");
+});
+
+test("container log validates real container interactions and caps entries", () => {
+  assert.equal(isContainerBlock("minecraft:chest"), true);
+  assert.equal(isContainerBlock("minecraft:trapped_chest"), true);
+  assert.equal(isContainerBlock("minecraft:undyed_shulker_box"), true);
+  assert.equal(isContainerBlock("minecraft:barrel"), true);
+  assert.equal(isContainerBlock("minecraft:stone"), false);
+  assert.equal(isContainerBlock("custom:chest"), true);
+  assert.equal(isContainerBlock(undefined), false);
+  assert.equal(containerLabel("minecraft:trapped_chest"), "Trapped Chest");
+
+  const entry = normalizeContainerEntry({
+    typeId: "minecraft:chest",
+    dimensionId: "minecraft:overworld",
+    x: 10.9,
+    y: 64.2,
+    z: -3.7,
+  });
+  assert.ok(entry);
+  assert.equal(entry.x, 10);
+  assert.equal(entry.y, 64);
+  assert.equal(entry.z, -4);
+  assert.equal(
+    containerKey(entry),
+    "minecraft:overworld|10|64|-4",
+  );
+  assert.equal(normalizeContainerEntry({ ...entry, typeId: "minecraft:stone" }), null);
+  assert.equal(normalizeContainerEntry({ ...entry, dimensionId: "bad dimension" }), null);
+  assert.equal(normalizeContainerEntry({ ...entry, x: NaN }), null);
+
+  const recorded = recordContainer([], entry, 1234);
+  assert.equal(recorded.added, true);
+  assert.equal(recorded.list.length, 1);
+  assert.equal(recorded.entry.seenAt, 1234);
+
+  const refreshed = recordContainer(recorded.list, { ...entry, typeId: "minecraft:barrel" }, 5678);
+  assert.equal(refreshed.added, false);
+  assert.equal(refreshed.list.length, 1);
+  assert.equal(refreshed.list[0].typeId, "minecraft:barrel");
+  assert.equal(refreshed.list[0].seenAt, 5678);
+
+  let list = [];
+  for (let i = 0; i < LIMITS.containers + 3; i++) {
+    list = recordContainer(
+      list,
+      {
+        typeId: "minecraft:barrel",
+        dimensionId: "minecraft:overworld",
+        x: i,
+        y: 64,
+        z: 0,
+      },
+      1000 + i,
+    ).list;
+  }
+  assert.equal(list.length, LIMITS.containers);
+  assert.equal(list[0].x, LIMITS.containers + 2);
+  const parsed = parseContainers(serializeContainers(list));
+  assert.deepEqual(parsed, list);
+  assert.deepEqual(parseContainers("not json"), []);
+  assert.deepEqual(parseContainers([{ garbage: true }]), []);
+  assert.deepEqual(parseContainers([entry, entry]).length, 1);
+  assert.equal(removeContainer(list, containerKey(list[0])).length, LIMITS.containers - 1);
 });

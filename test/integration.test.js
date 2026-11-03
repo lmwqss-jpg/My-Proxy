@@ -23,7 +23,7 @@ import {
   state,
 } from "./mocks/state.js";
 import { normalizeSettings, settingsToCode } from "../src/ATLAS/BP/scripts/settings.js";
-import { LANGUAGE_IDS, THEME_IDS, TOGGLE_PATHS } from "../src/ATLAS/BP/scripts/config.js";
+import { ADDON_VERSION, LANGUAGE_IDS, THEME_IDS, TOGGLE_PATHS } from "../src/ATLAS/BP/scripts/config.js";
 import { getPath, toBase36 } from "../src/ATLAS/BP/scripts/util.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -64,9 +64,10 @@ function queue(...responses) {
 }
 
 async function settle() {
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 80; i++) {
     runTasks();
     await new Promise((resolve) => setTimeout(resolve, 0));
+    if (state.uiQueue.length === 0 && state.tasks.length === 0) break;
   }
 }
 
@@ -129,13 +130,36 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.ok(command);
     assert.equal(command.spec.permissionLevel, 0);
     assert.equal(command.spec.cheatsRequired, false);
+    assert.equal(state.commandRegistrations, 1, "command registered more than once");
+    assert.equal(state.commands.size, 1);
     assert.ok(state.startupFired);
+    const consoleCommand = command.callback({ sourceEntity: undefined, sourceType: "Server" });
+    assert.equal(consoleCommand.status, 1);
+    assert.match(consoleCommand.message, /in-game/);
+    const eventListeners = {
+      worldLoad: 1,
+      playerSpawn: 1,
+      playerLeave: 1,
+      itemUse: 2,
+      entityDie: 1,
+      entityHurt: 1,
+      playerDimensionChange: 1,
+      playerInventoryItemChange: 1,
+      scriptEventReceive: 1,
+      entityHitEntity: 1,
+      entityHitBlock: 1,
+      playerInteractWithBlock: 2,
+      playerInteractWithEntity: 1,
+    };
+    for (const [name, expected] of Object.entries(eventListeners)) {
+      assert.equal(state.events[name].length, expected, `wrong listener count for ${name}`);
+    }
     assert.equal(player.inventory.items.size, 1, "menu item was not given");
     assert.equal([...player.inventory.items.values()][0].typeId, MENU_ITEM_ID);
     assert.ok(player.titles.some((entry) => entry.text.includes("ATLAS CLIENT")));
     assert.ok(player.messages.some((message) => message.includes("/atlas:menu")));
-    assert.ok(player.messages.some((message) => /Scripts v1\.3\.0 are running/.test(message)));
-    assert.equal(player.dynamic.get("atlas:boot_version"), "1.3.0");
+    assert.ok(player.messages.some((message) => message.includes(`Scripts v${ADDON_VERSION} are running`)));
+    assert.equal(player.dynamic.get("atlas:boot_version"), ADDON_VERSION);
     assert.ok((player.actionBars.at(-1) ?? "").includes("10 64 -4"));
     assert.ok((player.actionBars.at(-1) ?? "").includes("20/20"));
 
@@ -168,6 +192,16 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.equal(JSON.parse(player.dynamic.get("atlas:settings")).hud.session, true);
     assert.match(player.actionBars.at(-1) ?? "", /Session §f\d+:\d{2}/);
 
+    // Two item uses in the same tick cannot stack two menus.
+    const formsBeforeDoubleUse = state.forms.length;
+    queue(click(/Close/));
+    emit("itemUse", { itemStack: new ItemStack(MENU_ITEM_ID, 1), source: player });
+    emit("itemUse", { itemStack: new ItemStack(MENU_ITEM_ID, 1), source: player });
+    advanceTicks(1);
+    await settle();
+    assertClean();
+    assert.equal(state.forms.length, formsBeforeDoubleUse + 1);
+
     // Open through the custom command as a second, independent entry point.
     queue(click(/Close/));
     openWithCommand(player);
@@ -175,6 +209,119 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assertClean();
     assert.ok(state.forms.at(-1).title.includes("ATLAS"));
     assert.ok(state.forms.at(-1).buttons.some((b) => /Close/.test(b)));
+
+    // Every main-menu section exists and returns to the main menu.
+    const formsBeforeSections = state.forms.length;
+    const sections = [
+      [/Home§r/, "Home"],
+      [/ESPCHEST§r/, "ESPCHEST"],
+      [/HUD§r/, "HUD"],
+      [/Visual§r/, "Visual"],
+      [/Player§r/, "Player"],
+      [/Movement§r/, "Movement"],
+      [/Armor§r/, "Armor"],
+      [/Items§r/, "Items"],
+      [/Potions§r/, "Potions"],
+      [/Totems§r/, "Totems"],
+      [/Combat§r/, "Combat"],
+      [/Waypoints§r/, "Waypoints"],
+      [/Settings§r/, "Settings"],
+      [/Diagnostics§r/, "Diagnostics"],
+      [/About ATLAS CLIENT§r/, "About ATLAS CLIENT"],
+    ];
+    for (const [pattern] of sections) {
+      queue(click(pattern), click(/Back/));
+    }
+    queue(click(/Close/));
+    openWithItem(player);
+    await settle();
+    assertClean();
+    const sectionForms = state.forms.slice(formsBeforeSections);
+    for (const [, title] of sections) {
+      assert.ok(
+        sectionForms.some((form) => form.title?.includes(title)),
+        `section did not open: ${title}`,
+      );
+    }
+
+    // ESPCHEST records real container interactions only and persists them.
+    emit("playerInteractWithBlock", {
+      player,
+      isFirstEvent: true,
+      block: {
+        typeId: "minecraft:chest",
+        location: { x: 12, y: 64, z: -5 },
+        dimension: player.dimension,
+      },
+    });
+    emit("playerInteractWithBlock", {
+      player,
+      isFirstEvent: true,
+      block: {
+        typeId: "minecraft:barrel",
+        location: { x: 15, y: 64, z: -5 },
+        dimension: player.dimension,
+      },
+    });
+    emit("playerInteractWithBlock", {
+      player,
+      isFirstEvent: true,
+      block: {
+        typeId: "minecraft:stone",
+        location: { x: 18, y: 64, z: -5 },
+        dimension: player.dimension,
+      },
+    });
+    await settle();
+    const containerLog = JSON.parse(player.dynamic.get("atlas:containers"));
+    assert.equal(containerLog.length, 2);
+    assert.equal(containerLog[0].typeId, "minecraft:barrel");
+
+    // Re-opening the same chest refreshes one entry instead of duplicating it.
+    emit("playerInteractWithBlock", {
+      player,
+      isFirstEvent: true,
+      block: {
+        typeId: "minecraft:chest",
+        location: { x: 12, y: 64, z: -5 },
+        dimension: player.dimension,
+      },
+    });
+    await settle();
+    const dedupedLog = JSON.parse(player.dynamic.get("atlas:containers"));
+    assert.equal(dedupedLog.length, 2);
+    assert.equal(dedupedLog[0].typeId, "minecraft:chest");
+
+    queue(
+      click(/ESPCHEST/),
+      click(/Barrel/),
+      click(/Remove entry/),
+      click(/Remove entry/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    const detailForm = state.forms.find((form) => form.title?.includes("Container details"));
+    assert.ok(detailForm);
+    assert.match(detailForm.body, /15 64 -5/);
+    const afterRemove = JSON.parse(player.dynamic.get("atlas:containers"));
+    assert.equal(afterRemove.length, 1);
+    assert.equal(afterRemove[0].typeId, "minecraft:chest");
+
+    // Clearing the log removes only ATLAS history, never world blocks.
+    queue(
+      click(/ESPCHEST/),
+      click(/Clear container log/),
+      click(/Clear container log/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    assert.deepEqual(JSON.parse(player.dynamic.get("atlas:containers")), []);
 
     // A busy client (for example the chat screen still closing) is retried,
     // then the menu opens normally on the next attempt.
@@ -252,9 +399,11 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     // A real attack and interaction are counted as observed clicks.
     emit("entityHitEntity", { damagingEntity: player, hitEntity: {} });
     emit("playerInteractWithBlock", { player, isFirstEvent: true });
-    // Allow for the configured 5-tick HUD interval plus the tick that just
-    // recorded the actions, so the assertions read a rebuilt line.
-    advanceTicks(10);
+    // Move one refresh interval, then force a rebuild from a real inventory
+    // event while the observed action is still inside the indicator window.
+    advanceTicks(5);
+    player.inventory.setItem(3, new ItemStack("minecraft:stone", 1));
+    emit("playerInventoryItemChange", { player });
     await settle();
     liveBar = player.actionBars.at(-1) ?? "";
     const observedCps = Number((liveBar.match(/CPS §f(\d+)/) ?? [])[1]);
@@ -371,7 +520,7 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
 
     // Add a waypoint through the modal, which should also become the HUD target.
     queue(
-      click(/Utilities/),
+      click(/Waypoints/),
       click(/Add waypoint here/),
       modal("Base"),
       click(/Back/),
@@ -391,7 +540,7 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
 
     // Rename it through the detail screen.
     queue(
-      click(/Utilities/),
+      click(/Waypoints/),
       click(/Waypoints/),
       click(/Base/),
       click(/Rename/),
@@ -443,7 +592,7 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
 
     // Combat log displays the persisted stats and the death event.
     queue(
-      click(/PvP/),
+      click(/Combat/),
       click(/Combat log/),
       click(/Back/),
       click(/Back/),
@@ -579,7 +728,123 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.match(returning.actionBars.at(-1) ?? "", /Health/);
     assert.match(returning.actionBars.at(-1) ?? "", /20\/20/);
     assert.equal(JSON.parse(state.worldProps.get("atlas:waypoints")).length, waypointCount);
-    assert.ok(!returning.messages.some((message) => /Scripts v1\.3\.0 are running/.test(message)));
+    assert.ok(!returning.messages.some((message) => message.includes(`Scripts v${ADDON_VERSION} are running`)));
+
+    // 1.4.0 section controls: each screen writes the setting it describes.
+    const controls = [
+      [/Movement§r/, /CPS counter/, "hud.cps"],
+      [/Armor§r/, /Helmet/, "hud.armorHelmet"],
+      [/Player§r/, /Player name/, "hud.name"],
+      [/Potions§r/, /Potion effects HUD/, "hud.potions"],
+      [/Items§r/, /Totem counter/, "hud.totems"],
+      [/Totems§r/, /Totem counter/, "hud.totems"],
+    ];
+    for (const [section, control, path] of controls) {
+      const before = JSON.parse(returning.dynamic.get("atlas:settings"));
+      const oldValue = path.split(".").reduce((value, key) => value?.[key], before);
+      queue(click(section), click(control), click(/Back/), click(/Close/));
+      openWithItem(returning);
+      await settle();
+      assertClean();
+      const changed = JSON.parse(returning.dynamic.get("atlas:settings"));
+      assert.equal(
+        path.split(".").reduce((value, key) => value?.[key], changed),
+        !oldValue,
+        `control did not persist: ${path}`,
+      );
+      // Restore so the screens continue from a known layout.
+      queue(click(section), click(control), click(/Back/), click(/Close/));
+      openWithItem(returning);
+      await settle();
+      assertClean();
+      const restored = JSON.parse(returning.dynamic.get("atlas:settings"));
+      assert.equal(
+        path.split(".").reduce((value, key) => value?.[key], restored),
+        oldValue,
+        `control did not restore: ${path}`,
+      );
+    }
+
+    // Home's session shortcut and the Armor threshold modal are real controls.
+    queue(click(/Home§r/), click(/Session timer/), click(/Back/), click(/Close/));
+    openWithItem(returning);
+    await settle();
+    assertClean();
+    assert.equal(JSON.parse(returning.dynamic.get("atlas:settings")).hud.session, true);
+
+    queue(
+      click(/Armor§r/),
+      click(/Durability alert threshold/),
+      modal(45),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(returning);
+    await settle();
+    assertClean();
+    assert.equal(JSON.parse(returning.dynamic.get("atlas:settings")).hud.durabilityThreshold, 45);
+
+    queue(
+      click(/Armor§r/),
+      click(/Durability alert threshold/),
+      modal(20),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(returning);
+    await settle();
+    assertClean();
+    assert.equal(JSON.parse(returning.dynamic.get("atlas:settings")).hud.durabilityThreshold, 20);
+
+    // Missing equippable data must not turn the ITEMS screen into a fake empty hand.
+    const originalGetComponent = returning.getComponent.bind(returning);
+    returning.getComponent = (id) =>
+      id === "minecraft:equippable" ? undefined : originalGetComponent(id);
+    const formsBeforeItems = state.forms.length;
+    queue(click(/Items§r/), click(/Back/), click(/Close/));
+    openWithItem(returning);
+    await settle();
+    assertClean();
+    const degradedItems = state.forms
+      .slice(formsBeforeItems)
+      .find((form) => form.title?.includes("Items"));
+    assert.ok(degradedItems);
+    assert.match(degradedItems.body, /Not available/);
+    assert.doesNotMatch(degradedItems.body, /Main hand: §8Empty/);
+    returning.getComponent = originalGetComponent;
+
+    // A container detail still shows real coordinates/distance when the view API fails.
+    emit("playerInteractWithBlock", {
+      player: returning,
+      isFirstEvent: true,
+      block: {
+        typeId: "minecraft:barrel",
+        location: { x: 20, y: 64, z: -5 },
+        dimension: returning.dimension,
+      },
+    });
+    await settle();
+    const originalDetailView = returning.getViewDirection.bind(returning);
+    returning.getViewDirection = () => {
+      throw new Error("unsupported view API");
+    };
+    const formsBeforeDetail = state.forms.length;
+    queue(
+      click(/ESPCHEST§r/),
+      click(/Barrel/),
+      click(/Back/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(returning);
+    await settle();
+    assertClean();
+    const degradedDetail = state.forms
+      .slice(formsBeforeDetail)
+      .find((form) => form.title?.includes("Container details"));
+    assert.ok(degradedDetail);
+    assert.match(degradedDetail.body, /20 64 -5/);
+    returning.getViewDirection = originalDetailView;
 
     originalWarn(`Integration harness complete: ${state.forms.length} forms exercised.`);
   } finally {
