@@ -3,17 +3,28 @@
  * Minecraft's own locator bar; this module never modifies Ore UI.
  */
 
-import { LocationWaypoint, WaypointTexture, world } from "@minecraft/server";
+import * as mc from "@minecraft/server";
 import { getSettings, getWaypoints } from "./store.js";
 import { distance3 } from "./util.js";
 import { getTheme } from "./themes.js";
 import { findWaypoint } from "./waypoints.js";
 
-const TEXTURE_SELECTOR = Object.freeze({
-  textureBoundsList: [{ lowerBound: 0, texture: WaypointTexture.Circle }],
-});
+const { world } = mc;
 
-/** @type {Map<string, Map<string, LocationWaypoint>>} */
+/**
+ * The locator-bar API only exists in newer Script API versions. Access it
+ * through the module namespace and build the texture selector lazily so an
+ * older client cannot crash the whole script module while it is loading.
+ */
+function textureSelector() {
+  const texture = mc.WaypointTexture?.Circle;
+  if (!texture) return null;
+  return Object.freeze({
+    textureBoundsList: [{ lowerBound: 0, texture }],
+  });
+}
+
+/** @type {Map<string, Map<string, any>>} */
 const handlesByPlayer = new Map();
 /** @type {Set<string>} */
 const warnedPlayers = new Set();
@@ -48,6 +59,7 @@ function locatorBarOf(player) {
 
 export function isLocatorSupported(player) {
   if (locatorUnsupported) return false;
+  if (typeof mc.LocationWaypoint !== "function" || !textureSelector()) return false;
   const bar = locatorBarOf(player);
   if (!bar) return false;
   try {
@@ -63,6 +75,15 @@ export function isLocatorSupported(player) {
  */
 export function syncLocator(player) {
   if (!player || !player.isValid) return false;
+  if (typeof mc.LocationWaypoint !== "function") {
+    locatorUnsupported = true;
+    return false;
+  }
+  const selector = textureSelector();
+  if (!selector) {
+    locatorUnsupported = true;
+    return false;
+  }
   const bar = locatorBarOf(player);
   if (!bar) return false;
   const handles = handlesFor(player.id);
@@ -118,7 +139,7 @@ export function syncLocator(player) {
       };
       let handle = handles.get(waypoint.id);
       if (!handle || !handle.isValid) {
-        handle = new LocationWaypoint(location, TEXTURE_SELECTOR, { ...theme.RGB });
+        handle = new mc.LocationWaypoint(location, selector, { ...theme.RGB });
         handles.set(waypoint.id, handle);
       } else {
         handle.setDimensionLocation(location);

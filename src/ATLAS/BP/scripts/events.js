@@ -1,13 +1,21 @@
-/** World event wiring: spawn, menu access, combat stats and death points. */
+/**
+ * World event wiring: spawn, menu access, combat stats and death points.
+ *
+ * Each event is subscribed independently. If one event is unavailable on a
+ * particular client/server build, the rest of the add-on (including the menu
+ * item and /atlas:menu) still initializes instead of aborting the whole module.
+ */
 
 import { system, world } from "@minecraft/server";
 import {
   addCombatHistory,
   clearSettingsCache,
+  getBootVersion,
   getCombatStats,
   getSettings,
   getWaypoints,
   hasWelcomed,
+  markBootVersion,
   markWelcomed,
   saveCombatStats,
   saveWaypoints,
@@ -25,7 +33,7 @@ import {
   syncLocator,
 } from "./locator.js";
 import { t } from "./i18n.js";
-import { MENU_ITEM_ID } from "./config.js";
+import { ADDON_VERSION, MENU_ITEM_ID } from "./config.js";
 import { upsertDeathWaypoint } from "./waypoints.js";
 import { initInputTracking, forgetInputState } from "./input.js";
 
@@ -37,6 +45,20 @@ function guarded(name, callback) {
       console.warn(`[ATLAS] ${name} event failed: ${error}`);
     }
   };
+}
+
+function on(signal, name, callback) {
+  try {
+    if (!signal || typeof signal.subscribe !== "function") {
+      console.warn(`[ATLAS] Event unavailable: ${name}`);
+      return false;
+    }
+    signal.subscribe(guarded(name, callback));
+    return true;
+  } catch (error) {
+    console.warn(`[ATLAS] Could not subscribe to ${name}: ${error}`);
+    return false;
+  }
 }
 
 function welcome(player) {
@@ -65,6 +87,12 @@ function handleSpawn(event) {
     const settings = getSettings(player);
     const language = settings.language;
     const firstTime = !hasWelcomed(player);
+    // Confirm a successful update once per add-on version. This makes a
+    // missing/old pack visible in chat even when Content Log is closed.
+    if (getBootVersion(player) !== ADDON_VERSION) {
+      markBootVersion(player, ADDON_VERSION);
+      player.sendMessage(t(language, "boot.running", { version: ADDON_VERSION }));
+    }
     const itemState = ensureMenuItem(player);
     if (itemState === "given" && (initialSpawn || firstTime)) {
       player.sendMessage(t(language, "welcome.itemGiven"));
@@ -157,39 +185,54 @@ function handleScriptEvent(event) {
 }
 
 export function initEvents() {
-  initInputTracking();
-  world.afterEvents.worldLoad.subscribe(
-    guarded("worldLoad", () => {
+  try {
+    initInputTracking();
+  } catch (error) {
+    console.warn(`[ATLAS] Input tracking failed to initialize: ${error}`);
+  }
+
+  let count = 0;
+  const track = (result) => {
+    if (result) count += 1;
+    return result;
+  };
+
+  track(
+    on(world.afterEvents.worldLoad, "worldLoad", () => {
       // Safe point for world storage and player queries in Script API v2.
       getWaypoints();
       syncAllLocators();
       for (const player of world.getPlayers()) updateHud(player, true);
+      console.log("[ATLAS] World loaded; storage, locators and HUD initialized.");
     }),
   );
-  world.afterEvents.playerSpawn.subscribe(guarded("playerSpawn", handleSpawn));
-  world.afterEvents.playerLeave.subscribe(
-    guarded("playerLeave", (event) => {
+  track(on(world.afterEvents.playerSpawn, "playerSpawn", handleSpawn));
+  track(
+    on(world.afterEvents.playerLeave, "playerLeave", (event) => {
       clearSettingsCache(event.playerId);
       forgetHudState(event.playerId);
       forgetInputState(event.playerId);
       forgetLocatorState(event.playerId);
     }),
   );
-  world.afterEvents.itemUse.subscribe(guarded("itemUse", handleItemUse));
-  world.afterEvents.entityDie.subscribe(guarded("entityDie", handleDeath));
-  world.afterEvents.entityHurt.subscribe(guarded("entityHurt", handleHurt));
-  world.afterEvents.playerInventoryItemChange.subscribe(
-    guarded("playerInventoryItemChange", (event) => {
+  track(on(world.afterEvents.itemUse, "itemUse", handleItemUse));
+  track(on(world.afterEvents.entityDie, "entityDie", handleDeath));
+  track(on(world.afterEvents.entityHurt, "entityHurt", handleHurt));
+  track(
+    on(world.afterEvents.playerInventoryItemChange, "playerInventoryItemChange", (event) => {
       if (event.player?.isValid) updateHud(event.player);
     }),
   );
-  world.afterEvents.playerDimensionChange.subscribe(
-    guarded("playerDimensionChange", (event) => {
+  track(
+    on(world.afterEvents.playerDimensionChange, "playerDimensionChange", (event) => {
       syncLocator(event.player);
       updateHud(event.player, true);
     }),
   );
-  system.afterEvents.scriptEventReceive.subscribe(
-    guarded("scriptEventReceive", handleScriptEvent),
-  );
+  track(on(system.afterEvents.scriptEventReceive, "scriptEventReceive", handleScriptEvent));
+
+  console.log(`[ATLAS] Event handlers registered: ${count}.`);
+  if (count === 0) {
+    console.warn("[ATLAS] No world events could be registered; the menu item may still work.");
+  }
 }

@@ -379,14 +379,14 @@ function logoIcon() {
 const icon = packIcon();
 writePng(path.join(BP, "pack_icon.png"), icon.width, icon.height, icon.pixels);
 writePng(path.join(RP, "pack_icon.png"), icon.width, icon.height, icon.pixels);
-writePng(path.join(RP, "textures/items/atlas_client.png"), ...pngItem());
-writePng(path.join(RP, "textures/ui/atlas_logo.png"), ...pngItem(logoIcon));
-writePng(path.join(RP, "textures/ui/atlas_hud.png"), ...pngItem(hudIcon));
-writePng(path.join(RP, "textures/ui/atlas_visual.png"), ...pngItem(visualIcon));
-writePng(path.join(RP, "textures/ui/atlas_pvp.png"), ...pngItem(pvpIcon));
-writePng(path.join(RP, "textures/ui/atlas_utilities.png"), ...pngItem(utilitiesIcon));
-writePng(path.join(RP, "textures/ui/atlas_settings.png"), ...pngItem(settingsIcon));
-writePng(path.join(RP, "textures/ui/atlas_close.png"), ...pngItem(closeIcon));
+writePng(path.join(RP, "textures/atlas/common/atlas_client.png"), ...pngItem());
+writePng(path.join(RP, "textures/atlas/common/atlas_logo.png"), ...pngItem(logoIcon));
+writePng(path.join(RP, "textures/atlas/common/atlas_hud.png"), ...pngItem(hudIcon));
+writePng(path.join(RP, "textures/atlas/common/atlas_visual.png"), ...pngItem(visualIcon));
+writePng(path.join(RP, "textures/atlas/common/atlas_pvp.png"), ...pngItem(pvpIcon));
+writePng(path.join(RP, "textures/atlas/common/atlas_utilities.png"), ...pngItem(utilitiesIcon));
+writePng(path.join(RP, "textures/atlas/common/atlas_settings.png"), ...pngItem(settingsIcon));
+writePng(path.join(RP, "textures/atlas/common/atlas_close.png"), ...pngItem(closeIcon));
 
 function pngItem(factory = itemIcon) {
   const image = factory();

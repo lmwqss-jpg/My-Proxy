@@ -31,6 +31,7 @@ try {
 
 try {
   startHud();
+  console.log("[ATLAS] HUD tick loop started.");
 } catch (error) {
   console.warn(`[ATLAS] HUD loop failed to start: ${error}`);
 }
@@ -38,10 +39,16 @@ try {
 // Script API v2 loads scripts during early execution, before world storage is
 // readable. Never touch world/player data at module scope. The worldLoad event
 // and this deferred fallback initialise storage after the world is ready.
-system.runTimeout(() => {
-  try {
-    syncAllLocators();
-  } catch (error) {
-    console.warn(`[ATLAS] Locator-bar initialization failed: ${error}`);
-  }
-}, 40);
+try {
+  system.runTimeout(() => {
+    try {
+      syncAllLocators();
+    } catch (error) {
+      console.warn(`[ATLAS] Locator-bar initialization failed: ${error}`);
+    }
+  }, 40);
+} catch (error) {
+  console.warn(`[ATLAS] Deferred initialization could not be scheduled: ${error}`);
+}
+
+console.log("[ATLAS] Boot sequence complete. Waiting for world load.");

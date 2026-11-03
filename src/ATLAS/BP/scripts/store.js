@@ -185,3 +185,21 @@ export function markWelcomed(player) {
     console.warn(`[ATLAS] Could not store the welcome flag: ${error}`);
   }
 }
+
+/** Last add-on version that announced itself to this player. */
+export function getBootVersion(player) {
+  try {
+    const value = player.getDynamicProperty(STORAGE_KEYS.bootVersion);
+    return typeof value === "string" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+export function markBootVersion(player, version) {
+  try {
+    player.setDynamicProperty(STORAGE_KEYS.bootVersion, version);
+  } catch (error) {
+    console.warn(`[ATLAS] Could not store the boot version: ${error}`);
+  }
+}

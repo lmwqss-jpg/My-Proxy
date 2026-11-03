@@ -134,6 +134,8 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.equal([...player.inventory.items.values()][0].typeId, MENU_ITEM_ID);
     assert.ok(player.titles.some((entry) => entry.text.includes("ATLAS CLIENT")));
     assert.ok(player.messages.some((message) => message.includes("/atlas:menu")));
+    assert.ok(player.messages.some((message) => /Scripts v1\.2\.0 are running/.test(message)));
+    assert.equal(player.dynamic.get("atlas:boot_version"), "1.2.0");
     assert.ok((player.actionBars.at(-1) ?? "").includes("10 64 -4"));
     assert.ok((player.actionBars.at(-1) ?? "").includes("20/20"));
 
@@ -453,7 +455,7 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.ok(state.forms.some((form) => form.buttons?.some((b) => /الإعدادات/.test(b))));
 
     // A legacy ATLAS1 code imports through the same form and is saved as the
-    // current schema. Toggles added in 1.1.0 keep their defaults.
+    // current schema. Toggles added after the legacy format keep their defaults.
     const legacy = normalizeSettings({
       theme: "violet",
       language: "ar",
@@ -522,6 +524,7 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.match(returning.actionBars.at(-1) ?? "", /Health/);
     assert.match(returning.actionBars.at(-1) ?? "", /20\/20/);
     assert.equal(JSON.parse(state.worldProps.get("atlas:waypoints")).length, waypointCount);
+    assert.ok(!returning.messages.some((message) => /Scripts v1\.2\.0 are running/.test(message)));
 
     originalWarn(`Integration harness complete: ${state.forms.length} forms exercised.`);
   } finally {

@@ -10,12 +10,12 @@ import { getSettings } from "../store.js";
 import { getTheme } from "../themes.js";
 
 export const ICONS = Object.freeze({
-  hud: "textures/ui/atlas_hud",
-  visual: "textures/ui/atlas_visual",
-  pvp: "textures/ui/atlas_pvp",
-  utilities: "textures/ui/atlas_utilities",
-  settings: "textures/ui/atlas_settings",
-  close: "textures/ui/atlas_close",
+  hud: "textures/atlas/common/atlas_hud",
+  visual: "textures/atlas/common/atlas_visual",
+  pvp: "textures/atlas/common/atlas_pvp",
+  utilities: "textures/atlas/common/atlas_utilities",
+  settings: "textures/atlas/common/atlas_settings",
+  close: "textures/atlas/common/atlas_close",
 });
 
 export function waitTicks(ticks) {

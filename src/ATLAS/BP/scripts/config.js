@@ -5,7 +5,7 @@
  * settings and data model can be tested with plain Node.js.
  */
 
-export const ADDON_VERSION = "1.1.0";
+export const ADDON_VERSION = "1.2.0";
 
 export const MENU_ITEM_ID = "atlas:client_token";
 
@@ -25,6 +25,7 @@ export const STORAGE_KEYS = Object.freeze({
   deaths: "atlas:deaths",
   lastDeath: "atlas:last_death",
   welcomed: "atlas:welcomed",
+  bootVersion: "atlas:boot_version",
 });
 
 export const LIMITS = Object.freeze({

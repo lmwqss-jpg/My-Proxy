@@ -1,6 +1,6 @@
 # ATLAS CLIENT — Test Report
 
-**Add-on version:** 1.1.0
+**Add-on version:** 1.2.0
 **Archive:** `ATLAS.mcaddon`
 **Target:** Minecraft Bedrock 26.60 (1.26.60)
 **Official modules:** `@minecraft/server 2.11.0`, `@minecraft/server-ui 2.3.0`
@@ -15,10 +15,12 @@
 |---|---|
 | `npm run typecheck` | **Passed.** The pack scripts were checked against the official 2.11.0 / 2.3.0 TypeScript definitions. |
 | `npm test` | **Passed.** 13 tests: 12 unit/static tests + 1 integration test that exercised **81 native form flows** through mocked Minecraft APIs, including a leave/rejoin settings reload and an ATLAS1 import. |
-| `npm run build` | **Passed.** Produced `ATLAS.mcaddon` with **43 files / 56.5 KiB** (45 ZIP entries including pack roots). |
-| `npm run validate` | **Passed.** Manifest, UUID, version, path, texture, language, import and ZIP checks. |
+| `npm run build` | **Passed.** Produced `ATLAS.mcaddon` with **42 files / 57.4 KiB** (44 ZIP entries including pack roots). |
+| `npm run validate` | **Passed.** Manifest, UUID, version, metadata, `pack_scope`, texture, language, import and ZIP checks. |
+| `mct validate all` (official Minecraft Creator Tools 0.20.0) | **Passed, exit 0.** No manifest/UUID/module/format errors. Remaining messages are warnings that UI button textures are not linked to items, because forms reference them by path. |
+| Bedrock Dedicated Server 1.26.60.6 | **Script load verified.** The server loaded the Behavior Pack and logged, without script errors: `Scripts loaded: v1.2.0`, `Event handlers registered: 9`, `HUD tick loop started`, `Custom command /atlas:menu registered`, `Boot sequence complete`, `World loaded`. No player joined, so no UI was rendered. |
 
-Environment: Linux, Node.js 24.22.1, TypeScript 5.9.3, esbuild 0.25.12. The mock harness is not Minecraft.
+Environment: Linux, Node.js 24.22.1, TypeScript 5.9.3, esbuild 0.25.12, Minecraft Bedrock Dedicated Server 1.26.60.6 (Linux). The mock harness is not a client; the BDS run is a real Minecraft server runtime but has no GUI.
 
 ---
 
@@ -29,15 +31,20 @@ Environment: Linux, Node.js 24.22.1, TypeScript 5.9.3, esbuild 0.25.12. The mock
 - Both `manifest.json` files are valid JSON and use `format_version: 2`.
 - Five UUIDs are valid v4 and unique: two pack headers, one data module, one script module, one resources module.
 - `min_engine_version` is exactly `[1, 26, 60]`.
-- `package.json`, both manifest headers, all manifest modules and the runtime `ADDON_VERSION` agree on **1.1.0**.
+- `package.json`, both manifest headers, all manifest modules and the runtime `ADDON_VERSION` agree on **1.2.0**.
 - Behavior Pack has `data` + `script` modules; script language is `javascript`; entry is `scripts/main.js` and the file exists.
 - Resource Pack has a `resources` module.
 - Dependencies use stable `@minecraft/server 2.11.0` and `@minecraft/server-ui 2.3.0`; no beta/preview versions.
 - Behavior/resource packs declare each other's correct UUID and version.
 - No experiment capability is declared.
-- Item `atlas:client_token` exists, uses the declared icon, and the icon is mapped to an existing 32×32 PNG.
+- `metadata` is a top-level section (not nested in `header`) and declares `product_type: "addon"`.
+- The Resource Pack declares `header.pack_scope: "world"` as required for a cooperative add-on.
+- Item `atlas:client_token` uses format version `1.26.60`, the declared icon, and an existing 32×32 PNG.
+- `item_texture.json` uses the current array schema for `textures`.
+- Textures live under the creator namespace folder `textures/atlas/common/`, not the generic `items`/`ui` folders.
 - All UI button textures exist, all PNG signatures and dimensions are correct, and both pack icons are 256×256.
-- Both language files contain the item name; `languages.json` lists `en_US` and `ar_SA`.
+- `languages.json` lists `en_US` only. Bedrock has no Arabic game locale; Arabic is an in-add-on language handled by `i18n.js`.
+- The add-on version is **1.2.0** in both manifests, so Minecraft replaces 1.0.0/1.1.0 installations instead of keeping a cached build.
 - Every relative script import resolves; only the two allowed official modules are imported; no `eval`/`Function` construction.
 - No legacy/forbidden names appear in pack files.
 - The ZIP has no double nesting, no unexpected top-level files, no junk files, and every archived file matches its source byte-for-byte.
@@ -55,7 +62,7 @@ Covered by `test/core.test.js`:
 - Name sanitisation removes section-sign codes, control characters and excess length.
 - Settings validation clamps HUD interval (5–40 ticks), health alert threshold (2–19), durability threshold (5–90 in steps of 5), rejects invalid themes/languages/HUD colours, drops unknown keys, and preserves the allowed toggle set.
 - `ATLAS2-...` settings codes round-trip all 33 booleans, four themes, two languages, both thresholds, refresh interval and HUD colour. Tampered, truncated and invalid codes are rejected.
-- Legacy `ATLAS1-...` codes still import the original 20 toggles; toggles added in 1.1.0 keep their defaults.
+- Legacy `ATLAS1-...` codes still import the original 20 toggles; toggles added after the legacy format keep their defaults.
 - Waypoint CRUD, duplicate IDs, 30-item cap, death-point reuse, death-point rename, death-point recreation after rename, parsing invalid JSON/entries, serialisation round-trip.
 - HUD composition: every toggle, compact mode, health bar, combat stats, Arabic labels, other-dimension waypoint, and the all-off case.
 - New live HUD text: WASD active/inactive states, observed CPS, LMB/RMB state, real armor durability (compact and detailed), per-piece armor toggles, low-armor colour, potion names/levels/durations, infinite effects, totem count, and honest `--` output when the input/status APIs are unavailable.
@@ -92,8 +99,9 @@ Covered by `test/core.test.js`:
 22. Diagnostics shows the real API/product versions and feature status.
 23. Export produces an `ATLAS2-...` code and sends it to chat.
 24. Import applies a valid Arabic/Emerald code.
-25. A legacy `ATLAS1-...` code imports through the real Settings → Import form, restores the original 20 toggles and keeps the 1.1.0 panels at their defaults.
+25. A legacy `ATLAS1-...` code imports through the real Settings → Import form, restores the original 20 toggles and keeps the newer panels at their defaults.
 26. Leaving and rejoining reloads a distinct stored settings state from player storage instead of reusing the old cache.
+27. A version announcement (`Scripts v1.2.0 are running`) is shown once per player/version and is not repeated on rejoin.
 
 No mocked warnings or form errors remained at the end of the run. That verifies control flow, not Minecraft rendering.
 
@@ -124,10 +132,11 @@ No mocked warnings or form errors remained at the end of the run. That verifies 
 
 ## 6. NOT tested
 
-The following were **not** executed in this environment because Minecraft Bedrock, the iOS/PS5 clients, and a graphics stack are unavailable:
+The following were **not** executed in this environment because the iOS/PS5 clients and a graphics stack are unavailable. A headless BDS run proves script startup only; it does not render forms or simulate touch/controller input.
 
 - Importing `ATLAS.mcaddon` into Minecraft on iPhone/iPad, PS5, or any Bedrock client.
-- Activating the packs in a real world.
+- Activating the packs in a real client world (the BDS world used development pack folders).
+- A player joining; therefore no welcome message, item give, custom command execution or form response was observed in a real client.
 - Actual rendering of ActionFormData/ModalFormData on iOS or PS5.
 - Whether tapping/using the custom item triggers on a specific iPhone/PS5 control scheme.
 - Arabic glyph shaping and right-to-left line layout in Bedrock's proprietary form font.
@@ -179,17 +188,21 @@ Do not start the device pass until these automated checks pass. During the pass,
 
 ---
 
-## 9. Why the previous build may have appeared empty
+## 9. What changed for the reported launch failure
 
-The repository originally contained no previous add-on files, only `README.md`, so the exact old failure could not be reproduced. This build reduces the common silent-failure causes:
+The 1.0.0/1.1.0 package could be rejected or partly ignored for several concrete reasons found by Microsoft's official validator and the 26.60.6 runtime:
 
-- Correct Behavior Pack script module and `scripts/main.js` entry.
-- Stable API dependencies matching the target game (no beta modules, no experiments).
-- Both packs in one `.mcaddon`, with each manifest at the pack root.
-- Explicit activation instructions for the Behavior and Resource packs.
-- Two independent menu entry points: the custom item and a no-cheats custom command.
-- A visible welcome title/chat so a loaded script is immediately observable.
-- Diagnostics inside the menu and `[ATLAS] Scripts loaded` in the Content Log.
-- A validator that checks the built ZIP, not only the source tree.
+| Problem in the old package | Effect | Fix in 1.2.0 |
+|---|---|---|
+| `metadata` was nested inside `header` | Authors/product type were invisible to pack tooling; invalid placement | Moved `metadata` to the manifest root and added `product_type: "addon"` |
+| Resource Pack had no `pack_scope` | Cooperative add-on validation error; the RP could be applied as a global pack without the BP | Added `header.pack_scope: "world"` |
+| `item_texture.json` used a string for `textures` | Official schema warning; item icon may not resolve | Changed to the current array form |
+| Icon files were in generic `textures/items` and `textures/ui` | Cooperative add-on validation errors | Moved to `textures/atlas/common/` and updated every reference |
+| `languages.json` advertised `ar_SA` | Unsupported Bedrock locale warning; the file is not a valid game locale | Removed it; Arabic remains selectable inside ATLAS |
+| Item used `format_version 1.21.70` | Old item format on a 1.26.60 target | Updated to `1.26.60` |
+| `header.version` was 1.1.0 | A cached 1.0.0 pack could remain in a world | Bumped to 1.2.0 and documented deleting old packs |
+| One unavailable event could abort all later subscriptions | Menu item/command could stop registering | Each event now subscribes independently and logs failures |
+| Locator API was used at module scope | A client without that API could fail before any HUD/menu code ran | The locator API is accessed lazily and guarded |
+| No visible proof of script startup after an update | Players could not tell whether the new build loaded | One chat line per player/version plus boot-stage Content Log lines |
 
-The remaining verification that matters is importing and using the file on the target devices.
+The exact error message on the reporter's iPhone was not provided, so these are the verified load/validation defects we could fix, not a claim to have matched an unseen log. The 1.2.0 build does load its scripts, register all nine events, register `/atlas:menu` and receive `worldLoad` on a real Minecraft Bedrock 1.26.60.6 server. Client rendering, item use and touch/controller input still require the iPhone/PS5 pass.

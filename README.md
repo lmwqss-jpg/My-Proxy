@@ -1,13 +1,14 @@
 # ATLAS CLIENT — Minecraft Bedrock
 
-**الإصدار / Version:** 1.1.0
+**الإصدار / Version:** 1.2.0
 **ملف التثبيت / Install file:** `ATLAS.mcaddon`
 **الهدف / Target:** Minecraft Bedrock **26.60 (1.26.60)** أو أحدث
 **المنصة الأساسية / Primary platform:** iPhone — Minecraft Bedrock 26.60+
 **PS5:** الكود يستخدم واجهات مستقلة عن الجهاز، لكن **لم يُختبر على PS5**. لا تدّعي هذه النسخة توافقاً مؤكداً مع PS5.
 **التجارب / Experiments:** لا يحتاج أي تفعيل
 **دليل الاختبار الفعلي / Device test plan:** [`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md)
-**حالة الاختبار:** لم يُختبر بعد على iPhone أو PS5 أو داخل Minecraft أو على Mega10. الدليل يحتوي قوائم iPhone وPS5 ومصفوفة السيرفرات، وليس نتائج نجاح.
+**حالة الاختبار:** تم تحميل السكربتات فعلياً على **Bedrock Dedicated Server 1.26.60.6**: تسجيل الأحداث التسعة، تسجيل `/atlas:menu`، وبدء HUD، وحدث `worldLoad` ظهرت كلها في سجل اللعبة بدون أخطاء. **لم يُختبر بعد على iPhone أو PS5 أو بواجهة لاعب حقيقية أو على Mega10.**
+**الاختبار الرسمي:** `mct validate all` على ملف `ATLAS.mcaddon` يمر بدون أخطاء (تحذيرات فقط عن أيقونات النماذج غير المرتبطة بعناصر).
 
 ---
 
@@ -31,7 +32,18 @@
 **لا توجد في هذه الإضافة:** X-ray، ESP، رؤية خلف الجدران، Aimbot، Auto Clicker، أو أي أتمتة قتال.
 **لا تحتاج** إلى «Beta APIs» أو أي تجربة أخرى.
 
-> ملاحظة عن النسخة السابقة: المستودع لم يكن يحتوي على ملفات النسخة السابقة (كان `README.md` فقط)، لذلك أُعيد بناء الإضافة من الصفر بنفس هوية ATLAS. النسخة الحالية تعالج الأسباب الشائعة لعدم ظهور أي شيء: ملف دخول صحيح، إصدارات API مستقرة، عدم الحاجة لتجارب، أداة قائمة تلقائية، أمر يعمل بدون غش، رسالة ترحيب، وشاشة تشخيص.
+> **تشخيص فشل التشغيل السابق:** بلاغك عن عدم ظهور شيء داخل Minecraft صحيح، ولا يمكن تأكيد رسالة الخطأ الدقيقة بدون Content Log من جهازك. لذلك فحصنا الملف بأدوات Microsoft الرسمية وأصلحنا كل ما يمكن أن يمنع التحميل أو يفسد الحزمة:
+> - نقل `metadata` من داخل `header` إلى الجذر، وإضافة `product_type: "addon"`.
+> - إضافة `pack_scope: "world"` إلى حزمة الموارد، وهو شرط Cooperative Add-On الرسمي.
+> - تصحيح `item_texture.json`: `textures` يجب أن تكون مصفوفة، وليس نصاً.
+> - نقل الأيقونات إلى مجلد باسم المشروع (`textures/atlas/common/`) بدلاً من مجلدات عامة (`items`/`ui`).
+> - إزالة `ar_SA` من `languages.json` لأن Bedrock لا يدعم العربية كلغة لعبة؛ العربية تبقى داخل واجهة ATLAS عبر مبدّل اللغة.
+> - تحديث تعريف الأداة إلى `format_version 1.26.60`.
+> - رفع إصدار الحزمة إلى **1.2.0** لتستبدل أي نسخة قديمة مخزنة.
+> - جعل تسجيل كل حدث مستقلاً، وحماية واجهة Locator Bar من إسقاط كامل السكربت على إصدار لا يملكها.
+> - إضافة رسالة تأكيد في الدردشة مرة واحدة لكل إصدار: `Scripts v1.2.0 are running`، وإضافة سجلات `[ATLAS] Custom command /atlas:menu registered` و`[ATLAS] World loaded` إلى Content Log.
+>
+> **إذا استمر الفشل:** أرسل سطر Content Log الذي يبدأ بـ `[ATLAS]` أو `[Scripting]`. لا نستطيع تشخيص رسالة لم نرها.
 
 ---
 
@@ -47,7 +59,7 @@
    - **Add-Ons / Behavior Packs** ← **My Packs** ← **ATLAS CLIENT** ← **Activate**
    - **Resource Packs** ← **My Packs** ← **ATLAS CLIENT Resources** ← **Activate**
 6. لا تفعّل أي Experiments. لا تحتاج تفعيل الغش من أجل `/atlas:menu`.
-7. ادخل العالم. ستظهر رسالة ترحيب وأداة **ATLAS CLIENT** في الحقيبة.
+7. ادخل العالم. ستظهر رسالة تأكيد مرة واحدة لكل إصدار، ورسالة ترحيب، وأداة **ATLAS CLIENT** في الحقيبة.
 
 > إذا لم تظهر الحزم ضمن «My Packs»، أعد استيراد الملف وتأكد أن Minecraft نسخة **26.60 أو أحدث**. إذا كانت لديك نسخة قديمة من ATLAS بنفس UUID، احذف الحزم القديمة أولاً ثم استورد الملف الجديد.
 
@@ -56,7 +68,8 @@
 - **الحزمة غير مفعّلة داخل العالم:** التثبيت وحده لا يشغّل السلوك. يجب تفعيل Behavior Pack من إعدادات العالم.
 - **إصدار Minecraft أقدم من 26.60:** ملف `manifest.json` يطلب `min_engine_version` مساوياً لـ `[1, 26, 60]`، لذلك لن تُحمّل الحزمة على إصدار أقدم.
 - **إصدار API غير موجود:** الحزم تعتمد على `@minecraft/server 2.11.0` و`@minecraft/server-ui 2.3.0` (إصدارات مستقرة في 26.60).
-- **أخطاء تحميل أخرى:** فعّل **Settings → Creator → Content Log GUI**، ثم افتح العالم وابحث عن `[ATLAS] Scripts loaded`.
+- **أخطاء تحميل أخرى:** فعّل **Settings → Creator → Content Log GUI**، ثم افتح العالم وابحث عن `[ATLAS] Scripts loaded`. يجب أن ترى أيضاً `Event handlers registered` و`Custom command /atlas:menu registered` و`World loaded`. إذا توقف السجل قبلها فالسكربت لم يُحمّل؛ تحقق من إصدار اللعبة وتفعيل Behavior Pack.
+- **نسخة قديمة عالقة:** إذا كنت جرّبت 1.0.0 أو 1.1.0، احذف الحزمتين القديمتين من العالم أولاً. النسخة الجديدة 1.2.0 لها نفس UUID لكن رقم إصدار أعلى، لذا يستبدلها Minecraft عند الاستيراد.
 - **الأداة مفقودة لكن السكربت يعمل:** استخدم `/atlas:menu`، أو من القائمة **Utilities → Restore ATLAS item**.
 - **الأمر غير موجود:** إذا لم يظهر `/atlas:menu` في الإكمال التلقائي، فالBehavior Pack غير مفعّل أو السكربت لم يُحمّل؛ راجع Content Log.
 
@@ -167,7 +180,7 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 
 الثيم يغيّر ألوان النصوص في النماذج، وسطر HUD، ولون علامات المواقع في شريط التحديد. **لا يمكنه تغيير خلفية واجهات Minecraft الأصلية أو Ore UI** لأن ذلك خارج صلاحيات الإضافات.
 
-اللغة العربية مدعومة في كل نصوص الإضافة والأسماء الافتراضية والاتجاهات. عرض النص في النماذج يعتمد على محرك واجهة Bedrock نفسه؛ الإضافة لا ترسم واجهة HTML، لذلك لا يحدث تداخل نصوص من طرفنا. إذا كان اتجاه السطر في نسخة اللعبة غير مثالي، فهذا سلوك واجهة اللعبة وليس تعديلاً من الحزمة.
+اللغة العربية مدعومة داخل واجهة ATLAS في كل النصوص والأسماء الافتراضية والاتجاهات. Minecraft Bedrock نفسه لا يوفّر العربية كلغة لعبة، لذلك لا يوجد ملف `.lang` عربي للعبة؛ اختَر العربية من **Settings → Language** داخل الإضافة. عرض النص في النماذج يعتمد على محرك واجهة Bedrock نفسه؛ الإضافة لا ترسم واجهة HTML، لذلك لا يحدث تداخل نصوص من طرفنا. إذا كان اتجاه السطر في نسخة اللعبة غير مثالي، فهذا سلوك واجهة اللعبة وليس تعديلاً من الحزمة.
 
 ---
 
@@ -178,7 +191,7 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 - من **Settings → Import settings code** الصق/اكتب الرمز ثم اضغط Apply.
 - الحافظة (Clipboard) غير متاحة للإضافات، لذلك لا يوجد زر «نسخ» آلي.
 - الرمز لا ينقل المواقع ولا الإحصائيات؛ هي بيانات عالم/لاعب منفصلة.
-- **التوافق الخلفي:** رموز `ATLAS1-...` القديمة ما زالت مقبولة. تستعيد الثيم واللغة والحدود والتبديلات العشرين القديمة، بينما تأخذ لوحات 1.1.0 القيم الافتراضية. بعد استيرادها يصبح التصدير `ATLAS2-...`.
+- **التوافق الخلفي:** رموز `ATLAS1-...` القديمة ما زالت مقبولة. تستعيد الثيم واللغة والحدود والتبديلات العشرين القديمة، بينما تأخذ اللوحات الجديدة القيم الافتراضية. بعد استيرادها يصبح التصدير `ATLAS2-...`.
 - **الحفظ:** كل تغيير يُحفظ فوراً في Dynamic Properties الخاصة باللاعب. للتحقق بعد إغلاق العالم استخدم **Save & Quit** ثم أعد فتح العالم؛ راجع قسم حفظ الإعدادات في دليل الاختبار.
 
 ---
@@ -193,7 +206,7 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 | `min_engine_version` | `[1, 26, 60]` |
 | Experiments | لا شيء |
 | Script entry | `scripts/main.js` |
-| إصدار الإضافة | 1.1.0 |
+| إصدار الإضافة | 1.2.0 |
 | Behavior Pack UUID | `45ec3030-7e82-4b27-b1bc-006fc4d14de5` |
 | Resource Pack UUID | `6f7b2107-421b-480f-9a07-3acdf805714d` |
 
@@ -279,11 +292,11 @@ If nothing appears: verify Minecraft 26.60+, verify the behavior pack is active 
 - **Visual:** player details, world details, text health bar, combat stats, official locator-bar waypoints.
 - **PvP:** combat health, low-health alert with threshold/sound/screen warning, automatic death point, persisted kills/deaths/K/D, session damage and recent combat log. No combat automation.
 - **Utilities:** add/list/rename/move/delete waypoints, distances and directions, HUD tracking, death point, restore item. Up to 30 world-shared waypoints.
-- **Settings:** four themes, English/Arabic, HUD controls, short `ATLAS2-...` settings export/import code (legacy `ATLAS1-...` accepted), reset, diagnostics, official-limits help. Legacy codes restore the original 20 toggles while 1.1.0 panels keep their defaults; settings are written to player dynamic properties on every change.
+- **Settings:** four themes, English/Arabic, HUD controls, short `ATLAS2-...` settings export/import code (legacy `ATLAS1-...` accepted), reset, diagnostics, official-limits help. Legacy codes restore the original 20 toggles while the newer panels keep their defaults; settings are written to player dynamic properties on every change.
 
 ### Testing
 
-`npm run typecheck`, `npm test` (13 tests and 81 mock UI flows), `npm run build`, and `npm run validate` pass. The archive is a single `ATLAS.mcaddon`. The harness also covers settings reload after a leave/rejoin and legacy `ATLAS1` import. **It has not been tested on an iPhone, PS5 or inside Minecraft in this environment**; see `docs/TEST_REPORT.md` for the exact scope and `docs/DEVICE_TESTING.md` for the iPhone/PS5/server checklists.
+`npm run typecheck`, `npm test` (13 tests and 81 mock UI flows), `npm run build`, and `npm run validate` pass. The archive is a single `ATLAS.mcaddon`. The harness also covers settings reload after a leave/rejoin and legacy `ATLAS1` import. **The scripts, all nine event registrations, `/atlas:menu` registration and `worldLoad` were observed on Bedrock Dedicated Server 1.26.60.6 without script errors.** A real player UI, iPhone, PS5 and Mega10 were not tested. See `docs/TEST_REPORT.md` for the exact scope and `docs/DEVICE_TESTING.md` for the iPhone/PS5/server checklists.
 
 ### PS5 and public servers
 

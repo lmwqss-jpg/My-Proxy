@@ -137,6 +137,21 @@ function checkManifest(manifest, label, expectedType) {
   if (manifest.header.name === undefined || manifest.header.description === undefined) {
     fail(`${label}: missing name/description`);
   }
+  // metadata belongs at the manifest root, not inside header. The old layout
+  // was accepted by the JSON parser but made authors/product_type invisible to
+  // pack tooling and cooperative add-on validation.
+  if (manifest.header.metadata !== undefined) {
+    fail(`${label}: metadata must be a top-level section, not part of header`);
+  }
+  if (!manifest.metadata || !Array.isArray(manifest.metadata.authors) || manifest.metadata.authors.length === 0) {
+    fail(`${label}: missing top-level metadata.authors`);
+  }
+  if (manifest.metadata?.product_type !== "addon") {
+    fail(`${label}: metadata.product_type must be "addon"`);
+  }
+  if (label === "RP manifest" && manifest.header.pack_scope !== "world") {
+    fail('RP: header.pack_scope must be "world" for a cooperative add-on');
+  }
 }
 
 checkManifest(bpManifest, "BP manifest", "data");
@@ -175,16 +190,19 @@ const itemFile = path.join(BP, "items/atlas_client.json");
 const item = readJson(itemFile);
 const itemId = item?.["minecraft:item"]?.description?.identifier;
 if (itemId !== "atlas:client_token") fail(`item identifier must be atlas:client_token, got ${itemId}`);
+if (item?.format_version !== "1.26.60") fail("item format_version must be 1.26.60");
 const iconKey = item?.["minecraft:item"]?.components?.["minecraft:icon"];
 if (iconKey !== "atlas:client_token") fail("item icon key mismatch");
 const textureJson = readJson(path.join(RP, "textures/item_texture.json"));
 const itemTexture = textureJson?.texture_data?.["atlas:client_token"]?.textures;
-if (itemTexture !== "textures/items/atlas_client") fail("item texture mapping is wrong");
-const itemPng = pngInfo(path.join(RP, "textures/items/atlas_client.png"));
+if (!Array.isArray(itemTexture) || itemTexture[0] !== "textures/atlas/common/atlas_client") {
+  fail("item texture mapping must be an array pointing at textures/atlas/common/atlas_client");
+}
+const itemPng = pngInfo(path.join(RP, "textures/atlas/common/atlas_client.png"));
 if (itemPng && (itemPng.width !== 32 || itemPng.height !== 32)) fail("item texture should be 32x32");
-for (const icon of fs.readdirSync(path.join(RP, "textures/ui"))) {
+for (const icon of fs.readdirSync(path.join(RP, "textures/atlas/common"))) {
   if (!icon.endsWith(".png")) continue;
-  const info = pngInfo(path.join(RP, "textures/ui", icon));
+  const info = pngInfo(path.join(RP, "textures/atlas/common", icon));
   if (info && (info.width !== 32 || info.height !== 32)) fail(`UI icon ${icon} should be 32x32`);
 }
 const packIcon = pngInfo(path.join(BP, "pack_icon.png"));
@@ -192,14 +210,16 @@ if (packIcon && (packIcon.width !== 256 || packIcon.height !== 256)) fail("pack 
 pngInfo(path.join(RP, "pack_icon.png"));
 ok("item, texture and icon references resolved");
 
-// Localisation.
+// Localisation. Bedrock has no Arabic locale, so the resource pack only ships
+// en_US. Arabic remains an in-add-on language option handled by i18n.js.
 const langEn = fs.readFileSync(path.join(RP, "texts/en_US.lang"), "utf8");
-const langAr = fs.readFileSync(path.join(RP, "texts/ar_SA.lang"), "utf8");
 if (!/^item\.atlas:client_token=/m.test(langEn)) fail("en_US.lang has no item name");
-if (!/^item\.atlas:client_token=/m.test(langAr)) fail("ar_SA.lang has no item name");
 const languages = readJson(path.join(RP, "texts/languages.json"));
-if (!Array.isArray(languages) || !languages.includes("en_US") || !languages.includes("ar_SA")) {
-  fail("texts/languages.json must list en_US and ar_SA");
+if (!Array.isArray(languages) || languages.length === 0 || !languages.includes("en_US")) {
+  fail("texts/languages.json must list en_US");
+}
+if (languages.some((locale) => locale === "ar_SA")) {
+  fail("texts/languages.json must not advertise ar_SA: Bedrock has no Arabic locale");
 }
 ok("localisation files present");
 

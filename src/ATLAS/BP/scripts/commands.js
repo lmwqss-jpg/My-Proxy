@@ -14,6 +14,10 @@ export function registerCommands() {
   registered = true;
   system.beforeEvents.startup.subscribe((event) => {
     try {
+      if (!event.customCommandRegistry) {
+        console.warn("[ATLAS] Custom command registry is unavailable on this game version.");
+        return;
+      }
       event.customCommandRegistry.registerCommand(
         {
           name: "atlas:menu",
@@ -35,6 +39,7 @@ export function registerCommands() {
           return { status: CustomCommandStatus.Success };
         },
       );
+      console.log("[ATLAS] Custom command /atlas:menu registered (no cheats required).");
     } catch (error) {
       console.warn(`[ATLAS] Could not register /atlas:menu: ${error}`);
     }
