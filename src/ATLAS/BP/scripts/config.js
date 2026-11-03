@@ -5,7 +5,7 @@
  * settings and data model can be tested with plain Node.js.
  */
 
-export const ADDON_VERSION = "1.4.0";
+export const ADDON_VERSION = "1.5.0";
 
 export const MENU_ITEM_ID = "atlas:client_token";
 
@@ -27,6 +27,8 @@ export const STORAGE_KEYS = Object.freeze({
   welcomed: "atlas:welcomed",
   bootVersion: "atlas:boot_version",
   containers: "atlas:containers",
+  servers: "atlas:servers",
+  serverTarget: "atlas:server_target",
 });
 
 export const LIMITS = Object.freeze({
@@ -35,12 +37,31 @@ export const LIMITS = Object.freeze({
   historyEntries: 5,
   containers: 20,
   settingsCodeLength: 32,
+  servers: 40,
+  serverNameLength: 32,
+  serverDescriptionLength: 80,
 });
 
 export const DEATH_WAYPOINT_ID = "atlas_death";
 
 export const THEME_IDS = Object.freeze(["atlas", "emerald", "violet", "ember"]);
 export const LANGUAGE_IDS = Object.freeze(["en", "ar"]);
+/**
+ * Server entries are an address book only. The stable Script API has no
+ * networking and cannot start or observe a connection, so these values never
+ * trigger a fake connect action.
+ */
+export const DEFAULT_SERVER_PORT = 19132;
+export const SERVER_CATEGORIES = Object.freeze([
+  "public",
+  "private",
+  "friends",
+  "realm",
+  "dedicated",
+  "other",
+]);
+export const SERVER_REGIONS = Object.freeze(["eu", "asia", "na", "sa", "me", "other"]);
+
 export const HUD_COLOR_IDS = Object.freeze([
   "theme",
   "white",

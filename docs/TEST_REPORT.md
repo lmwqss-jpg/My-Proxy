@@ -1,11 +1,11 @@
-# ATLAS CLIENT 1.4.0 — Full Test Report
+# ATLAS CLIENT 1.5.0 — Full Test Report
 
-**Add-on version:** 1.4.0
+**Add-on version:** 1.5.0
 **Archive:** `ATLAS.mcaddon` (single BP + RP)
 **Target:** Minecraft Bedrock 26.60 / `1.26.60`+
 **Script modules:** `@minecraft/server 2.11.0`, `@minecraft/server-ui 2.3.0`
 **Experiments:** none
-**Report scope:** automated/static tests actually run for 1.4.0. Device and in-game tests are listed separately as **NOT TESTED**.
+**Report scope:** automated/static tests actually run for 1.5.0. Device and in-game tests are listed separately as **NOT TESTED**.
 
 > This is not a claim that the add-on works on iPhone, PS5, Mega10 or inside a real Minecraft client. No such test environment was available here.
 
@@ -19,9 +19,9 @@ Linux, Node.js 24.22.1, npm 11.19.1, TypeScript 5.9.3, esbuild 0.25.12.
 |---|---|---|
 | `npm ci` | PASS | 8 packages installed, 0 vulnerabilities |
 | `npm run typecheck` | PASS | pack scripts checked against the official 2.11.0 / 2.3.0 types |
-| `npm test` | PASS | 14 tests; 13 unit/static tests + 1 integration test with **198 native form flows** |
-| `npm run build` | PASS | `ATLAS.mcaddon`, **45 files, 67.9 KiB**, 47 ZIP entries including pack roots |
-| `npm run validate` | PASS | **6 checks**: manifests, 5 JSON files, item/PNG/texture references, localisation, 29 scripts/imports, ZIP |
+| `npm test` | PASS | 16 tests; 15 unit/static tests + 1 integration test with **271 native form flows** |
+| `npm run build` | PASS | `ATLAS.mcaddon`, **48 files, 78.5 KiB**, 50 ZIP entries including pack roots |
+| `npm run validate` | PASS | **6 checks**: manifests, 5 JSON files, item/PNG/texture references, localisation, 31 scripts/imports, ZIP |
 | `npm run check` | PASS | the four commands above in sequence |
 | `unzip -l ATLAS.mcaddon` | PASS | `ATLAS_BP/` and `ATLAS_RP/` manifests, `scripts/main.js`, item and textures at the expected roots |
 | `unzip -t ATLAS.mcaddon` | PASS | archive integrity: no compressed-data errors |
@@ -43,7 +43,7 @@ The integration harness loads the real bundled `scripts/main.js` against mock Mi
 | A6 | Dependencies and API versions | PASS | BP depends on RP and stable `@minecraft/server 2.11.0` / `@minecraft/server-ui 2.3.0`; RP depends on BP; no beta/preview |
 | A7 | Missing files | PASS | script entry, item definition, texture map, icons, language file and pack icons all exist |
 | A8 | Paths | PASS | all relative imports resolve; item texture references resolve; archive paths are not nested |
-| A9 | Old code conflicts | PASS | version 1.4.0 aligns across `package.json`, manifests, dependency versions and runtime; ATLAS1 and older ATLAS2 codes still import |
+| A9 | Old code conflicts | PASS | version 1.5.0 aligns across `package.json`, manifests, dependency versions and runtime; ATLAS1 and older ATLAS2 codes still import |
 
 Static forbidden checks also passed: no `eval`/`new Function`, no experiment or `script_eval` capability, no unsupported `ar_SA` locale, no legacy branding in pack files.
 
@@ -56,8 +56,8 @@ Static forbidden checks also passed: no `eval`/`new Function`, no experiment or 
 | B1 | Command registered correctly | PASS (harness) | name `atlas:menu`, permission `Any`, `cheatsRequired: false`; exactly one registration |
 | B2 | Command opens the main menu | PASS (harness) | player callback returns success and the main form opens |
 | B3 | Open and close the menu | PASS (harness) | item, custom command and close button exercised |
-| B4 | Navigate every section | PASS (harness) | all 15 sections opened and returned to the main menu |
-| B5 | No freeze while opening forms | PASS (harness) | 198 sequential forms handled; no unresolved UI queue |
+| B4 | Navigate every section | PASS (harness) | all 16 sections opened and returned to the main menu |
+| B5 | No freeze while opening forms | PASS (harness) | 271 sequential forms handled; no unresolved UI queue |
 | B6 | Handle form failure | PASS (harness) | `UserBusy` retry path and form error message covered |
 | B7 | No duplicate command/event registration | PASS (harness) | 1 command registration; expected listener counts; double item use opens one menu |
 
@@ -83,6 +83,7 @@ Each section was opened from the real main menu and exited back to it. Section c
 | TOTEMS | PASS (harness) | real count; toggle persists |
 | COMBAT | PASS (harness) | stats, last death, combat log, reset path, alert settings |
 | WAYPOINTS | PASS (harness) | add/list/detail/rename/track/delete/death point |
+| SERVER MANAGER | PASS (harness) | add/edit/delete/order/favourite/manual current; validation; Direct Join; guide; persistence after rejoin |
 | SETTINGS | PASS (harness) | theme, language, save, export, import, reset, diagnostics/about links |
 | DIAGNOSTICS | PASS (harness) | real product/API versions, locator state, session duration, server ticks |
 | ABOUT | PASS (harness) | version and official limits |
@@ -146,6 +147,10 @@ Each section was opened from the real main menu and exited back to it. Section c
 | Arabic / English | PASS (unit + harness) | identical key sets, matching placeholders, RTL/Arabic form flow and Arabic HUD labels |
 | Themes | PASS (unit) | four complete palettes and HUD colours |
 | Settings import/export | PASS (harness) | ATLAS2 export, valid import, invalid rejection, ATLAS1 import |
+| SERVER MANAGER model | PASS (unit) | IPv4/domain/port validation, invalid rejection, normalisation, duplicate host/port and id rejection, 40-entry cap, order/favourite/current rules, JSON round-trip, UTC timestamp |
+| SERVER MANAGER forms | PASS (harness) | add two entries with custom port; edit; delete; reorder; favourite; manual current; rejected `host:port`, bad host, bad port and duplicate; Direct Join invalid+valid; last target saved; guide shows host/port and `Add Server`; entries survive leave/rejoin |
+
+**SERVER MANAGER limitation:** it is an address book, not a connector. It stores and validates entries but cannot start a connection, observe ONLINE/OFFLINE state, ping a server, read player counts/version, auto-reconnect, access the clipboard or open Minecraft's Add Server screen. PS5 has no Add Server button, so the guide cannot make a custom server joinable there.
 
 **ESPCHEST limitation:** it records only containers the player actually opens. It does not scan hidden containers, unloaded chunks or contents through walls, and does not modify the world.
 
@@ -163,6 +168,8 @@ Each section was opened from the real main menu and exited back to it. Section c
 | Inventory bursts | PASS (harness) | two same-tick inventory changes produce one HUD rebuild |
 | Missing optional APIs | PASS (harness) | HUD and new screens omit unavailable values and do not crash |
 | Container log cap | PASS (unit) | 20 entries maximum; oldest entries drop |
+| Server list cap | PASS (unit) | 40 entries maximum; extra add is rejected |
+| Server cache cleanup | PASS (harness) | entries reload from dynamic properties after leave/rejoin; no stale cache |
 | HUD refresh | PASS (harness) | configurable 5–40 ticks; default 5 |
 
 No memory-leak or long-run soak test was possible outside Minecraft. The test covers listener registration and state cleanup, not hours of live play.
@@ -173,13 +180,13 @@ No memory-leak or long-run soak test was possible outside Minecraft. The test co
 
 `npm run build` produced:
 
-- `ATLAS.mcaddon` with 45 files, 67.9 KiB, 47 ZIP entries.
+- `ATLAS.mcaddon` with 48 files, 78.5 KiB, 50 ZIP entries.
 - `ATLAS_BP/manifest.json`, `ATLAS_BP/scripts/main.js`, `ATLAS_BP/items/atlas_client.json`.
-- `ATLAS_RP/manifest.json`, textures, `texts/en_US.lang`, `texts/languages.json`.
+- `ATLAS_RP/manifest.json`, textures (including `atlas_servers.png`), `texts/en_US.lang`, `texts/languages.json`.
 - No nested pack folder, no `__MACOSX`, no `.DS_Store`, no stale archived files.
 - Every archived file matches its source byte-for-byte.
 
-`npm run validate` passed 6 checks and confirmed version 1.4.0, 5 unique UUIDs, 5 parsed JSON files, item/texture/PNG references, localisation and 29 script import graphs.
+`npm run validate` passed 6 checks and confirmed version 1.5.0, 5 unique UUIDs, 5 parsed JSON files, item/texture/PNG references, localisation and 31 script import graphs.
 
 ---
 
@@ -198,9 +205,10 @@ Not verified:
 - Arabic shaping and right-to-left layout;
 - settings persistence after a real **Save & Quit**;
 - ESPCHEST recording a real chest/barrel;
+- SERVER MANAGER add/edit forms on a touch or controller keyboard, and the platform-specific connection guide;
 - long HUD lines at different screen sizes.
 
-The 1.2.0 build previously loaded its scripts and registered events on Bedrock Dedicated Server 1.26.60.6. That is historical startup evidence only; **1.4.0 was not run on BDS or in a client for this report.**
+The 1.2.0 build previously loaded its scripts and registered events on Bedrock Dedicated Server 1.26.60.6. That is historical startup evidence only; **1.5.0 was not run on BDS or in a client for this report.**
 
 ---
 
@@ -209,16 +217,16 @@ The 1.2.0 build previously loaded its scripts and registered events on Bedrock D
 | Platform / environment | Result | Note |
 |---|---|---|
 | iPhone / iPad | NOT TESTED | import, touch item use, Arabic shaping and persistence need device checks |
-| PS5 | NOT TESTED | primary target, but local import and controller input are unverified |
+| PS5 | NOT TESTED | primary target; local import, controller input and custom-server entry (PS5 has no Add Server button) are unverified |
 | Bedrock Arab | NOT TESTED | file-picker flow and real import are unverified |
 | Mega10 | NOT TESTED | public-server packs, commands and storage may be restricted |
-| Bedrock Dedicated Server | NOT TESTED for 1.4.0 | no server binary in this environment |
+| Bedrock Dedicated Server | NOT TESTED for 1.5.0 | no server binary in this environment |
 
 No compatibility claim is made for any of these.
 
 ---
 
-## 13. L. Defects found and fixed during 1.4.0 work
+## 13. L. Defects found and fixed during 1.4.0–1.5.0 work
 
 | Defect | Impact | Fix | Re-tested |
 |---|---|---|---|
@@ -234,7 +242,7 @@ No failing product assertion remained in the final automated run. The earlier `a
 
 | Feature | Status | Scope |
 |---|---|---|
-| Main menu and 15 sections | PASS (harness) | native forms; device render unverified |
+| Main menu and 16 sections | PASS (harness) | native forms; device render unverified |
 | `/atlas:menu` | PASS (harness) | no cheats; device command path unverified |
 | HUD text | PASS (harness) | action bar only; no positioning/size/opacity |
 | WASD | PARTIAL | movement vector, not physical keys; device unverified |
@@ -244,6 +252,7 @@ No failing product assertion remained in the final automated run. The earlier `a
 | Low health / durability alerts | PASS (harness) | scoped and one per low episode |
 | Waypoints | PASS (harness) | 30 per world, world-shared |
 | ESPCHEST | PASS (harness) | interaction log only; no hidden-container scan |
+| SERVER MANAGER | PASS (harness) / NOT CONNECTED | validated address book and guides; no connection, status or auto-reconnect by design |
 | Settings / ATLAS1+ATLAS2 | PASS (harness) | dynamic properties; server may block |
 | Arabic / English | PASS (unit + harness) | device shaping unverified |
 | PS5 / iPhone / Mega10 | NOT TESTED | no compatibility claim |
@@ -261,6 +270,9 @@ No failing product assertion remained in the final automated run. The earlier `a
 - Low-durability monitoring covers equipped armor and the held main-hand item only.
 - Settings depend on dynamic properties; servers can block or reset them.
 - Public servers must already contain and allow the pack. ATLAS does not bypass server rules.
+- SERVER MANAGER never connects. Minecraft exposes no networking, server-list or connection-observation API to world add-ons; `@minecraft/server-admin.transferPlayer` is BDS-only and experimental.
+- No clipboard API, no way to open the Add Server screen, and no PS5 Add Server button.
+- IPv6 addresses are intentionally rejected in 1.5.0; only IPv4 and domain names are validated.
 
 ---
 
@@ -271,8 +283,8 @@ No failing product assertion remained in the final automated run. The earlier `a
 3. Do not enable experiments.
 4. Enter the world.
 5. Open the menu with the **ATLAS CLIENT** item or `/atlas:menu` (no cheats required).
-6. Expected Content Log lines: `[ATLAS] Scripts loaded: v1.4.0`, `[ATLAS] Event handlers registered: 10`, `[ATLAS] Custom command /atlas:menu registered`, `[ATLAS] World loaded`.
-7. Expected chat line once per player/version: `Scripts v1.4.0 are running`.
+6. Expected Content Log lines: `[ATLAS] Scripts loaded: v1.5.0`, `[ATLAS] Event handlers registered: 10`, `[ATLAS] Custom command /atlas:menu registered`, `[ATLAS] World loaded`.
+7. Expected chat line once per player/version: `Scripts v1.5.0 are running`.
 
 Detailed device steps: [`DEVICE_TESTING.md`](DEVICE_TESTING.md). Installation: [`INSTALL.md`](INSTALL.md). Troubleshooting: [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md). Limits: [`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md).
 

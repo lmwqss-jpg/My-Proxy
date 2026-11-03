@@ -4,7 +4,7 @@
     "name": "ATLAS CLIENT",
     "description": "ATLAS CLIENT - live HUD, armor, effects, waypoints, PvP alerts, themes and settings for Minecraft Bedrock.",
     "uuid": "45ec3030-7e82-4b27-b1bc-006fc4d14de5",
-    "version": [1, 4, 0],
+    "version": [1, 5, 0],
     "min_engine_version": [1, 26, 60]
   },
   "modules": [
@@ -12,14 +12,14 @@
       "description": "ATLAS CLIENT behavior data",
       "type": "data",
       "uuid": "4631e986-dcb4-4db5-a342-6438337d1496",
-      "version": [1, 4, 0]
+      "version": [1, 5, 0]
     },
     {
       "description": "ATLAS CLIENT scripts",
       "language": "javascript",
       "type": "script",
       "uuid": "d73083b6-3d4c-4c26-be53-9b83f6450055",
-      "version": [1, 4, 0],
+      "version": [1, 5, 0],
       "entry": "scripts/main.js"
     }
   ],
@@ -34,7 +34,7 @@
     },
     {
       "uuid": "6f7b2107-421b-480f-9a07-3acdf805714d",
-      "version": [1, 4, 0]
+      "version": [1, 5, 0]
     }
   ],
   "metadata": {

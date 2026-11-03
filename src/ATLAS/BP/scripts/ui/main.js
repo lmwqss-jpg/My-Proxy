@@ -22,6 +22,7 @@ import "./hudEditorScreen.js";
 import "./visualScreen.js";
 import "./pvpScreen.js";
 import "./utilitiesScreen.js";
+import "./serversScreen.js";
 import "./settingsScreen.js";
 
 function homeSummary(player, language) {
@@ -54,6 +55,7 @@ function sectionsFor(language) {
     { id: "totems", title: t(language, "totems.title"), desc: t(language, "menu.totemsDesc"), icon: ICONS.utilities },
     { id: "pvp", title: t(language, "pvp.title"), desc: t(language, "menu.pvpDesc"), icon: ICONS.pvp },
     { id: "utilities", title: t(language, "utilities.title"), desc: t(language, "menu.utilitiesDesc"), icon: ICONS.utilities },
+    { id: "servers", title: t(language, "servers.title"), desc: t(language, "menu.serversDesc"), icon: ICONS.servers },
     { id: "settings", title: t(language, "settings.title"), desc: t(language, "menu.settingsDesc"), icon: ICONS.settings },
     { id: "settings.diagnostics", title: t(language, "diag.title"), desc: t(language, "menu.diagnosticsDesc"), icon: ICONS.settings },
     { id: "settings.about", title: t(language, "settings.aboutTitle"), desc: t(language, "menu.aboutDesc"), icon: ICONS.settings },

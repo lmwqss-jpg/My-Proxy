@@ -8,6 +8,7 @@ import { LIMITS, STORAGE_KEYS } from "./config.js";
 import { normalizeSettings } from "./settings.js";
 import { parseWaypoints, serializeWaypoints } from "./waypoints.js";
 import { parseContainers, serializeContainers } from "./containers.js";
+import { parseServers, serializeServers, normalizeServerTarget } from "./servers.js";
 
 /** @type {Map<string, any>} */
 const settingsCache = new Map();
@@ -15,6 +16,8 @@ const settingsCache = new Map();
 const combatCache = new Map();
 /** @type {Map<string, any[]>} */
 const containerCache = new Map();
+/** @type {Map<string, any[]>} */
+const serverCache = new Map();
 /** @type {any[] | null} */
 let waypointCache = null;
 let waypointStorageWarned = false;
@@ -63,6 +66,7 @@ export function clearSettingsCache(playerId) {
   settingsCache.delete(playerId);
   combatCache.delete(playerId);
   containerCache.delete(playerId);
+  serverCache.delete(playerId);
 }
 
 export function getWaypoints() {
@@ -119,6 +123,56 @@ export function saveContainerLog(player, list) {
   }
   containerCache.set(player.id, normalized);
   return normalized;
+}
+
+/** Saved server addresses for this player. */
+export function getServers(player) {
+  if (serverCache.has(player.id)) return parseServers(serverCache.get(player.id));
+  let stored = null;
+  let readable = true;
+  try {
+    stored = player.getDynamicProperty(STORAGE_KEYS.servers);
+  } catch (error) {
+    readable = false;
+    console.warn(`[ATLAS] Could not read server list: ${error}`);
+  }
+  const list = parseServers(stored);
+  if (readable) serverCache.set(player.id, list);
+  return parseServers(list);
+}
+
+export function saveServers(player, list) {
+  const normalized = parseServers(list);
+  try {
+    player.setDynamicProperty(STORAGE_KEYS.servers, serializeServers(normalized));
+  } catch (error) {
+    console.warn(`[ATLAS] Could not save server list: ${error}`);
+    return null;
+  }
+  serverCache.set(player.id, normalized);
+  return parseServers(normalized);
+}
+
+/** Last address the player typed in the Direct Join form. */
+export function getServerTarget(player) {
+  try {
+    return normalizeServerTarget(player.getDynamicProperty(STORAGE_KEYS.serverTarget));
+  } catch (error) {
+    console.warn(`[ATLAS] Could not read last server address: ${error}`);
+    return null;
+  }
+}
+
+export function saveServerTarget(player, target) {
+  const normalized = normalizeServerTarget(target);
+  if (!normalized) return false;
+  try {
+    player.setDynamicProperty(STORAGE_KEYS.serverTarget, JSON.stringify(normalized));
+    return true;
+  } catch (error) {
+    console.warn(`[ATLAS] Could not save last server address: ${error}`);
+    return false;
+  }
 }
 
 export function emptyCombatStats() {

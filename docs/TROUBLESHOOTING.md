@@ -1,6 +1,6 @@
 # ATLAS CLIENT — Troubleshooting
 
-**Version:** 1.4.0
+**Version:** 1.5.0
 **Log prefix:** `[ATLAS]`
 **First check:** Minecraft is 26.60 / `1.26.60` or newer and the Behavior Pack is active in the world.
 
@@ -16,7 +16,7 @@
 4. Look for these lines, in order:
 
 ```text
-[ATLAS] Scripts loaded: v1.4.0 | target Minecraft 1.26.60 | server 2.11.0 | ui 2.3.0
+[ATLAS] Scripts loaded: v1.5.0 | target Minecraft 1.26.60 | server 2.11.0 | ui 2.3.0
 [ATLAS] Event handlers registered: 10.
 [ATLAS] HUD tick loop started.
 [ATLAS] Custom command /atlas:menu registered (no cheats required).
@@ -35,7 +35,7 @@ If the first line never appears, the script module did not load. Check the pack 
 | Game version | Update to 26.60 or newer. The manifest requires `min_engine_version [1, 26, 60]`. |
 | Correct file | Use `ATLAS.mcaddon` from the project root or release. Do not rename a ZIP by hand. |
 | Archive shape | `ATLAS_BP/manifest.json` and `ATLAS_RP/manifest.json` must be at the roots, not inside an extra folder. Run `npm run validate`. |
-| Duplicate UUID | Remove older ATLAS packs with the same UUID, then import 1.4.0 again. |
+| Duplicate UUID | Remove older ATLAS packs with the same UUID, then import 1.5.0 again. |
 | Device import | On PS5, local file import may not exist. Joining a world/Realm that already has the packs is the only alternative, and it is unverified. |
 | Bedrock Arab | The Bedrock Arab import workflow was not tested. A file picker accepting the file is not proof of a successful import. |
 
@@ -50,10 +50,10 @@ If the first line never appears, the script module did not load. Check the pack 
 5. If the item is missing, open **Waypoints → Restore ATLAS item** or use `/atlas:menu`.
 6. If the item and command both fail, the Behavior Pack or its script module did not load. Send the first `[ATLAS]` or `[Scripting]` error line from the Content Log.
 
-### “Scripts v1.4.0 are running” does not appear
+### “Scripts v1.5.0 are running” does not appear
 
-- The player already received that announcement for version 1.4.0. It is shown once per player/version.
-- The world may still have an older pack active. Remove the old packs and activate 1.4.0.
+- The player already received that announcement for version 1.5.0. It is shown once per player/version.
+- The world may still have an older pack active. Remove the old packs and activate 1.5.0.
 - If no `[ATLAS]` log lines exist, the script module did not start.
 
 ### `/atlas:menu` is missing
@@ -78,7 +78,7 @@ The optional `/scriptevent atlas:menu` requires cheats and is not a replacement 
 
 ### Coordinates, health or compass missing
 
-1.4.0 hides an element when the API cannot provide a real value. It does not show `0/20`, `null` or a fake north. If all three are missing while other elements remain, check the Content Log for an API error. In normal survival play these values come from `Player`, `minecraft:health` and `getViewDirection()`.
+1.5.0 hides an element when the API cannot provide a real value. It does not show `0/20`, `null` or a fake north. If all three are missing while other elements remain, check the Content Log for an API error. In normal survival play these values come from `Player`, `minecraft:health` and `getViewDirection()`.
 
 ### WASD does not light up
 
@@ -101,7 +101,7 @@ The slot is empty, or the item has no readable `minecraft:durability` component.
 ### Totem count does not change
 
 - Totems in the main inventory and offhand are counted. Shulker boxes and other containers are not scanned.
-- Inventory changes force an immediate HUD rebuild in 1.4.0. If the count still looks wrong, rejoin and check again.
+- Inventory changes force an immediate HUD rebuild in 1.5.0. If the count still looks wrong, rejoin and check again.
 - On servers that block inventory access, the counter hides rather than showing a false zero.
 
 ### Potion durations look wrong
@@ -117,9 +117,9 @@ Durations are real ticks from `Player.getEffects()`. Infinite effects show `∞`
 
 ### A section is missing from the menu
 
-- The installed pack may still be 1.3.0 or older. Import 1.4.0, remove the old pack from the world, and reactivate it.
-- Check `Scripts v1.4.0 are running` in chat or `[ATLAS] Scripts loaded: v1.4.0` in Content Log.
-- The 1.4.0 menu is: HOME, ESPCHEST, HUD, VISUAL, PLAYER, MOVEMENT, ARMOR, ITEMS, POTIONS, TOTEMS, COMBAT, WAYPOINTS, SETTINGS, DIAGNOSTICS, ABOUT.
+- The installed pack may still be 1.4.0 or older. Import 1.5.0, remove the old pack from the world, and reactivate it.
+- Check `Scripts v1.5.0 are running` in chat or `[ATLAS] Scripts loaded: v1.5.0` in Content Log.
+- The 1.5.0 menu is: HOME, ESPCHEST, HUD, VISUAL, PLAYER, MOVEMENT, ARMOR, ITEMS, POTIONS, TOTEMS, COMBAT, WAYPOINTS, SERVER MANAGER, SETTINGS, DIAGNOSTICS, ABOUT.
 
 ### Low-durability alert repeats or does not fire
 
@@ -146,7 +146,17 @@ Durations are real ticks from `Player.getEffects()`. Infinite effects show `∞`
 
 ### Clipboard
 
-Bedrock add-ons have no clipboard access. Use **Send code to chat** or write the code down.
+Bedrock add-ons have no clipboard access. Use **Send code to chat** for settings or server addresses, or write them down.
+
+### SERVER MANAGER
+
+- **No CONNECT button is intentional.** Minecraft's stable Script API has no networking, server-list or transfer API. SERVER MANAGER is a validated address book with manual steps.
+- **Status is always Unknown.** The add-on cannot observe connections, ping a server or read its version/player count, so it does not invent ONLINE/OFFLINE data.
+- **No auto-reconnect.** The game owns the connection; there is no connection event to observe.
+- **The address is rejected.** Remove `http://`, spaces and paths; put the port in the port field. IPv6 is not accepted in 1.5.0.
+- **“Already saved”.** The same host and port exist; edit the existing entry instead of adding a duplicate.
+- **No Add Server on PS5.** PlayStation Minecraft does not provide that button. ATLAS cannot add or bypass it; do not claim PS5 custom-server compatibility.
+- **Connection guide shows the host/port but does nothing else.** Open Minecraft's Play → Servers → Add Server screen yourself (on platforms that have it).
 
 ### Legacy ATLAS1 code
 
@@ -177,7 +187,8 @@ ATLAS is a world add-on, not a client mod. If the world does not contain and all
 
 - no HUD, forms, waypoints, locator markers or settings run;
 - `/atlas:menu` does not exist;
-- the player cannot inject the pack from their own device.
+- the player cannot inject the pack from their own device;
+- SERVER MANAGER cannot connect to a server.
 
 If the world does contain the pack, the server may still block custom commands, dynamic properties, locator bars or custom packs. ATLAS does not bypass server rules or anti-cheat. Mega10 was not tested.
 
@@ -190,7 +201,7 @@ Device:
 Minecraft version:
 World / Realm / server:
 Pack versions visible in world settings:
-Does [ATLAS] Scripts loaded: v1.4.0 appear?
+Does [ATLAS] Scripts loaded: v1.5.0 appear?
 Content Log lines starting with [ATLAS] or [Scripting]:
 Steps to reproduce:
 Expected result:

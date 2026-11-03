@@ -14,6 +14,7 @@ export const ICONS = Object.freeze({
   visual: "textures/atlas/common/atlas_visual",
   pvp: "textures/atlas/common/atlas_pvp",
   utilities: "textures/atlas/common/atlas_utilities",
+  servers: "textures/atlas/common/atlas_servers",
   settings: "textures/atlas/common/atlas_settings",
   close: "textures/atlas/common/atlas_close",
 });

@@ -225,6 +225,7 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
       [/Totems§r/, "Totems"],
       [/Combat§r/, "Combat"],
       [/Waypoints§r/, "Waypoints"],
+      [/Server Manager§r/, "Server Manager"],
       [/Settings§r/, "Settings"],
       [/Diagnostics§r/, "Diagnostics"],
       [/About ATLAS CLIENT§r/, "About ATLAS CLIENT"],
@@ -558,6 +559,199 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.equal(renamed[0].name, "HQ");
     assert.ok((player.actionBars.at(-1) ?? "").includes("HQ"));
 
+    // SERVER MANAGER stores validated entries. It never claims to connect:
+    // Minecraft's Script API has no networking or server-list access.
+    queue(
+      click(/Server Manager/),
+      click(/Add server/),
+      modal("My SMP", "Play.Example.COM", "19132", "Main world", 0, 0),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    let savedServers = JSON.parse(player.dynamic.get("atlas:servers"));
+    assert.equal(savedServers.length, 1);
+    assert.equal(savedServers[0].name, "My SMP");
+    assert.equal(savedServers[0].address, "play.example.com");
+    assert.equal(savedServers[0].port, 19132);
+    assert.equal(savedServers[0].category, "public");
+    assert.equal(savedServers[0].region, "eu");
+    assert.equal(savedServers[0].favorite, false);
+    assert.equal(savedServers[0].current, false);
+
+    queue(
+      click(/Server Manager/),
+      click(/Add server/),
+      modal("Second", "203.0.113.10", "19133", "", 2, 1),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    savedServers = JSON.parse(player.dynamic.get("atlas:servers"));
+    assert.deepEqual(savedServers.map((server) => server.name), ["My SMP", "Second"]);
+    assert.equal(savedServers[1].port, 19133);
+    assert.equal(savedServers[1].category, "friends");
+    assert.equal(savedServers[1].region, "asia");
+
+    // Favourite and manual-current flags are real stored state.
+    const formsBeforeServerDetail = state.forms.length;
+    queue(
+      click(/Server Manager/),
+      click(/Second/),
+      click(/Add favorite/),
+      click(/Mark as current/),
+      click(/Back/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    const serverDetailForm = state.forms
+      .slice(formsBeforeServerDetail)
+      .find((form) => form.title?.includes("Server details"));
+    assert.ok(serverDetailForm);
+    assert.match(serverDetailForm.body, /203\.0\.113\.10/);
+    assert.match(serverDetailForm.body, /19133/);
+    assert.match(serverDetailForm.body, /Unknown/);
+    assert.ok(!serverDetailForm.buttons.some((button) => /\bCONNECT\b/i.test(button)));
+    savedServers = JSON.parse(player.dynamic.get("atlas:servers"));
+    assert.equal(savedServers[1].favorite, true);
+    assert.equal(savedServers[1].current, true);
+    assert.ok(savedServers[1].lastMarkedAt > 0);
+    assert.equal(savedServers[0].current, false);
+
+    // Ordering is stored, not just visual.
+    queue(
+      click(/Server Manager/),
+      click(/Second/),
+      click(/Move up/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    savedServers = JSON.parse(player.dynamic.get("atlas:servers"));
+    assert.deepEqual(savedServers.map((server) => server.name), ["Second", "My SMP"]);
+
+    // Editing keeps the id and updates the persisted fields.
+    queue(
+      click(/Server Manager/),
+      click(/Second/),
+      click(/Edit server/),
+      modal("Second HQ", "203.0.113.10", "19133", "Edited", 2, 1),
+      click(/Back/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    savedServers = JSON.parse(player.dynamic.get("atlas:servers"));
+    assert.equal(savedServers[0].name, "Second HQ");
+    assert.equal(savedServers[0].description, "Edited");
+
+    // Invalid addresses, ports and duplicate targets are rejected, not saved.
+    queue(
+      click(/Server Manager/),
+      click(/Add server/),
+      modal("Bad", "host:19132", "19132", "", 0, 0),
+      modal("Bad", "bad_host.com", "0", "", 0, 0),
+      modal("Bad", "valid.example.com", "70000", "", 0, 0),
+      close(),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    assert.equal(JSON.parse(player.dynamic.get("atlas:servers")).length, 2);
+    assert.ok(player.messages.some((message) => /port field/.test(message)));
+    assert.ok(player.messages.some((message) => /valid IPv4 address or domain/.test(message)));
+    assert.ok(player.messages.some((message) => /Port must be a number/.test(message)));
+
+    queue(
+      click(/Server Manager/),
+      click(/Add server/),
+      modal("Duplicate", "203.0.113.10", "19133", "", 0, 0),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    assert.equal(JSON.parse(player.dynamic.get("atlas:servers")).length, 2);
+    assert.ok(player.messages.some((message) => /already saved/.test(message)));
+
+    // Direct Join validates two fields, remembers the last target and opens
+    // the manual steps. There is deliberately no CONNECT button.
+    queue(
+      click(/Server Manager/),
+      click(/Direct join/),
+      click(/Enter address and port/),
+      modal("bad host", "0"),
+      modal("Play.Example.COM", "19132"),
+      click(/Send address to chat/),
+      click(/Save this server/),
+      modal("Play again", "play.example.com", "19132", "", 0, 0),
+      click(/Back/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    assert.deepEqual(JSON.parse(player.dynamic.get("atlas:server_target")), {
+      address: "play.example.com",
+      port: 19132,
+    });
+    assert.equal(JSON.parse(player.dynamic.get("atlas:servers")).length, 2);
+    assert.ok(player.messages.some((message) => /My SMP|Play.Example|play\.example/.test(message)));
+
+    // The connection guide names the real host and port and the official screen.
+    const formsBeforeGuide = state.forms.length;
+    queue(
+      click(/Server Manager/),
+      click(/Second HQ/),
+      click(/Connection guide/),
+      click(/Back/),
+      click(/Back/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    const guideForm = state.forms
+      .slice(formsBeforeGuide)
+      .find((form) => form.title?.includes("Connect manually"));
+    assert.ok(guideForm);
+    assert.match(guideForm.body, /203\.0\.113\.10/);
+    assert.match(guideForm.body, /19133/);
+    assert.match(guideForm.body, /Add Server/);
+
+    // Deleting removes only the saved entry.
+    queue(
+      click(/Server Manager/),
+      click(/Second HQ/),
+      click(/Delete server/),
+      click(/Delete server/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    savedServers = JSON.parse(player.dynamic.get("atlas:servers"));
+    assert.equal(savedServers.length, 1);
+    assert.equal(savedServers[0].name, "My SMP");
+    assert.equal(savedServers[0].current, false);
+
     // Low-health alert fires once per low-health episode.
     player.health = 5;
     advanceTicks(5);
@@ -729,6 +923,24 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.match(returning.actionBars.at(-1) ?? "", /20\/20/);
     assert.equal(JSON.parse(state.worldProps.get("atlas:waypoints")).length, waypointCount);
     assert.ok(!returning.messages.some((message) => message.includes(`Scripts v${ADDON_VERSION} are running`)));
+    // Server entries and the last Direct Join target survive the rejoin too.
+    assert.equal(JSON.parse(returning.dynamic.get("atlas:servers")).length, 1);
+    assert.equal(JSON.parse(returning.dynamic.get("atlas:servers"))[0].name, "My SMP");
+    assert.deepEqual(JSON.parse(returning.dynamic.get("atlas:server_target")), {
+      address: "play.example.com",
+      port: 19132,
+    });
+    queue(
+      click(/Server Manager/),
+      click(/My SMP/),
+      click(/Back/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(returning);
+    await settle();
+    assertClean();
+    assert.ok(state.forms.some((form) => form.title?.includes("Server details")));
 
     // 1.4.0 section controls: each screen writes the setting it describes.
     const controls = [

@@ -1,15 +1,15 @@
 # ATLAS CLIENT — Minecraft Bedrock
 
-**الإصدار / Version:** 1.4.0
+**الإصدار / Version:** 1.5.0
 **ملف التثبيت / Install file:** `ATLAS.mcaddon`
 **الهدف / Target:** Minecraft Bedrock **26.60 (1.26.60)** أو أحدث
 **المنصة الأساسية / Primary platform:** PS5 — **لم يُختبر بعد / not tested**
 **منصات إضافية / Also supported:** iPhone وAndroid وWindows وأي منصة Bedrock متوافقة
 **PS5:** الكود لا يعتمد على جهاز محدد، لكن استيراد الملف والتحكم والواجهة على PS5 **لم تُختبر**. لا تدّعي هذه النسخة توافقاً مؤكداً مع PS5 أو Bedrock Arab.
 **التجارب / Experiments:** لا يحتاج أي تفعيل
-**دليل التثبيت:** [`docs/INSTALL.md`](docs/INSTALL.md) · **حل المشاكل:** [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) · **القيود:** [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) · **التدقيق:** [`docs/AUDIT.md`](docs/AUDIT.md) · **السجل:** [`docs/CHANGELOG.md`](docs/CHANGELOG.md)
+**دليل التثبيت:** [`docs/INSTALL.md`](docs/INSTALL.md) · **حل المشاكل:** [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) · **السيرفرات:** [`docs/SERVERS.md`](docs/SERVERS.md) · **القيود:** [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) · **التدقيق:** [`docs/AUDIT.md`](docs/AUDIT.md) · **السجل:** [`docs/CHANGELOG.md`](docs/CHANGELOG.md)
 **دليل الاختبار الفعلي / Device test plan:** [`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md)
-**حالة الاختبار:** `npm run check` يمر بالكامل لنسخة 1.4.0: typecheck، و14 اختباراً، و**198 مسار واجهة**، وبناء وأرشيف وتحقق (6 فحوص). **لم يُختبر 1.4.0 داخل Minecraft أو على iPhone أو PS5 أو Mega10.** النسخة 1.2.0 سبق أن حمّلت سكربتاتها وأحداثها التسعة والأمر و`worldLoad` على Bedrock Dedicated Server 1.26.60.6؛ هذا لا يُثبت عمل الواجهة أو الاستيراد على جهاز حقيقي.
+**حالة الاختبار:** `npm run check` يمر بالكامل لنسخة 1.5.0: typecheck، و16 اختباراً، و**271 مسار واجهة**، وبناء 48 ملفاً (78.5 KiB)، وتحقق (6 فحوص). **لم يُختبر 1.5.0 داخل Minecraft أو على iPhone أو PS5 أو Mega10.** النسخة 1.2.0 سبق أن حمّلت سكربتاتها وأحداثها التسعة والأمر و`worldLoad` على Bedrock Dedicated Server 1.26.60.6؛ هذا لا يُثبت عمل الواجهة أو الاستيراد على جهاز حقيقي.
 
 ---
 
@@ -28,7 +28,10 @@
 | قراءة نقرات الفأرة أو أزرار يد PS5 | لا تكشف الإضافة ضغطات الفأرة أو أزرار اليد | WASD من **متجه الحركة الرسمي**، وCPS/LMB/RMB من أحداث اللعبة الفعلية |
 | عداد CPS لكل نقرة | لا توجد واجهة لنقرات الهواء | يُحسب فقط ما تسجله اللعبة: هجوم، تفاعل، أو استخدام عنصر |
 | تغيير خلفية نوافذ اللعبة أو Ore UI | غير متاح رسمياً | ثيمات للنصوص والألوان وشريط HUD وعلامات المواقع فقط |
-| نسخ رمز الإعدادات آلياً | لا توفر الإضافات وصولاً إلى الحافظة | يظهر الرمز في النموذج ويمكن إرساله إلى الدردشة أو كتابته يدوياً |
+| نسخ رمز الإعدادات أو عنوان السيرفر آلياً | لا توفر الإضافات وصولاً إلى الحافظة | يظهر الرمز/العنوان في النموذج ويمكن إرساله إلى الدردشة أو كتابته يدوياً |
+| الاتصال بسيرفر من داخل واجهة ATLAS | لا توجد واجهة شبكة أو تغيير سيرفر أو قراءة حالة اتصال في Script API | قسم **SERVER MANAGER** يحفظ العناوين ويعرض خطوات الاتصال الرسمية، بدون زر CONNECT وهمي |
+| عرض ONLINE/OFFLINE أو Ping أو عدد لاعبي السيرفر | الإضافة لا تستطيع استعلام سيرفر خارجي | تظهر الحالة **Unknown** مع وقت آخر تحديد يدوي، بدون أرقام وهمية |
+| إضافة سيرفر مخصص على PS5 | ماينكرافت على PS5 لا يعرض زر Add Server | الإضافة تحفظ العنوان للرجوع، ولا تدّعي قدرتها على تغيير واجهة PS5 |
 | كشف الحاويات عبر الجدران أو قراءة محتواها المخفي (ESPchest) | غير متاح للإضافات، ومحاولته تعني عرض بيانات غير حقيقية | قسم **ESPCHEST** يسجل فقط الحاويات التي تفتحها فعلاً، مع النوع والموقع والمسافة، دون كشف مخفي |
 
 **لا توجد في هذه الإضافة:** X-ray، ESP، رؤية خلف الجدران، Aimbot، Auto Clicker، أو أي أتمتة قتال.
@@ -71,7 +74,7 @@
 - **إصدار Minecraft أقدم من 26.60:** ملف `manifest.json` يطلب `min_engine_version` مساوياً لـ `[1, 26, 60]`، لذلك لن تُحمّل الحزمة على إصدار أقدم.
 - **إصدار API غير موجود:** الحزم تعتمد على `@minecraft/server 2.11.0` و`@minecraft/server-ui 2.3.0` (إصدارات مستقرة في 26.60).
 - **أخطاء تحميل أخرى:** فعّل **Settings → Creator → Content Log GUI**، ثم افتح العالم وابحث عن `[ATLAS] Scripts loaded`. يجب أن ترى أيضاً `Event handlers registered` و`Custom command /atlas:menu registered` و`World loaded`. إذا توقف السجل قبلها فالسكربت لم يُحمّل؛ تحقق من إصدار اللعبة وتفعيل Behavior Pack.
-- **نسخة قديمة عالقة:** إذا كنت جرّبت 1.0.0 أو 1.1.0 أو 1.2.0 أو 1.3.0، احذف الحزمتين القديمتين من العالم أولاً. النسخة الجديدة 1.4.0 لها نفس UUID لكن رقم إصدار أعلى، لذا يستبدلها Minecraft عند الاستيراد.
+- **نسخة قديمة عالقة:** إذا كنت جرّبت 1.0.0 أو 1.1.0 أو 1.2.0 أو 1.3.0 أو 1.4.0، احذف الحزمتين القديمتين من العالم أولاً. النسخة الجديدة 1.5.0 لها نفس UUID لكن رقم إصدار أعلى، لذا يستبدلها Minecraft عند الاستيراد.
 - **الأداة مفقودة لكن السكربت يعمل:** استخدم `/atlas:menu`، أو من القائمة **Waypoints → Restore ATLAS item**.
 - **الأمر غير موجود:** إذا لم يظهر `/atlas:menu` في الإكمال التلقائي، فالBehavior Pack غير مفعّل أو السكربت لم يُحمّل؛ راجع Content Log.
 
@@ -101,7 +104,7 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 
 ## 3. الأقسام
 
-القائمة الرئيسية تحتوي: **HOME، ESPCHEST، HUD، VISUAL، PLAYER، MOVEMENT، ARMOR، ITEMS، POTIONS، TOTEMS، COMBAT، WAYPOINTS، SETTINGS، DIAGNOSTICS، ABOUT**. كل قسم يفتح شاشة مستقلة ويعود إلى القائمة الرئيسية.
+القائمة الرئيسية تحتوي: **HOME، ESPCHEST، HUD، VISUAL، PLAYER، MOVEMENT، ARMOR، ITEMS، POTIONS، TOTEMS، COMBAT، WAYPOINTS، SERVER MANAGER، SETTINGS، DIAGNOSTICS، ABOUT**. كل قسم يفتح شاشة مستقلة ويعود إلى القائمة الرئيسية.
 
 ### HOME
 
@@ -219,6 +222,16 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 - الحد الأقصى: **30 موقعاً لكل عالم**. المواقع مخزنة في العالم، وتُشارك بين اللاعبين في العالم نفسه.
 - المواقع تظهر أيضاً في شريط التحديد الرسمي عند تفعيل Visual → Locator bar waypoints.
 
+### SERVER MANAGER
+
+- دفتر عناوين لكل لاعب (حتى **40 سيرفراً**) مع الاسم والعنوان والمنفذ والوصف والتصنيف والمنطقة.
+- إضافة وتعديل وحذف وترتيب وتفضيل السيرفرات، وتحديد سيرفر حالي **يدوياً** مع وقت آخر تحديد.
+- تحقق حقيقي من IPv4 أو النطاق والمنفذ من 1 إلى 65535، ورفض `host:port` داخل حقل العنوان، والتكرار، والأسماء الفارغة.
+- **Direct Join:** إدخال عنوان ومنفذ فقط، حفظ آخر عنوان، ثم عرض خطوات الاتصال الرسمية.
+- **إرسال العنوان إلى الدردشة** لأن الإضافات لا تصل إلى الحافظة. لا يوجد زر «نسخ» وهمي.
+- **لا يوجد زر CONNECT** ولا ONLINE/OFFLINE ولا Ping أو عدد لاعبين أو إعادة اتصال تلقائية: Script API لا يوفر اتصالاً شبكياً ولا قراءة لحالة السيرفر. القسم دفتر عناوين مع خطوات يدوية، وليس متصلاً.
+- **PS5:** ماينكرافت على PS5 لا يعرض زر Add Server؛ لا تستطيع الإضافة إضافته أو تجاوز قيود المنصة. التفاصيل في [`docs/SERVERS.md`](docs/SERVERS.md).
+
 ### SETTINGS
 
 - أربعة ثيمات: **Atlas Blue / Emerald / Violet / Ember**.
@@ -269,7 +282,7 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 | `min_engine_version` | `[1, 26, 60]` |
 | Experiments | لا شيء |
 | Script entry | `scripts/main.js` |
-| إصدار الإضافة | 1.4.0 |
+| إصدار الإضافة | 1.5.0 |
 | Behavior Pack UUID | `45ec3030-7e82-4b27-b1bc-006fc4d14de5` |
 | Resource Pack UUID | `6f7b2107-421b-480f-9a07-3acdf805714d` |
 
@@ -277,7 +290,7 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 
 ### PS5 والسيرفرات العامة
 
-- **PS5:** لم يُختبر الاستيراد أو التشغيل أو الإدخال على PS5. لا توجد واجهة لقراءة أزرار يد PS5؛ WASD تعكس متجه الحركة (العصا اليسرى)، ومؤشرا LMB/RMB يعكسان أحداث اللعبة، وليسا أزراراً فيزيائية. إذا كانت PS5 لا تسمح بفتح ملف محلي، فجرّب الانضمام إلى عالم/Realm تكون فيه الحزمتان مفعّلتان؛ هذا أيضاً غير مُختبر.
+- **PS5:** لم يُختبر الاستيراد أو التشغيل أو الإدخال على PS5. لا توجد واجهة لقراءة أزرار يد PS5؛ WASD تعكس متجه الحركة (العصا اليسرى)، ومؤشرا LMB/RMB يعكسان أحداث اللعبة، وليسا أزراراً فيزيائية. ماينكرافت على PS5 **لا يعرض زر Add Server**، لذلك SERVER MANAGER لا يجعل السيرفرات المخصصة قابلة للاتصال هناك. إذا كانت PS5 لا تسمح بفتح ملف محلي، فجرّب الانضمام إلى عالم/Realm تكون فيه الحزمتان مفعّلتان؛ هذا أيضاً غير مُختبر.
 - **طبيعة الإضافات:** الإضافات مرتبطة بالعالم، وليست تعديلاً على جهاز اللاعب. لا تستطيع نسخة مفعّلة على iPhone حقن HUD أو أوامر في عالم سيرفر عام لا يملك الحزمة.
 - **Mega10 أو أي سيرفر عام:** إذا لم تكن الحزمة مثبتة ومفعّلة في العالم، فلن تعمل أي ميزة. وإذا كانت مثبتة، فقد يمنع السيرفر الحزم المخصصة أو `/atlas:menu` أو شريط التحديد أو حفظ البيانات. لا يوجد في ATLAS أي أتمتة قتال أو نقر تلقائي. لم يُختبر المشروع على Mega10.
 - **الواجهة النصية** تظهر فقط عندما تعمل الحزمة في العالم؛ الإعدادات محفوظة لكل لاعب/عالم وليست تعديلاً لواجهة السيرفر.
@@ -297,7 +310,7 @@ npm run build        # ينتج ATLAS.mcaddon
 npm run validate     # يفحص الحزم والـ ZIP
 ```
 
-الاختبارات الآلية تغطي بنية الحزم والمنطق و**198 مسار واجهة** في محاكي APIs، كما تتحقق من حفظ الإعدادات بعد خروج اللاعب وعودته، واستيراد رموز `ATLAS1` القديمة، وتوافق رموز `ATLAS2` القديمة، وتدهور HUD عند غياب API اختياري. لكنها **لا تغني عن التجربة داخل Minecraft**. لم يتم اختبار 1.4.0 على iPhone أو PS5 أو داخل Minecraft في بيئة البناء الحالية. راجع [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) للتقرير الآلي، و[`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) لقوائم iPhone وPS5 والسيرفرات.
+الاختبارات الآلية تغطي بنية الحزم والمنطق و**271 مسار واجهة** في محاكي APIs، كما تتحقق من حفظ الإعدادات والسيرفرات بعد خروج اللاعب وعودته، واستيراد رموز `ATLAS1` القديمة، وتوافق رموز `ATLAS2` القديمة، وتدهور HUD عند غياب API اختياري، ورفض عناوين/منافذ السيرفرات غير الصحيحة. لكنها **لا تغني عن التجربة داخل Minecraft**. لم يتم اختبار 1.5.0 على iPhone أو PS5 أو داخل Minecraft في بيئة البناء الحالية. راجع [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) للتقرير الآلي، و[`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) لقوائم iPhone وPS5 والسيرفرات.
 
 ### بنية المستودع
 
@@ -311,8 +324,9 @@ scripts/generate-assets.mjs   توليد الأيقونات (PNG) بشكل ثا�
 test/                         اختبارات Node + محاكي Minecraft
 docs/TEST_REPORT.md           تقرير الاختبار الآلي والتوافق
 docs/DEVICE_TESTING.md        قوائم اختبار iPhone وPS5 والسيرفرات
-docs/AUDIT.md                 التدقيق التقني وقرارات 1.4.0
+docs/AUDIT.md                 التدقيق التقني وقرارات 1.4.0/1.5.0
 docs/INSTALL.md               دليل التثبيت لكل منصة
+docs/SERVERS.md               حدود وطريقة عمل SERVER MANAGER والاتصال اليدوي
 docs/TROUBLESHOOTING.md       حل مشاكل التحميل وHUD والإعدادات
 docs/CHANGELOG.md             سجل الإصدارات
 docs/KNOWN_LIMITATIONS.md    القيود غير المدعومة وغير المختبرة
@@ -339,6 +353,8 @@ ATLAS CLIENT uses only the official Bedrock Script API. A clickable top-right ov
 
 **Input limits:** WASD is driven by the real movement vector (`Player.inputInfo.getMovementVector()`), not physical key events. CPS and LMB/RMB count game-reported attacks, interactions and item uses; clicks into empty air are not exposed by the API. PS5 controller buttons and mouse buttons cannot be read directly, and no fake CPS is generated.
 
+**Server limits:** add-ons cannot open a network connection, read Minecraft's server list, transfer a player, or observe ONLINE/OFFLINE state, ping, version or player count. **SERVER MANAGER** is a validated per-player address book with a manual connection guide. It deliberately has no CONNECT button, no fake status values and no auto-reconnect switch. `@minecraft/server-admin.transferPlayer` is dedicated-server-only and experimental, so it is not used. Add-ons also have no clipboard access; addresses can be sent to chat. PS5 has no Add Server button, and ATLAS cannot add one.
+
 The add-on contains no X-ray, ESP, aimbot, auto-clicker, or combat automation.
 
 ### iPhone installation
@@ -362,6 +378,7 @@ If nothing appears: verify Minecraft 26.60+, verify the behavior pack is active 
 - **Visual:** player details, world details, text health bar, combat stats, official locator-bar waypoints.
 - **Combat:** combat health, low-health alert with threshold/sound/screen warning, automatic death point, persisted kills/deaths/K/D, session damage and recent combat log. No combat automation.
 - **Waypoints:** add/list/rename/move/delete waypoints, distances and directions, HUD tracking, death point, restore item. Up to 30 world-shared waypoints.
+- **SERVER MANAGER:** up to 40 saved servers per player with IPv4/domain and port validation, description, category, region label, favourites, ordering, one manual current mark and a last-marked timestamp. Direct Join remembers the last address and opens the official manual connection steps. Addresses can be sent to chat because the clipboard is unavailable. It never connects, pings or reports fake server status.
 - **Settings:** four themes, English/Arabic, HUD controls, short `ATLAS2-...` settings export/import code (legacy `ATLAS1-...` and older `ATLAS2` codes accepted), reset, diagnostics with real session duration, and official-limits help. Legacy codes restore their original toggles while newer panels keep their defaults; settings are written to player dynamic properties on every change.
 
 ### Documentation
@@ -369,17 +386,18 @@ If nothing appears: verify Minecraft 26.60+, verify the behavior pack is active 
 - [`docs/INSTALL.md`](docs/INSTALL.md) — iPhone, desktop, BDS, PS5 and update instructions
 - [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) — import, startup, HUD, input and persistence problems
 - [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) — unsupported, partially supported and untested items
-- [`docs/AUDIT.md`](docs/AUDIT.md) — architecture and the 1.4.0 technical audit
+- [`docs/SERVERS.md`](docs/SERVERS.md) — Server Manager scope, validation, platform connection steps and limits
+- [`docs/AUDIT.md`](docs/AUDIT.md) — architecture, the 1.4.0 audit and the 1.5.0 Server Manager addendum
 - [`docs/CHANGELOG.md`](docs/CHANGELOG.md) — version history
 - [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) and [`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) — automated evidence and device checklists
 
 ### Testing
 
-`npm run typecheck`, `npm test` (14 tests and 198 mock UI flows), `npm run build`, and `npm run validate` pass for 1.4.0. The archive is a single `ATLAS.mcaddon`. The harness also covers settings reload after a leave/rejoin, legacy `ATLAS1` and older `ATLAS2` import, session timing, coalesced inventory refresh and graceful degradation when an optional API is unavailable. **1.4.0 was not tested inside Minecraft, on iPhone, PS5 or Mega10.** The 1.2.0 scripts, nine event registrations, `/atlas:menu` and `worldLoad` were observed on Bedrock Dedicated Server 1.26.60.6 without script errors; that proved startup only and did not render a player UI. See `docs/TEST_REPORT.md` for the exact scope and `docs/DEVICE_TESTING.md` for the iPhone/PS5/server checklists.
+`npm run typecheck`, `npm test` (16 tests and 271 mock UI flows), `npm run build` (48 files, 78.5 KiB), and `npm run validate` (6 checks) pass for 1.5.0. The archive is a single `ATLAS.mcaddon`. The harness also covers settings and server-list reload after a leave/rejoin, legacy `ATLAS1` and older `ATLAS2` import, session timing, coalesced inventory refresh, server address/port validation and graceful degradation when an optional API is unavailable. **1.5.0 was not tested inside Minecraft, on iPhone, PS5 or Mega10.** The 1.2.0 scripts, nine event registrations, `/atlas:menu` and `worldLoad` were observed on Bedrock Dedicated Server 1.26.60.6 without script errors; that proved startup only and did not render a player UI. See `docs/TEST_REPORT.md` for the exact scope and `docs/DEVICE_TESTING.md` for the iPhone/PS5/server checklists.
 
 ### PS5 and public servers
 
-- **PS5:** import, rendering and controller input were not tested. WASD follows the movement vector (left stick on a controller); LMB/RMB are game-action indicators, not physical mouse buttons. If PS5 cannot open a local file, joining a world/Realm that already has the packs active is the only possible path, and it is also unverified.
+- **PS5:** import, rendering and controller input were not tested. WASD follows the movement vector (left stick on a controller); LMB/RMB are game-action indicators, not physical mouse buttons. PS5 Minecraft has **no Add Server button**, so SERVER MANAGER cannot make a custom server joinable there. If PS5 cannot open a local file, joining a world/Realm that already has the packs active is the only possible path, and it is also unverified.
 - **World-bound packs:** Bedrock add-ons belong to the world, not the player's device. A pack activated on an iPhone cannot inject a HUD or commands into a public server world that does not contain it.
 - **Mega10 / public servers:** if the world does not have the pack installed and active, no ATLAS feature runs. If it does, the server may still block custom packs, `/atlas:menu`, the locator bar or data storage, and server rules apply. No combat or click automation is included. Mega10 was not tested.
 

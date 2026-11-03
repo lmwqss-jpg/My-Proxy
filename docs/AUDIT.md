@@ -1,8 +1,8 @@
-# ATLAS CLIENT — Technical Audit (1.4.0)
+# ATLAS CLIENT — Technical Audit (1.4.0, with 1.5.0 addendum)
 
 **Repository:** `lmwqss-jpg/My-Proxy`
 **Audited version:** 1.3.0 working tree, before the 1.4.0 changes
-**Delivered version:** 1.4.0
+**Delivered versions:** 1.4.0 and 1.5.0
 **Target:** Minecraft Bedrock 26.60 / `[1, 26, 60]`, stable Script API
 **Automated audit:** `npm run typecheck`, `npm test`, `npm run build`, `npm run validate`
 
@@ -120,6 +120,9 @@ The 1.1.0–1.3.0 HUD/input/status/settings work described in the changelog rema
 
 The following remain impossible for an ordinary Bedrock add-on and are documented instead of imitated:
 
+- Connecting to, transferring to or observing an external server from a world add-on.
+- Real server status, ping, version, player count or auto-reconnect.
+- Clipboard copy or opening Minecraft's Add Server screen.
 - Clickable top-right HUD icon or arbitrary HUD layout.
 - ESC interception or replacing the native pause menu.
 - Ore UI / native form background modification.
@@ -131,3 +134,34 @@ The following remain impossible for an ordinary Bedrock add-on and are documente
 - X-ray, ESP through walls, hidden-container scanning or reading container contents, aimbot, auto-clicker or combat automation. ESPCHEST is only a log of containers the player opened.
 
 PS5 compatibility is not claimed. The code is device-independent, but local import, controller navigation, Arabic shaping and real rendering were not exercised on a PS5.
+
+
+---
+
+## 7. 1.5.0 addendum — SERVER MANAGER
+
+### Decision
+
+The request asked for a real connection system. The stable Script API has no networking, server-list, transfer or connection-observation API. The only official transfer function, `@minecraft/server-admin.transferPlayer`, is dedicated-server-only, experimental, unavailable on clients/Realms and incompatible with this pack's no-experiments requirement. A CONNECT button would therefore be fake, and the project spec explicitly forbids that.
+
+The implementation is a **validated, persistent, per-player address book with manual connection guidance**:
+
+1. **Model** (`servers.js`) — IPv4/domain and port validation, normalisation, JSON parsing/serialisation, duplicate-target rejection, 40-entry cap, ordering, favourites, one manual current entry with timestamp, last Direct Join target. It has no Minecraft imports and is unit-tested.
+2. **Storage** (`store.js`) — `atlas:servers` and `atlas:server_target` player dynamic properties, separate from settings. A leave clears the cache so a rejoin reads storage again.
+3. **UI** (`serversScreen.js`) — add/edit/delete, list/detail, guide, Direct Join, send-to-chat and manual current/favourite/order controls. Invalid submissions reopen the form with a specific message. The screen explicitly states that status is unknown and that no connection is attempted.
+4. **Menu** — `SERVER MANAGER` is registered between Waypoints and Settings and uses its own generated icon. All existing sections remain.
+
+### Why no status or reconnect
+
+A status manager that displayed ONLINE/OFFLINE/CONNECTING/RECONNECTING/ERROR would need to measure the server. The API can observe neither the current server nor an external endpoint, so the only honest value is **Unknown**. Auto-reconnect and retry counts are likewise game-owned; adding switches would mislead the user.
+
+### Platform consequence
+
+- iPhone/Android/Windows expose **Servers → Add Server**; the guide names the exact host and port to enter.
+- PS5 does **not** expose an Add Server button. ATLAS cannot add one, and no PS5 compatibility is claimed.
+- Friends/Realms addresses are not published to add-ons; those entries are organisational only.
+- Microsoft sign-in, allow-lists, anti-cheat and server permissions remain outside the add-on.
+
+### Verification
+
+Unit tests cover the address model; the integration harness covers add/edit/delete/order/favourite/manual current, invalid addresses/ports, duplicates, Direct Join and reload after leave/rejoin. `npm run validate` checks the rebuilt archive. No real client, console or server was available, so device behavior remains **NOT TESTED**.

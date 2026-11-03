@@ -341,6 +341,18 @@ function utilitiesIcon() {
   return image;
 }
 
+function serversIcon() {
+  const image = canvas(32, 32);
+  for (let row = 0; row < 3; row++) {
+    const y = 7 + row * 7;
+    fillRoundedRect(image, 5, y, 22, 5, 1, COLORS.cyan);
+    fillRoundedRect(image, 6, y + 1, 20, 3, 1, COLORS.dark);
+    fillCircle(image, 9, y + 2.5, 1, row === 0 ? COLORS.green : COLORS.muted);
+    fillCircle(image, 12, y + 2.5, 1, COLORS.muted);
+  }
+  return image;
+}
+
 function settingsIcon() {
   const image = canvas(32, 32);
   for (let i = 0; i < 8; i++) {
@@ -385,6 +397,7 @@ writePng(path.join(RP, "textures/atlas/common/atlas_hud.png"), ...pngItem(hudIco
 writePng(path.join(RP, "textures/atlas/common/atlas_visual.png"), ...pngItem(visualIcon));
 writePng(path.join(RP, "textures/atlas/common/atlas_pvp.png"), ...pngItem(pvpIcon));
 writePng(path.join(RP, "textures/atlas/common/atlas_utilities.png"), ...pngItem(utilitiesIcon));
+writePng(path.join(RP, "textures/atlas/common/atlas_servers.png"), ...pngItem(serversIcon));
 writePng(path.join(RP, "textures/atlas/common/atlas_settings.png"), ...pngItem(settingsIcon));
 writePng(path.join(RP, "textures/atlas/common/atlas_close.png"), ...pngItem(closeIcon));
 

@@ -4,6 +4,40 @@ All notable changes to ATLAS CLIENT are recorded here. The archive is a single `
 
 ---
 
+## 1.5.0 — Server Manager release
+
+### Added
+
+- **SERVER MANAGER** section in `/atlas:menu`, kept separate from the rest of the client.
+- Per-player server address book with add, edit, delete, reorder, favourites, category and region label.
+- Validation for IPv4 addresses, domain names and ports 1–65535; duplicate host/port and blank names are rejected.
+- Manual **current server** mark with a UTC last-marked timestamp, plus a **Direct Join** form that remembers the last address and port.
+- **Connection guide** with the exact host/port and the official manual steps, plus **Send address to chat** because add-ons have no clipboard access.
+- One dedicated `atlas_servers` menu icon.
+- Unit tests for the server model and integration coverage for add/edit/delete/order/favourite/mark, invalid input, duplicates, Direct Join and persistence after leave/rejoin.
+- [`docs/SERVERS.md`](SERVERS.md) with the supported scope, platform steps and limitations.
+
+### Explicitly not added
+
+- No CONNECT button, auto-reconnect switch or fake ONLINE/OFFLINE/ping/player-count/version data. Minecraft's stable Script API has no networking, server-list, transfer or connection-observation API for world add-ons. `@minecraft/server-admin.transferPlayer` is dedicated-server-only, experimental and unavailable on clients/Realms, so it is not used.
+- No clipboard control and no way to open Minecraft's Add Server screen.
+- No Microsoft-login, allow-list, anti-cheat or PS5 restriction bypass. PS5 has no Add Server button; SERVER MANAGER cannot change the console UI.
+
+### Changed
+
+- Version bumped to **1.5.0** in `package.json`, both manifests, module versions and the runtime.
+- All 1.4.0 HUD, input, armor, effects, totems, waypoints, ESPCHEST, combat, themes, Arabic/English, diagnostics and settings behavior is preserved. Settings codes remain `ATLAS2-...` with legacy `ATLAS1-...` import; server data is stored separately.
+
+### Verification
+
+- `npm run typecheck` — passed.
+- `npm test` — 16 tests passed, including 271 mocked form flows.
+- `npm run build` — produced a 48-file `ATLAS.mcaddon` (78.5 KiB).
+- `npm run validate` — passed 6 checks, including every JSON file, manifests, UUIDs, textures, imports and ZIP contents.
+- **Not tested inside Minecraft, on iPhone, on PS5 or on any public server.** See [`TEST_REPORT.md`](TEST_REPORT.md).
+
+---
+
 ## 1.4.0 — full-testing release
 
 ### Added

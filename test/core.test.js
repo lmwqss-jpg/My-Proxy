@@ -67,6 +67,26 @@ import {
   formatEffectDuration,
   trackedWaypointSnapshot,
 } from "../src/ATLAS/BP/scripts/hudFormat.js";
+import {
+  addServer,
+  clearCurrent,
+  createServer,
+  findServer,
+  formatServerTimestamp,
+  markCurrent,
+  moveServer,
+  normalizeAddress,
+  normalizePort,
+  normalizeServer,
+  normalizeServerTarget,
+  parseServers,
+  removeServer,
+  sameTarget,
+  serverAddress,
+  serializeServers,
+  toggleFavorite,
+  updateServer,
+} from "../src/ATLAS/BP/scripts/servers.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -697,4 +717,170 @@ test("container log validates real container interactions and caps entries", () 
   assert.deepEqual(parseContainers([{ garbage: true }]), []);
   assert.deepEqual(parseContainers([entry, entry]).length, 1);
   assert.equal(removeContainer(list, containerKey(list[0])).length, LIMITS.containers - 1);
+});
+
+test("server addresses and ports are validated, not guessed", () => {
+  assert.equal(normalizeAddress("play.example.com"), "play.example.com");
+  assert.equal(normalizeAddress("  PLAY.Example.COM  "), "play.example.com");
+  assert.equal(normalizeAddress("203.0.113.10"), "203.0.113.10");
+  assert.equal(normalizeAddress("0.0.0.0"), "0.0.0.0");
+  assert.equal(normalizeAddress("255.255.255.255"), "255.255.255.255");
+  for (const invalid of [
+    "",
+    "   ",
+    "256.1.1.1",
+    "1.2.3",
+    "1.2.3.4.5",
+    "01.2.3.999",
+    "http://example.com",
+    "https://example.com/path",
+    "example.com:19132",
+    "[2001:db8::1]",
+    "bad_host.com",
+    "-bad.example.com",
+    "example..com",
+    "localhost",
+    "example.c",
+    "example.123",
+    "host name.com",
+    "user@example.com",
+  ]) {
+    assert.equal(normalizeAddress(invalid), null, `accepted invalid address: ${invalid}`);
+  }
+
+  assert.equal(normalizePort("19132"), 19132);
+  assert.equal(normalizePort(" 19132 "), 19132);
+  assert.equal(normalizePort(19133), 19133);
+  assert.equal(normalizePort("65535"), 65535);
+  for (const invalid of ["", "0", "65536", "-1", "19a", "1.5", 0, 65536, 1.5, null, undefined]) {
+    assert.equal(normalizePort(invalid), null, `accepted invalid port: ${invalid}`);
+  }
+
+  const server = createServer({
+    id: "s_test",
+    now: 1700000000000,
+    name: "  §cMy   Server ",
+    address: "Play.Example.COM",
+    port: "19132",
+    description: "Main world",
+    category: "public",
+    region: "eu",
+    favorite: true,
+  });
+  assert.ok(server);
+  assert.equal(server.name, "My Server");
+  assert.equal(server.address, "play.example.com");
+  assert.equal(server.port, 19132);
+  assert.equal(server.favorite, true);
+  assert.equal(server.current, false);
+  assert.equal(server.createdAt, 1700000000000);
+  assert.equal(server.lastMarkedAt, null);
+  assert.equal(serverAddress(server), "play.example.com:19132");
+  assert.equal(sameTarget(server, { address: "play.example.com", port: 19132 }), true);
+  assert.equal(sameTarget(server, { address: "play.example.com", port: 19133 }), false);
+
+  const roundTrip = parseServers(serializeServers([server]));
+  assert.deepEqual(roundTrip, [server]);
+  assert.equal(normalizeServer({ ...server, port: "0" }), null);
+  assert.equal(normalizeServer({ ...server, name: "   " }), null);
+  assert.equal(normalizeServer({ ...server, id: "bad id" }), null);
+  assert.equal(normalizeServer({ ...server, category: "unknown" }).category, "other");
+  assert.equal(normalizeServer({ ...server, region: "unknown" }).region, "other");
+});
+
+test("server registry keeps order, favourites and one manual current entry", () => {
+  const base = {
+    now: 1700000000000,
+    port: 19132,
+    category: "public",
+    region: "eu",
+  };
+  const a = createServer({ ...base, id: "s_a", name: "Alpha", address: "a.example.com" });
+  const b = createServer({ ...base, id: "s_b", name: "Beta", address: "b.example.com" });
+  let list = [];
+  assert.equal(addServer(list, a).added, true);
+  list = addServer(list, a).list;
+  list = addServer(list, b).list;
+  assert.deepEqual(list.map((server) => server.name), ["Alpha", "Beta"]);
+
+  assert.deepEqual(addServer(list, b).reason, "duplicate");
+  assert.deepEqual(
+    addServer(list, createServer({ ...base, id: "s_c", name: "Copy", address: "a.example.com" })).reason,
+    "duplicateAddress",
+  );
+  assert.deepEqual(addServer(list, null).reason, "invalid");
+
+  list = toggleFavorite(list, "s_b");
+  assert.equal(findServer(list, "s_b").favorite, true);
+
+  list = markCurrent(list, "s_b", 1700000100000);
+  assert.equal(findServer(list, "s_b").current, true);
+  assert.equal(findServer(list, "s_a").current, false);
+  assert.equal(findServer(list, "s_b").lastMarkedAt, 1700000100000);
+  assert.equal(formatServerTimestamp(1700000100000), "2023-11-14 22:15 UTC");
+  assert.equal(formatServerTimestamp(null), null);
+  assert.equal(formatServerTimestamp(Number.MAX_VALUE), null);
+  assert.equal(formatServerTimestamp(-1), null);
+
+  list = markCurrent(list, "s_a", 1700000200000);
+  assert.equal(findServer(list, "s_a").current, true);
+  assert.equal(findServer(list, "s_b").current, false);
+  // JSON storage cannot contain two current entries.
+  assert.equal(parseServers(serializeServers(list)).filter((server) => server.current).length, 1);
+  assert.equal(parseServers(serializeServers([{ ...list[0], current: true }, { ...list[1], current: true }])).filter((server) => server.current).length, 1);
+
+  list = clearCurrent(list);
+  assert.equal(list.some((server) => server.current), false);
+
+  list = moveServer(list, "s_b", -1);
+  assert.deepEqual(list.map((server) => server.name), ["Beta", "Alpha"]);
+  assert.equal(moveServer(list, "s_b", -1), list);
+  assert.equal(moveServer(list, "s_a", 1), list);
+
+  const edited = updateServer(list, "s_a", { name: "Gamma", address: "c.example.com" });
+  assert.equal(edited.updated, true);
+  assert.equal(findServer(edited.list, "s_a").name, "Gamma");
+  assert.equal(findServer(edited.list, "s_a").address, "c.example.com");
+  assert.equal(updateServer(edited.list, "s_a", { address: "b.example.com" }).reason, "duplicateAddress");
+  assert.equal(updateServer(edited.list, "missing", { name: "x" }).reason, "notFound");
+  assert.equal(updateServer(edited.list, "s_a", { name: "   " }).reason, "invalid");
+
+  assert.equal(removeServer(edited.list, "s_b").length, 1);
+  assert.equal(findServer(removeServer(edited.list, "s_b"), "s_b"), null);
+
+  assert.deepEqual(parseServers("not json"), []);
+  assert.deepEqual(parseServers({ servers: [] }), []);
+  assert.deepEqual(parseServers([{ garbage: true }, a, a]).length, 1);
+  assert.equal(
+    parseServers([
+      { ...a, current: true },
+      { ...b, current: true },
+    ]).filter((server) => server.current).length,
+    1,
+  );
+
+  let many = [];
+  for (let i = 0; i < LIMITS.servers; i++) {
+    many = addServer(
+      many,
+      createServer({
+        ...base,
+        id: `s_${i}`,
+        name: `Server ${i}`,
+        address: `10.0.${Math.floor(i / 250)}.${i % 250}`,
+      }),
+    ).list;
+  }
+  assert.equal(many.length, LIMITS.servers);
+  assert.equal(
+    addServer(many, createServer({ ...base, id: "s_extra", name: "Extra", address: "extra.example.com" })).reason,
+    "limit",
+  );
+
+  assert.deepEqual(normalizeServerTarget('{"address":"Play.Example.com","port":"19132"}'), {
+    address: "play.example.com",
+    port: 19132,
+  });
+  assert.equal(normalizeServerTarget("bad json"), null);
+  assert.equal(normalizeServerTarget({ address: "bad host", port: 19132 }), null);
 });
