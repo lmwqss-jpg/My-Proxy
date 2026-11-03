@@ -20,18 +20,51 @@ const lowHealthState = new Map();
 const warnedPlayers = new Set();
 /** @type {Map<string, Map<string, {low: boolean, typeId: string}>>} */
 const durabilityState = new Map();
+/** @type {Map<string, number>} */
+const sessionStarts = new Map();
+/** @type {Map<string, number>} */
+const lastInventoryUpdate = new Map();
+const INVENTORY_UPDATE_TICKS = 5;
 
+function readOptional(read) {
+  try {
+    return read();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Returns null for both values when the health component cannot be read. The
+ * HUD then omits health instead of showing a fabricated 0/20.
+ */
 function healthOf(player) {
   try {
     const health = player.getComponent("minecraft:health");
-    if (!health) return { current: 0, max: 20 };
+    if (!health) return { current: null, max: null };
+    const current = Number(health.currentValue);
+    const max = Number(health.effectiveMax || health.defaultValue || 20);
+    if (!Number.isFinite(current) || !Number.isFinite(max) || max <= 0) {
+      return { current: null, max: null };
+    }
     return {
-      current: Math.max(0, health.currentValue),
-      max: Math.max(1, health.effectiveMax || health.defaultValue || 20),
+      current: Math.max(0, current),
+      max: Math.max(1, max),
     };
   } catch {
-    return { current: 0, max: 20 };
+    return { current: null, max: null };
   }
+}
+
+/** Real seconds since the player was first seen in this session. */
+function sessionSecondsFor(playerId) {
+  const tick = system.currentTick;
+  if (!sessionStarts.has(playerId)) sessionStarts.set(playerId, tick);
+  return Math.max(0, Math.floor((tick - sessionStarts.get(playerId)) / 20));
+}
+
+export function getSessionSeconds(playerId) {
+  return sessionSecondsFor(playerId);
 }
 
 export function collectSnapshot(player) {
@@ -43,29 +76,31 @@ export function collectSnapshot(player) {
   const displayName = tracked
     ? waypointDisplayName(tracked, t, settings.language)
     : null;
-  const trackedSnapshot = tracked
+  const equipment = collectEquipment(player);
+  const dimensionId = readOptional(() => player.dimension.id);
+  const trackedSnapshot = tracked && dimensionId
     ? trackedWaypointSnapshot(
         player.location,
-        player.dimension.id,
+        dimensionId,
         tracked,
         displayName,
       )
     : null;
-  const equipment = collectEquipment(player);
 
   return {
     name: player.name,
     health: health.current,
     maxHealth: health.max,
     location: { x: player.location.x, y: player.location.y, z: player.location.z },
-    dimensionId: player.dimension.id,
-    view: player.getViewDirection(),
-    day: world.getDay(),
-    timeOfDay: world.getTimeOfDay(),
-    difficulty: world.getDifficulty(),
-    playerCount: world.getPlayers().length,
-    level: player.level,
-    gameMode: player.getGameMode(),
+    dimensionId,
+    view: readOptional(() => player.getViewDirection()),
+    day: readOptional(() => world.getDay()),
+    timeOfDay: readOptional(() => world.getTimeOfDay()),
+    difficulty: readOptional(() => world.getDifficulty()),
+    playerCount: readOptional(() => world.getPlayers().length),
+    level: readOptional(() => player.level),
+    gameMode: readOptional(() => player.getGameMode()),
+    sessionSeconds: sessionSecondsFor(player.id),
     kills: stats.kills,
     deaths: stats.deaths,
     trackedWaypoint: trackedSnapshot,
@@ -103,6 +138,19 @@ export function updateHud(player, force = false) {
   }
 }
 
+/**
+ * Rebuilds after an inventory change, but coalesces rapid drag/transfer events
+ * so a player rearranging a full inventory cannot force a rebuild every tick.
+ */
+export function updateHudAfterInventoryChange(player) {
+  if (!player || !player.isValid) return false;
+  const tick = system.currentTick;
+  const previous = lastInventoryUpdate.get(player.id) ?? -10_000;
+  if (tick - previous < INVENTORY_UPDATE_TICKS) return false;
+  lastInventoryUpdate.set(player.id, tick);
+  return updateHud(player, true);
+}
+
 export function getHudPreview(player) {
   try {
     const settings = getSettings(player);
@@ -114,6 +162,10 @@ export function getHudPreview(player) {
 
 function checkLowHealth(player, settings) {
   const { current } = healthOf(player);
+  if (!Number.isFinite(current)) {
+    lowHealthState.set(player.id, false);
+    return;
+  }
   const threshold = settings.pvp.alertThreshold;
   const isLow = current > 0 && current <= threshold;
   const wasLow = lowHealthState.get(player.id) === true;
@@ -241,6 +293,8 @@ export function forgetHudState(playerId) {
   lowHealthState.delete(playerId);
   durabilityState.delete(playerId);
   warnedPlayers.delete(playerId);
+  sessionStarts.delete(playerId);
+  lastInventoryUpdate.delete(playerId);
 }
 
 export function clearLowHealthState(playerId) {

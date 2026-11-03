@@ -26,6 +26,7 @@ import {
   clearLowHealthState,
   forgetHudState,
   updateHud,
+  updateHudAfterInventoryChange,
 } from "./hud.js";
 import {
   forgetLocatorState,
@@ -220,7 +221,9 @@ export function initEvents() {
   track(on(world.afterEvents.entityHurt, "entityHurt", handleHurt));
   track(
     on(world.afterEvents.playerInventoryItemChange, "playerInventoryItemChange", (event) => {
-      if (event.player?.isValid) updateHud(event.player);
+      // Rebuild immediately for the totem count, but coalesce rapid inventory
+      // events so dragging stacks cannot force a rebuild every tick.
+      if (event.player?.isValid) updateHudAfterInventoryChange(event.player);
     }),
   );
   track(

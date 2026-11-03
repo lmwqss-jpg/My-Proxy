@@ -1,14 +1,15 @@
 # ATLAS CLIENT — Minecraft Bedrock
 
-**الإصدار / Version:** 1.2.0
+**الإصدار / Version:** 1.3.0
 **ملف التثبيت / Install file:** `ATLAS.mcaddon`
 **الهدف / Target:** Minecraft Bedrock **26.60 (1.26.60)** أو أحدث
-**المنصة الأساسية / Primary platform:** iPhone — Minecraft Bedrock 26.60+
-**PS5:** الكود يستخدم واجهات مستقلة عن الجهاز، لكن **لم يُختبر على PS5**. لا تدّعي هذه النسخة توافقاً مؤكداً مع PS5.
+**المنصة الأساسية / Primary platform:** PS5 — **لم يُختبر بعد / not tested**
+**منصات إضافية / Also supported:** iPhone وAndroid وWindows وأي منصة Bedrock متوافقة
+**PS5:** الكود لا يعتمد على جهاز محدد، لكن استيراد الملف والتحكم والواجهة على PS5 **لم تُختبر**. لا تدّعي هذه النسخة توافقاً مؤكداً مع PS5 أو Bedrock Arab.
 **التجارب / Experiments:** لا يحتاج أي تفعيل
+**دليل التثبيت:** [`docs/INSTALL.md`](docs/INSTALL.md) · **حل المشاكل:** [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) · **القيود:** [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) · **التدقيق:** [`docs/AUDIT.md`](docs/AUDIT.md) · **السجل:** [`docs/CHANGELOG.md`](docs/CHANGELOG.md)
 **دليل الاختبار الفعلي / Device test plan:** [`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md)
-**حالة الاختبار:** تم تحميل السكربتات فعلياً على **Bedrock Dedicated Server 1.26.60.6**: تسجيل الأحداث التسعة، تسجيل `/atlas:menu`، وبدء HUD، وحدث `worldLoad` ظهرت كلها في سجل اللعبة بدون أخطاء. **لم يُختبر بعد على iPhone أو PS5 أو بواجهة لاعب حقيقية أو على Mega10.**
-**الاختبار الرسمي:** `mct validate all` على ملف `ATLAS.mcaddon` يمر بدون أخطاء (تحذيرات فقط عن أيقونات النماذج غير المرتبطة بعناصر).
+**حالة الاختبار:** `npm run check` يمر بالكامل لنسخة 1.3.0: typecheck، و13 اختباراً، و**85 مسار واجهة**، وبناء وأرشيف وتحقق. **لم يُختبر 1.3.0 داخل Minecraft أو على iPhone أو PS5 أو Mega10.** النسخة 1.2.0 سبق أن حمّلت سكربتاتها وأحداثها التسعة والأمر و`worldLoad` على Bedrock Dedicated Server 1.26.60.6؛ هذا لا يُثبت عمل الواجهة أو الاستيراد على جهاز حقيقي.
 
 ---
 
@@ -69,7 +70,7 @@
 - **إصدار Minecraft أقدم من 26.60:** ملف `manifest.json` يطلب `min_engine_version` مساوياً لـ `[1, 26, 60]`، لذلك لن تُحمّل الحزمة على إصدار أقدم.
 - **إصدار API غير موجود:** الحزم تعتمد على `@minecraft/server 2.11.0` و`@minecraft/server-ui 2.3.0` (إصدارات مستقرة في 26.60).
 - **أخطاء تحميل أخرى:** فعّل **Settings → Creator → Content Log GUI**، ثم افتح العالم وابحث عن `[ATLAS] Scripts loaded`. يجب أن ترى أيضاً `Event handlers registered` و`Custom command /atlas:menu registered` و`World loaded`. إذا توقف السجل قبلها فالسكربت لم يُحمّل؛ تحقق من إصدار اللعبة وتفعيل Behavior Pack.
-- **نسخة قديمة عالقة:** إذا كنت جرّبت 1.0.0 أو 1.1.0، احذف الحزمتين القديمتين من العالم أولاً. النسخة الجديدة 1.2.0 لها نفس UUID لكن رقم إصدار أعلى، لذا يستبدلها Minecraft عند الاستيراد.
+- **نسخة قديمة عالقة:** إذا كنت جرّبت 1.0.0 أو 1.1.0 أو 1.2.0، احذف الحزمتين القديمتين من العالم أولاً. النسخة الجديدة 1.3.0 لها نفس UUID لكن رقم إصدار أعلى، لذا يستبدلها Minecraft عند الاستيراد.
 - **الأداة مفقودة لكن السكربت يعمل:** استخدم `/atlas:menu`، أو من القائمة **Utilities → Restore ATLAS item**.
 - **الأمر غير موجود:** إذا لم يظهر `/atlas:menu` في الإكمال التلقائي، فالBehavior Pack غير مفعّل أو السكربت لم يُحمّل؛ راجع Content Log.
 
@@ -115,7 +116,10 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 - **تأثيرات الجرعات:** اسم كل تأثير ومستواه والوقت المتبقي، وتختفي التأثيرات المنتهية تلقائياً. الوقت اللانهائي يظهر `∞`.
 - **عداد التوتيم:** مجموع توتيم الخلود في الحقيبة + اليد الثانية، ويُحدَّث عند تغير الحقيبة.
 - **تنبيه المتانة:** يراقب الدروع الأربعة والأداة المحمولة (اليد الرئيسية)، ويظهر تحذيراً (وصوتاً اختيارياً) عند النزول تحت النسبة المحددة، مرة واحدة لكل هبوط. أدوات الحقيبة غير المحمولة لا تُفحص.
-- **محرر HUD:** تشغيل/إيقاف كل واجهة وقطعة درع، تغيير لون تمييز سطر HUD كله، حد المتانة، الوضع المختصر/المفصّل، وإعادة ضبط تخطيط HUD. كل تغيير يُحفظ فوراً.
+- **مؤقت الجلسة:** عنصر اختياري (`HUD → Session timer`) يعرض مدة جلوسك الحقيقية منذ الدخول، ويُعاد ضبطه عند الخروج والعودة. ليس إحصائية محفوظة.
+- **محرر HUD:** تشغيل/إيقاف كل واجهة وقطعة درع، لون تمييز سطر HUD، حد المتانة، الوضع المختصر/المفصّل، وإعادة ضبط تخطيط HUD. يشمل الآن مؤقت الجلسة وعناصر Visual وPvP أيضاً. كل تغيير يُحفظ فوراً.
+- **تدهور آمن:** إذا لم تتوفر قراءة الصحة أو الاتجاه أو الوقت أو نمط اللعب، يختفي العنصر وحده بدلاً من عرض `0/20` أو `null` أو اتجاه وهمي.
+- **عداد التوتيم:** يتحدث فوراً عند تغير الحقيبة وليس فقط عند انتهاء فترة التحديث.
 - واجهة مختصرة أو مفصلة، ومعدل تحديث من 5 إلى 40 تكة (الافتراضي 5 لتحديث لوحات الإدخال بسرعة).
 - تشغيل/إيقاف كل عنصر بشكل مستقل، وأزرار «تشغيل الكل» و«إيقاف الكل».
 
@@ -164,7 +168,7 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 - حفظ فوري لكل تغيير، مع زر «حفظ الآن».
 - تصدير/استيراد رمز إعدادات قصير، مثل `ATLAS2-...`، يحتوي الثيم واللغة والتبديلات ومعدل التحديث وحدّي التنبيه ولون HUD. الرموز القديمة `ATLAS1-...` ما زالت مقبولة. لا يحتوي المواقع.
 - إعادة ضبط كل الإعدادات.
-- **Diagnostics:** حالة السكربت، إصدارات API، وجود الأداة، دعم شريط التحديد، عدد المواقع واللاعبين.
+- **Diagnostics:** حالة السكربت، إصدارات API، وجود الأداة، دعم شريط التحديد، عدد المواقع واللاعبين، ومدة الجلسة الحقيقية مقابل تكات الخادم.
 - **About:** ملخص الحدود الرسمية.
 
 ---
@@ -191,7 +195,7 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 - من **Settings → Import settings code** الصق/اكتب الرمز ثم اضغط Apply.
 - الحافظة (Clipboard) غير متاحة للإضافات، لذلك لا يوجد زر «نسخ» آلي.
 - الرمز لا ينقل المواقع ولا الإحصائيات؛ هي بيانات عالم/لاعب منفصلة.
-- **التوافق الخلفي:** رموز `ATLAS1-...` القديمة ما زالت مقبولة. تستعيد الثيم واللغة والحدود والتبديلات العشرين القديمة، بينما تأخذ اللوحات الجديدة القيم الافتراضية. بعد استيرادها يصبح التصدير `ATLAS2-...`.
+- **التوافق الخلفي:** رموز `ATLAS1-...` القديمة ما زالت مقبولة. تستعيد الثيم واللغة والحدود والتبديلات العشرين القديمة، بينما تأخذ اللوحات الجديدة القيم الافتراضية. رموز `ATLAS2-...` القديمة (33 تبديلاً) تعمل أيضاً، ويبقى مؤقت الجلسة الجديد مغلقاً. بعد الاستيراد يصبح التصدير `ATLAS2-...`.
 - **الحفظ:** كل تغيير يُحفظ فوراً في Dynamic Properties الخاصة باللاعب. للتحقق بعد إغلاق العالم استخدم **Save & Quit** ثم أعد فتح العالم؛ راجع قسم حفظ الإعدادات في دليل الاختبار.
 
 ---
@@ -206,7 +210,7 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 | `min_engine_version` | `[1, 26, 60]` |
 | Experiments | لا شيء |
 | Script entry | `scripts/main.js` |
-| إصدار الإضافة | 1.2.0 |
+| إصدار الإضافة | 1.3.0 |
 | Behavior Pack UUID | `45ec3030-7e82-4b27-b1bc-006fc4d14de5` |
 | Resource Pack UUID | `6f7b2107-421b-480f-9a07-3acdf805714d` |
 
@@ -234,7 +238,7 @@ npm run build        # ينتج ATLAS.mcaddon
 npm run validate     # يفحص الحزم والـ ZIP
 ```
 
-الاختبارات الآلية تغطي بنية الحزم والمنطق و**81 مسار واجهة** في محاكي APIs، كما تتحقق من حفظ الإعدادات بعد خروج اللاعب وعودته ومن استيراد رموز `ATLAS1` القديمة. لكنها **لا تغني عن التجربة داخل Minecraft**. لم يتم اختبار هذه النسخة على iPhone أو PS5 أو داخل Minecraft في بيئة البناء الحالية. راجع [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) للتقرير الآلي، و[`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) لقوائم iPhone وPS5 والسيرفرات.
+الاختبارات الآلية تغطي بنية الحزم والمنطق و**85 مسار واجهة** في محاكي APIs، كما تتحقق من حفظ الإعدادات بعد خروج اللاعب وعودته، واستيراد رموز `ATLAS1` القديمة، وتوافق رموز `ATLAS2` القديمة، وتدهور HUD عند غياب API اختياري. لكنها **لا تغني عن التجربة داخل Minecraft**. لم يتم اختبار 1.3.0 على iPhone أو PS5 أو داخل Minecraft في بيئة البناء الحالية. راجع [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) للتقرير الآلي، و[`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) لقوائم iPhone وPS5 والسيرفرات.
 
 ### بنية المستودع
 
@@ -248,6 +252,11 @@ scripts/generate-assets.mjs   توليد الأيقونات (PNG) بشكل ثا�
 test/                         اختبارات Node + محاكي Minecraft
 docs/TEST_REPORT.md           تقرير الاختبار الآلي والتوافق
 docs/DEVICE_TESTING.md        قوائم اختبار iPhone وPS5 والسيرفرات
+docs/AUDIT.md                 التدقيق التقني وقرارات 1.3.0
+docs/INSTALL.md               دليل التثبيت لكل منصة
+docs/TROUBLESHOOTING.md       حل مشاكل التحميل وHUD والإعدادات
+docs/CHANGELOG.md             سجل الإصدارات
+docs/KNOWN_LIMITATIONS.md    القيود غير المدعومة وغير المختبرة
 ```
 
 المجلد الرئيسي للمشروع هو `ATLAS` داخل `src/`. يحتوي الـ mcaddon على مجلدين في الجذر: `ATLAS_BP/` و`ATLAS_RP/`، وكل منهما يحتوي `manifest.json` مباشرة. لا توجد مجلدات متداخلة ولا ملفات إضافية؛ هذا هو الشكل الذي يقبله مستورد Minecraft، ووضع الحزم داخل مجلد ATLAS إضافي في الـ ZIP قد يمنع الاستيراد.
@@ -287,16 +296,25 @@ If nothing appears: verify Minecraft 26.60+, verify the behavior pack is active 
 
 ### Features
 
-- **HUD:** coordinates, health, player name, world day/time, dimension, compass, tracked waypoint; WASD movement panel; observed CPS and LMB/RMB indicators; real armor durability with percentages and per-piece toggles; active potion effects with remaining time; totem count; low-durability alert for equipped armor and the held item; compact/detailed modes; 5–40 tick refresh (default 5); per-element ON/OFF.
-- **HUD editor:** panel and armor-piece toggles, accent colour for the whole HUD line, durability alert threshold/sound, and HUD reset. Unsupported positioning/size/transparency controls are intentionally not shown.
+- **HUD:** coordinates, health, player name, world day/time, dimension, compass, tracked waypoint; opt-in session timer; WASD movement panel; observed CPS and LMB/RMB indicators; real armor durability with percentages and per-piece toggles; active potion effects with remaining time; totem count; low-durability alert for equipped armor and the held item; compact/detailed modes; 5–40 tick refresh (default 5); per-element ON/OFF. Missing optional APIs remove only their own element instead of showing fake values.
+- **HUD editor:** panel, armor-piece, Visual and PvP HUD switches; accent colour for the whole HUD line; durability alert threshold/sound; session toggle; and HUD reset. Unsupported positioning/size/transparency controls are intentionally not shown.
 - **Visual:** player details, world details, text health bar, combat stats, official locator-bar waypoints.
 - **PvP:** combat health, low-health alert with threshold/sound/screen warning, automatic death point, persisted kills/deaths/K/D, session damage and recent combat log. No combat automation.
 - **Utilities:** add/list/rename/move/delete waypoints, distances and directions, HUD tracking, death point, restore item. Up to 30 world-shared waypoints.
-- **Settings:** four themes, English/Arabic, HUD controls, short `ATLAS2-...` settings export/import code (legacy `ATLAS1-...` accepted), reset, diagnostics, official-limits help. Legacy codes restore the original 20 toggles while the newer panels keep their defaults; settings are written to player dynamic properties on every change.
+- **Settings:** four themes, English/Arabic, HUD controls, short `ATLAS2-...` settings export/import code (legacy `ATLAS1-...` and older `ATLAS2` codes accepted), reset, diagnostics with real session duration, and official-limits help. Legacy codes restore their original toggles while newer panels keep their defaults; settings are written to player dynamic properties on every change.
+
+### Documentation
+
+- [`docs/INSTALL.md`](docs/INSTALL.md) — iPhone, desktop, BDS, PS5 and update instructions
+- [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) — import, startup, HUD, input and persistence problems
+- [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) — unsupported, partially supported and untested items
+- [`docs/AUDIT.md`](docs/AUDIT.md) — architecture and the 1.3.0 technical audit
+- [`docs/CHANGELOG.md`](docs/CHANGELOG.md) — version history
+- [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) and [`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) — automated evidence and device checklists
 
 ### Testing
 
-`npm run typecheck`, `npm test` (13 tests and 81 mock UI flows), `npm run build`, and `npm run validate` pass. The archive is a single `ATLAS.mcaddon`. The harness also covers settings reload after a leave/rejoin and legacy `ATLAS1` import. **The scripts, all nine event registrations, `/atlas:menu` registration and `worldLoad` were observed on Bedrock Dedicated Server 1.26.60.6 without script errors.** A real player UI, iPhone, PS5 and Mega10 were not tested. See `docs/TEST_REPORT.md` for the exact scope and `docs/DEVICE_TESTING.md` for the iPhone/PS5/server checklists.
+`npm run typecheck`, `npm test` (13 tests and 85 mock UI flows), `npm run build`, and `npm run validate` pass for 1.3.0. The archive is a single `ATLAS.mcaddon`. The harness also covers settings reload after a leave/rejoin, legacy `ATLAS1` and older `ATLAS2` import, session timing, coalesced inventory refresh and graceful degradation when an optional API is unavailable. **1.3.0 was not tested inside Minecraft, on iPhone, PS5 or Mega10.** The 1.2.0 scripts, nine event registrations, `/atlas:menu` and `worldLoad` were observed on Bedrock Dedicated Server 1.26.60.6 without script errors; that proved startup only and did not render a player UI. See `docs/TEST_REPORT.md` for the exact scope and `docs/DEVICE_TESTING.md` for the iPhone/PS5/server checklists.
 
 ### PS5 and public servers
 

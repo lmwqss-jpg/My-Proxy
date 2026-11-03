@@ -1,5 +1,6 @@
 /** ATLAS CLIENT main menu. */
 
+import { world } from "@minecraft/server";
 import { ActionFormData } from "@minecraft/server-ui";
 import { registerScreen, openScreen } from "./router.js";
 import {
@@ -21,6 +22,21 @@ import "./pvpScreen.js";
 import "./utilitiesScreen.js";
 import "./settingsScreen.js";
 
+function homeSummary(player, language) {
+  const lines = [`§7${t(language, "menu.player", { name: player.name })}`];
+  try {
+    lines.push(
+      `§7${t(language, "menu.world", {
+        day: world.getDay(),
+        players: world.getPlayers().length,
+      })}`,
+    );
+  } catch {
+    lines.push(`§8${t(language, "common.notAvailable")}`);
+  }
+  return lines.join("\n");
+}
+
 async function mainScreen(player) {
   while (true) {
     if (!player.isValid) return;
@@ -30,6 +46,7 @@ async function mainScreen(player) {
     const body = [
       `§7${t(language, "menu.subtitle")}`,
       emptyLine(),
+      homeSummary(player, language),
       `§7${t(language, "common.theme")}: §f${currentThemeName(settings)}§8 | §7${t(language, "common.language")}: §f${currentLanguageName(settings)}`,
       `§a> §7${t(language, "menu.ready")}`,
       emptyLine(),

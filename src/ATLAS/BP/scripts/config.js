@@ -5,7 +5,7 @@
  * settings and data model can be tested with plain Node.js.
  */
 
-export const ADDON_VERSION = "1.2.0";
+export const ADDON_VERSION = "1.3.0";
 
 export const MENU_ITEM_ID = "atlas:client_token";
 
@@ -100,6 +100,9 @@ export const TOGGLE_PATHS = Object.freeze([
   "hud.armorDetail",
   "hud.durabilityAlert",
   "hud.durabilitySound",
+  // Appended again for 1.3.0 so existing ATLAS2 codes keep the same bit
+  // positions. New toggles start off when an older code is imported.
+  "hud.session",
 ]);
 
 export const DEFAULT_SETTINGS = deepFreeze({
@@ -133,6 +136,9 @@ export const DEFAULT_SETTINGS = deepFreeze({
     durabilityAlert: true,
     durabilityThreshold: 20,
     durabilitySound: true,
+    // Opt-in so importing an older ATLAS2/ATLAS1 code cannot silently change
+    // how much text the action bar has to render.
+    session: false,
     color: "theme",
   },
   visual: {

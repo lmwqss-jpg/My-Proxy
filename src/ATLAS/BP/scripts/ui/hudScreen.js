@@ -23,6 +23,7 @@ const TOGGLES = [
   ["hud.dimension", "hud.dimension"],
   ["hud.compass", "hud.compass"],
   ["hud.waypoint", "hud.waypoint"],
+  ["hud.session", "hud.session"],
 ];
 
 const ALL_HUD_PATHS = TOGGLE_PATHS.filter((path) => path.startsWith("hud."));

@@ -22,6 +22,7 @@ import {
   distance3,
   formatCoord,
   formatKd,
+  formatSessionDuration,
   gameClock,
   getPath,
   relativeDirectionKey,
@@ -115,6 +116,7 @@ const SNAPSHOT = {
     { typeId: "minecraft:night_vision", duration: -1, amplifier: 0 },
   ],
   totems: 2,
+  sessionSeconds: 125,
 };
 
 test("i18n dictionaries have identical keys and placeholders", () => {
@@ -200,6 +202,11 @@ test("geometry, compass and clock helpers", () => {
   assert.equal(formatCoord(1.26, true), "1.3");
   assert.equal(formatKd(3, 0), "3");
   assert.equal(formatKd(3, 2), "1.50");
+  assert.equal(formatSessionDuration(0), "0:00");
+  assert.equal(formatSessionDuration(61), "1:01");
+  assert.equal(formatSessionDuration(3661), "1:01:01");
+  assert.equal(formatSessionDuration(undefined), "--");
+  assert.equal(formatSessionDuration(-1), "--");
 });
 
 test("names are sanitised", () => {
@@ -234,6 +241,8 @@ test("settings normalisation clamps and discards unknown values", () => {
   assert.equal(normalizeSettings({ hud: { durabilityThreshold: 97 } }).hud.durabilityThreshold, 90);
   assert.equal(normalizeSettings({ hud: { durabilityThreshold: 7 } }).hud.durabilityThreshold, 5);
   assert.equal(normalizeSettings({ hud: { durabilityThreshold: 22 } }).hud.durabilityThreshold, 20);
+  assert.equal(normalizeSettings({ hud: { session: true } }).hud.session, true);
+  assert.equal(normalizeSettings({}).hud.session, false);
   assert.equal(toggleSetting(normalizeSettings({}), "hud.coords", false).hud.coords, false);
   assert.equal(toggleSetting(normalizeSettings({}), "unknown.path", false).hud.coords, true);
 });
@@ -301,6 +310,24 @@ test("settings codes round-trip and reject damage", () => {
   // This toggle was added after ATLAS1 and is not encoded by the old code.
   assert.equal(legacyRestored.hud.durabilityAlert, true);
   assert.equal(settingsFromCode(`${legacyCode.slice(0, -1)}x`), null);
+
+  // A 1.2.0 ATLAS2 code only contains the first 33 toggles. The new session
+  // toggle must stay off instead of being decoded from an absent bit.
+  const oldSettings = normalizeSettings({ theme: "ember" });
+  let oldMask = 0;
+  TOGGLE_PATHS.slice(0, TOGGLE_PATHS.length - 1).forEach((path, index) => {
+    if (getPath(oldSettings, path) === true) oldMask += 2 ** index;
+  });
+  const oldBody = `${THEME_IDS.indexOf(oldSettings.theme)}${LANGUAGE_IDS.indexOf(oldSettings.language)}${toBase36(oldSettings.hud.interval - 5, 1)}${toBase36(oldSettings.pvp.alertThreshold - 2, 1)}${toBase36((oldSettings.hud.durabilityThreshold - 5) / 5, 1)}${HUD_COLOR_IDS.indexOf(oldSettings.hud.color)}${toBase36(oldMask, 7)}`;
+  let oldChecksum = 0;
+  for (const character of oldBody) {
+    oldChecksum = (oldChecksum + character.charCodeAt(0)) % 1296;
+  }
+  const oldCode = `ATLAS2-${oldBody}${toBase36(oldChecksum, 2)}`;
+  const oldRestored = settingsFromCode(oldCode);
+  assert.ok(oldRestored);
+  assert.equal(oldRestored.theme, "ember");
+  assert.equal(oldRestored.hud.session, false);
 });
 
 test("waypoint model validates, caps and updates the death point", () => {
@@ -446,6 +473,11 @@ test("HUD text obeys toggles, theme and language", () => {
   assert.match(text, /Night Vision/);
   assert.match(text, /∞/);
   assert.match(text, /Totem §f2/);
+  assert.doesNotMatch(text, /Session/);
+
+  const withSession = normalizeSettings({});
+  withSession.hud.session = true;
+  assert.match(buildHudSegments(SNAPSHOT, withSession, "atlas").join(""), /Session §f2:05/);
 
   const arabic = normalizeSettings({ language: "ar" });
   arabic.hud.compact = false;
@@ -539,6 +571,44 @@ test("live HUD values are real and degrade honestly", () => {
   const noHelmet = normalizeSettings({});
   noHelmet.hud.armorHelmet = false;
   assert.doesNotMatch(buildHudSegments(SNAPSHOT, noHelmet, "atlas").join(""), /H §f300/);
+
+  // Missing optional APIs must remove their own element, not fabricate a value
+  // or blank the whole HUD.
+  const unavailable = normalizeSettings({});
+  unavailable.hud.session = true;
+  unavailable.visual.playerInfo = true;
+  unavailable.visual.worldInfo = true;
+  unavailable.visual.healthBar = true;
+  unavailable.pvp.showHealth = true;
+  const missingBar = buildHudSegments(
+    {
+      ...SNAPSHOT,
+      health: null,
+      maxHealth: null,
+      view: null,
+      dimensionId: null,
+      day: null,
+      timeOfDay: null,
+      difficulty: null,
+      playerCount: null,
+      level: null,
+      gameMode: null,
+      sessionSeconds: undefined,
+      trackedWaypoint: null,
+    },
+    unavailable,
+    "atlas",
+  ).join("");
+  assert.match(missingBar, /10 64 -4/);
+  assert.doesNotMatch(missingBar, /null|undefined|NaN/);
+  assert.doesNotMatch(missingBar, /14\/20|PvP|Level|Players|Difficulty|Session|Overworld/);
+
+  const withoutCompass = buildHudSegments(
+    { ...SNAPSHOT, view: null, effects: null, trackedWaypoint: null },
+    normalizeSettings({}),
+    "atlas",
+  ).join("");
+  assert.doesNotMatch(withoutCompass, /§b[NSWE]/);
 });
 
 test("tracked waypoint handles dimensions and labels", () => {

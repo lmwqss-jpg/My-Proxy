@@ -37,6 +37,14 @@ const TOGGLES = [
   ["hud.waypoint", "hud.waypoint"],
   ["hud.durabilityAlert", "hud.durabilityAlert"],
   ["hud.durabilitySound", "hud.durabilitySound"],
+  ["hud.session", "hud.session"],
+  // Visual/PvP elements are part of the same action-bar line, so keep every
+  // HUD switch reachable from this editor as well as from its own section.
+  ["visual.playerInfo", "visual.playerInfo"],
+  ["visual.worldInfo", "visual.worldInfo"],
+  ["visual.healthBar", "visual.healthBar"],
+  ["visual.stats", "visual.stats"],
+  ["pvp.showHealth", "pvp.showHealth"],
 ];
 
 function persist(player, settings) {

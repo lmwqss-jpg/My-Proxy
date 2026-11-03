@@ -10,6 +10,7 @@ import {
   formatCoord,
   formatDistance,
   formatKd,
+  formatSessionDuration,
   gameClock,
   getPath,
 } from "./util.js";
@@ -245,7 +246,8 @@ export function buildHudSegments(snapshot, settings, themeId) {
     );
   }
 
-  if (settings.hud.health) {
+  const healthAvailable = Number.isFinite(snapshot.health) && Number.isFinite(snapshot.maxHealth);
+  if (settings.hud.health && healthAvailable) {
     const value = healthValue(snapshot);
     elements.push(
       settings.hud.compact
@@ -254,7 +256,7 @@ export function buildHudSegments(snapshot, settings, themeId) {
     );
   }
 
-  if (settings.pvp.showHealth) {
+  if (settings.pvp.showHealth && healthAvailable) {
     elements.push(
       `§cPvP ${healthColor(snapshot.health, snapshot.maxHealth)}${healthValue(snapshot)}`,
     );
@@ -267,13 +269,24 @@ export function buildHudSegments(snapshot, settings, themeId) {
   }
 
   if (settings.hud.worldInfo) {
-    const clock = gameClock(snapshot.timeOfDay);
-    elements.push(
-      `§7${t(language, "common.day")} §f${snapshot.day} §8${clock.text}§r`,
-    );
+    const worldParts = [];
+    if (Number.isFinite(snapshot.day)) {
+      worldParts.push(`§7${t(language, "common.day")} §f${snapshot.day}`);
+    }
+    if (Number.isFinite(snapshot.timeOfDay)) {
+      worldParts.push(`§8${gameClock(snapshot.timeOfDay).text}`);
+    }
+    if (worldParts.length > 0) elements.push(worldParts.join(" "));
   }
 
-  if (settings.hud.dimension) {
+  if (settings.hud.session) {
+    const session = formatSessionDuration(snapshot.sessionSeconds);
+    if (session !== "--") {
+      elements.push(`§7${t(language, "common.session")} §f${session}`);
+    }
+  }
+
+  if (settings.hud.dimension && snapshot.dimensionId) {
     const dimension = dimensionLabel(snapshot.dimensionId, language);
     elements.push(
       settings.hud.compact
@@ -282,7 +295,7 @@ export function buildHudSegments(snapshot, settings, themeId) {
     );
   }
 
-  if (settings.hud.compass) {
+  if (settings.hud.compass && snapshot.view) {
     const bearing = bearingFromView(snapshot.view);
     const direction = t(language, cardinalKey(bearing, true));
     elements.push(
@@ -305,18 +318,28 @@ export function buildHudSegments(snapshot, settings, themeId) {
   }
 
   if (settings.visual.playerInfo) {
-    elements.push(
-      `§7${t(language, "common.level")} §f${snapshot.level} §8| §f${gameModeLabel(snapshot.gameMode, language)}`,
-    );
+    const playerParts = [];
+    if (Number.isFinite(snapshot.level)) {
+      playerParts.push(`§7${t(language, "common.level")} §f${snapshot.level}`);
+    }
+    if (snapshot.gameMode) {
+      playerParts.push(`§f${gameModeLabel(snapshot.gameMode, language)}`);
+    }
+    if (playerParts.length > 0) elements.push(playerParts.join(" §8| "));
   }
 
   if (settings.visual.worldInfo) {
-    elements.push(
-      `§7${t(language, "common.players")} §f${snapshot.playerCount} §8| §7${t(language, "common.difficulty")} §f${difficultyLabel(snapshot.difficulty, language)}`,
-    );
+    const worldParts = [];
+    if (Number.isFinite(snapshot.playerCount)) {
+      worldParts.push(`§7${t(language, "common.players")} §f${snapshot.playerCount}`);
+    }
+    if (snapshot.difficulty) {
+      worldParts.push(`§7${t(language, "common.difficulty")} §f${difficultyLabel(snapshot.difficulty, language)}`);
+    }
+    if (worldParts.length > 0) elements.push(worldParts.join(" §8| "));
   }
 
-  if (settings.visual.healthBar) {
+  if (settings.visual.healthBar && healthAvailable) {
     elements.push(healthBar(snapshot.health, snapshot.maxHealth));
   }
 

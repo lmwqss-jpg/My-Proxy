@@ -17,7 +17,7 @@ import {
   getWaypoints,
   saveSettings,
 } from "../store.js";
-import { getHudPreview, updateHud } from "../hud.js";
+import { getHudPreview, getSessionSeconds, updateHud } from "../hud.js";
 import { isLocatorSupported, syncLocator, syncAllLocators } from "../locator.js";
 import { hasMenuItem } from "../items.js";
 import {
@@ -34,6 +34,7 @@ import {
   TARGET_GAME_VERSION,
   THEME_IDS,
 } from "../config.js";
+import { formatSessionDuration } from "../util.js";
 
 function persist(player, settings, language) {
   if (!saveSettings(player, settings)) {
@@ -148,6 +149,9 @@ async function diagnosticsScreen(player) {
       emptyLine(),
       `§7${t(language, "diag.waypoints", { count: getWaypoints().length })}`,
       `§7${t(language, "diag.online", { count: world.getPlayers().length })}`,
+      `§7${t(language, "diag.session", {
+        duration: formatSessionDuration(getSessionSeconds(player.id)),
+      })}`,
       `§8${t(language, "diag.uptime", { ticks: system.currentTick })}`,
       `§8${t(language, "diag.footer")}`,
     ].join("\n");

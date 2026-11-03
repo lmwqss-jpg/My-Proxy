@@ -126,7 +126,7 @@ export function collectTotems(player) {
   try {
     const inventory = player.getComponent("minecraft:inventory");
     const container = inventory?.container;
-    if (!container) return null;
+    if (!container || !Number.isFinite(container.size) || container.size <= 0) return null;
     for (let slot = 0; slot < container.size; slot++) {
       const item = container.getItem(slot);
       if (item?.typeId === TOTEM_ID) {

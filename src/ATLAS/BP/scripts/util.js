@@ -123,6 +123,19 @@ export function formatKd(kills, deaths) {
   return (kills / deaths).toFixed(2);
 }
 
+/** Player session duration. Returns "--" when no real value is available. */
+export function formatSessionDuration(seconds) {
+  if (!Number.isFinite(seconds) || seconds < 0) return "--";
+  const total = Math.floor(seconds);
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const remainder = total % 60;
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
+  }
+  return `${minutes}:${String(remainder).padStart(2, "0")}`;
+}
+
 /**
  * Waypoint names are rendered in forms and chat. Strip section-sign colour
  * codes, line breaks and other control characters, then cap the length.

@@ -134,8 +134,8 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.equal([...player.inventory.items.values()][0].typeId, MENU_ITEM_ID);
     assert.ok(player.titles.some((entry) => entry.text.includes("ATLAS CLIENT")));
     assert.ok(player.messages.some((message) => message.includes("/atlas:menu")));
-    assert.ok(player.messages.some((message) => /Scripts v1\.2\.0 are running/.test(message)));
-    assert.equal(player.dynamic.get("atlas:boot_version"), "1.2.0");
+    assert.ok(player.messages.some((message) => /Scripts v1\.3\.0 are running/.test(message)));
+    assert.equal(player.dynamic.get("atlas:boot_version"), "1.3.0");
     assert.ok((player.actionBars.at(-1) ?? "").includes("10 64 -4"));
     assert.ok((player.actionBars.at(-1) ?? "").includes("20/20"));
 
@@ -154,6 +154,19 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.equal(afterHud.hud.coords, false);
     assert.ok(!(player.actionBars.at(-1) ?? "").includes("10 64 -4"));
     assert.ok((player.actionBars.at(-1) ?? "").includes("20/20"));
+
+    // The session timer is opt-in and uses real elapsed ticks.
+    queue(
+      click(/HUD/),
+      click(/Session timer/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    assert.equal(JSON.parse(player.dynamic.get("atlas:settings")).hud.session, true);
+    assert.match(player.actionBars.at(-1) ?? "", /Session §f\d+:\d{2}/);
 
     // Open through the custom command as a second, independent entry point.
     queue(click(/Close/));
@@ -213,14 +226,35 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.match(liveBar, /Night Vision§r §f∞/);
     assert.match(liveBar, /Totem §f2/);
     assert.ok(player.messages.some((message) => /Low durability/.test(message)));
+
+    // Inventory changes rebuild the HUD immediately so the totem count cannot
+    // lag behind the configured refresh interval.
+    player.inventory.setItem(1, new ItemStack("minecraft:totem_of_undying", 1));
+    emit("playerInventoryItemChange", { player });
+    await settle();
+    assert.match(player.actionBars.at(-1) ?? "", /Totem §f3/);
     assert.ok(player.sounds.some((sound) => sound.soundId === "note.bass"));
+
+    // A burst of inventory events is coalesced: two changes in the same tick
+    // produce one rebuild, not one per event.
+    advanceTicks(5);
+    await settle();
+    const barsBeforeBurst = player.actionBars.length;
+    player.inventory.setItem(2, new ItemStack("minecraft:totem_of_undying", 1));
+    emit("playerInventoryItemChange", { player });
+    emit("playerInventoryItemChange", { player });
+    await settle();
+    assert.equal(player.actionBars.length, barsBeforeBurst + 1);
+    assert.match(player.actionBars.at(-1) ?? "", /Totem §f4/);
     const warningCount = player.messages.filter((message) => /Low durability/.test(message)).length;
     assert.equal(warningCount, 1);
 
     // A real attack and interaction are counted as observed clicks.
     emit("entityHitEntity", { damagingEntity: player, hitEntity: {} });
     emit("playerInteractWithBlock", { player, isFirstEvent: true });
-    advanceTicks(5);
+    // Allow for the configured 5-tick HUD interval plus the tick that just
+    // recorded the actions, so the assertions read a rebuilt line.
+    advanceTicks(10);
     await settle();
     liveBar = player.actionBars.at(-1) ?? "";
     const observedCps = Number((liveBar.match(/CPS §f(\d+)/) ?? [])[1]);
@@ -228,6 +262,26 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.match(liveBar, /§lLMB/);
     assert.match(liveBar, /§lRMB/);
     assert.equal(player.messages.filter((message) => /Low durability/.test(message)).length, 1);
+
+    // An unavailable optional API removes only its own HUD element. It must
+    // not throw away the rest of the line or invent a neutral value.
+    const originalView = player.getViewDirection;
+    const originalGameMode = player.getGameMode;
+    const originalEffects = player.effects;
+    player.getViewDirection = () => { throw new Error("unsupported view API"); };
+    player.getGameMode = () => { throw new Error("unsupported game mode API"); };
+    player.effects = [];
+    advanceTicks(10);
+    await settle();
+    const degradedBar = player.actionBars.at(-1) ?? "";
+    assert.match(degradedBar, /H §f343/);
+    assert.doesNotMatch(degradedBar, /null|undefined|NaN/);
+    assert.doesNotMatch(degradedBar, /§b[NSWE]/);
+    player.getViewDirection = originalView;
+    player.getGameMode = originalGameMode;
+    player.effects = originalEffects;
+    advanceTicks(10);
+    await settle();
 
     // HUD editor persists per-piece toggles immediately.
     queue(
@@ -420,6 +474,7 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.match(diagForm.body, /1\.26\.60/);
     assert.match(diagForm.body, /2\.11\.0/);
     assert.match(diagForm.body, /2\.3\.0/);
+    assert.match(diagForm.body, /Session duration: \d+:\d{2}/);
 
     // Export produces a code; send it to chat.
     queue(
@@ -524,7 +579,7 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.match(returning.actionBars.at(-1) ?? "", /Health/);
     assert.match(returning.actionBars.at(-1) ?? "", /20\/20/);
     assert.equal(JSON.parse(state.worldProps.get("atlas:waypoints")).length, waypointCount);
-    assert.ok(!returning.messages.some((message) => /Scripts v1\.2\.0 are running/.test(message)));
+    assert.ok(!returning.messages.some((message) => /Scripts v1\.3\.0 are running/.test(message)));
 
     originalWarn(`Integration harness complete: ${state.forms.length} forms exercised.`);
   } finally {
