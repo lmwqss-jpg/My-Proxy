@@ -1,7 +1,7 @@
 /** HUD element toggles and HUD-specific options. */
 
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui";
-import { registerScreen } from "./router.js";
+import { registerScreen, openScreen } from "./router.js";
 import {
   emptyLine,
   formTitle,
@@ -13,6 +13,7 @@ import { getSettings, saveSettings } from "../store.js";
 import { updateHud, getHudPreview } from "../hud.js";
 import { t } from "../i18n.js";
 import { getPath, setPath } from "../util.js";
+import { TOGGLE_PATHS } from "../config.js";
 
 const TOGGLES = [
   ["hud.coords", "hud.coords"],
@@ -24,15 +25,7 @@ const TOGGLES = [
   ["hud.waypoint", "hud.waypoint"],
 ];
 
-const ALL_HUD_PATHS = [
-  "hud.coords",
-  "hud.health",
-  "hud.name",
-  "hud.worldInfo",
-  "hud.dimension",
-  "hud.compass",
-  "hud.waypoint",
-];
+const ALL_HUD_PATHS = TOGGLE_PATHS.filter((path) => path.startsWith("hud."));
 
 function persist(player, settings) {
   if (!saveSettings(player, settings)) {
@@ -75,6 +68,7 @@ async function hudScreen(player) {
     const body = [
       `§7${t(language, "hud.body")}`,
       `§8${t(language, "hud.menuAccess")}`,
+      `§8${t(language, "hud.inputNote")}`,
       emptyLine(),
       `§8${t(language, "hud.livePreview", { preview })}`,
     ].join("\n");
@@ -87,6 +81,7 @@ async function hudScreen(player) {
       );
     }
     form
+      .button(`§b${t(language, "hud.editor")}`)
       .button(`§b${t(language, "hud.settings")}`)
       .button(`§a${t(language, "hud.enableAll")}`)
       .button(`§c${t(language, "hud.disableAll")}`)
@@ -104,12 +99,14 @@ async function hudScreen(player) {
     }
     const action = selection - TOGGLES.length;
     if (action === 0) {
+      await openScreen("hud.editor", player);
+    } else if (action === 1) {
       await hudOptions(player, getSettings(player));
-    } else if (action === 1 || action === 2) {
+    } else if (action === 2 || action === 3) {
       const next = getSettings(player);
-      for (const path of ALL_HUD_PATHS) setPath(next, path, action === 1);
+      for (const path of ALL_HUD_PATHS) setPath(next, path, action === 2);
       persist(player, next);
-      send(player, t(language, action === 1 ? "hud.allOn" : "hud.allOff"));
+      send(player, t(language, action === 2 ? "hud.allOn" : "hud.allOff"));
     } else {
       return;
     }

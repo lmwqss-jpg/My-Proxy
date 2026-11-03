@@ -5,7 +5,7 @@
  * settings and data model can be tested with plain Node.js.
  */
 
-export const ADDON_VERSION = "1.0.0";
+export const ADDON_VERSION = "1.1.0";
 
 export const MENU_ITEM_ID = "atlas:client_token";
 
@@ -38,6 +38,26 @@ export const DEATH_WAYPOINT_ID = "atlas_death";
 
 export const THEME_IDS = Object.freeze(["atlas", "emerald", "violet", "ember"]);
 export const LANGUAGE_IDS = Object.freeze(["en", "ar"]);
+export const HUD_COLOR_IDS = Object.freeze([
+  "theme",
+  "white",
+  "gray",
+  "green",
+  "yellow",
+  "red",
+  "blue",
+]);
+
+/**
+ * Armor slots shown in the text HUD. Minecraft's Script API does not expose a
+ * way to draw item icons in the action bar, so each piece gets a short label.
+ */
+export const ARMOR_PIECES = Object.freeze([
+  Object.freeze({ key: "helmet", label: "H", toggle: "hud.armorHelmet", nameKey: "hud.piece.helmet" }),
+  Object.freeze({ key: "chest", label: "C", toggle: "hud.armorChest", nameKey: "hud.piece.chest" }),
+  Object.freeze({ key: "legs", label: "L", toggle: "hud.armorLegs", nameKey: "hud.piece.legs" }),
+  Object.freeze({ key: "boots", label: "B", toggle: "hud.armorBoots", nameKey: "hud.piece.boots" }),
+]);
 
 /**
  * Toggle paths are shared by the settings screen and the compact export code.
@@ -64,10 +84,25 @@ export const TOGGLE_PATHS = Object.freeze([
   "pvp.alertTitle",
   "pvp.deathWaypoint",
   "waypoints.locatorAll",
+  // Appended after the original 20 toggles so legacy ATLAS1 codes keep
+  // pointing at the same bits.
+  "hud.wasd",
+  "hud.cps",
+  "hud.clickIndicators",
+  "hud.armor",
+  "hud.armorHelmet",
+  "hud.armorChest",
+  "hud.armorLegs",
+  "hud.armorBoots",
+  "hud.potions",
+  "hud.totems",
+  "hud.armorDetail",
+  "hud.durabilityAlert",
+  "hud.durabilitySound",
 ]);
 
 export const DEFAULT_SETTINGS = deepFreeze({
-  version: 1,
+  version: 2,
   theme: "atlas",
   language: "en",
   hud: {
@@ -80,7 +115,24 @@ export const DEFAULT_SETTINGS = deepFreeze({
     waypoint: true,
     precise: false,
     compact: true,
-    interval: 10,
+    interval: 5,
+    // Live panels. The action bar is the only persistent HUD surface that
+    // official add-ons can draw into.
+    wasd: true,
+    cps: true,
+    clickIndicators: true,
+    armor: true,
+    armorHelmet: true,
+    armorChest: true,
+    armorLegs: true,
+    armorBoots: true,
+    potions: true,
+    totems: true,
+    armorDetail: false,
+    durabilityAlert: true,
+    durabilityThreshold: 20,
+    durabilitySound: true,
+    color: "theme",
   },
   visual: {
     playerInfo: false,

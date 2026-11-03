@@ -3,7 +3,7 @@
  * colours, so each theme provides both form colours and an RGB waypoint tint.
  */
 
-import { THEME_IDS } from "./config.js";
+import { HUD_COLOR_IDS, THEME_IDS } from "./config.js";
 
 export const THEMES = Object.freeze({
   atlas: Object.freeze({
@@ -36,8 +36,28 @@ export const THEMES = Object.freeze({
   }),
 });
 
+export const HUD_COLORS = Object.freeze({
+  theme: null,
+  white: "§f",
+  gray: "§7",
+  green: "§a",
+  yellow: "§e",
+  red: "§c",
+  blue: "§b",
+});
+
 export function getTheme(themeId) {
   return THEMES[themeId] ?? THEMES.atlas;
+}
+
+/** Resolves the HUD editor colour. The special "theme" id uses the theme's bright colour. */
+export function hudColorCode(themeId, colorId) {
+  if (colorId === "theme") return getTheme(themeId).bright;
+  return HUD_COLORS[colorId] ?? getTheme(themeId).bright;
+}
+
+export function isHudColor(value) {
+  return typeof value === "string" && HUD_COLOR_IDS.includes(value);
 }
 
 export function themeNameKey(themeId) {

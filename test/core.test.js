@@ -5,7 +5,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  ARMOR_PIECES,
   DEFAULT_SETTINGS,
+  HUD_COLOR_IDS,
   LANGUAGE_IDS,
   LIMITS,
   THEME_IDS,
@@ -21,9 +23,11 @@ import {
   formatCoord,
   formatKd,
   gameClock,
+  getPath,
   relativeDirectionKey,
   sanitizeName,
   setPath,
+  toBase36,
 } from "../src/ATLAS/BP/scripts/util.js";
 import {
   normalizeSettings,
@@ -48,6 +52,8 @@ import {
   buildHudPreview,
   buildHudSegments,
   dimensionLabel,
+  effectLabel,
+  formatEffectDuration,
   trackedWaypointSnapshot,
 } from "../src/ATLAS/BP/scripts/hudFormat.js";
 
@@ -77,6 +83,38 @@ const SNAPSHOT = {
     distance: 120.4,
     bearing: 90,
   },
+  input: {
+    wasd: { forward: true, back: false, left: false, right: true },
+    cps: 3,
+    left: true,
+    right: false,
+  },
+  armor: [
+    {
+      ...ARMOR_PIECES[0],
+      empty: false,
+      typeId: "minecraft:diamond_helmet",
+      durability: { remaining: 300, max: 363, percent: (300 / 363) * 100 },
+    },
+    {
+      ...ARMOR_PIECES[1],
+      empty: false,
+      typeId: "minecraft:diamond_chestplate",
+      durability: { remaining: 528, max: 528, percent: 100 },
+    },
+    { ...ARMOR_PIECES[2], empty: true, typeId: null, durability: null },
+    {
+      ...ARMOR_PIECES[3],
+      empty: false,
+      typeId: "minecraft:iron_boots",
+      durability: { remaining: 20, max: 195, percent: (20 / 195) * 100 },
+    },
+  ],
+  effects: [
+    { typeId: "minecraft:speed", duration: 1234, amplifier: 1 },
+    { typeId: "minecraft:night_vision", duration: -1, amplifier: 0 },
+  ],
+  totems: 2,
 };
 
 test("i18n dictionaries have identical keys and placeholders", () => {
@@ -186,9 +224,16 @@ test("settings normalisation clamps and discards unknown values", () => {
   assert.equal(normalized.hud.interval, 40);
   assert.equal(normalized.pvp.alertThreshold, 19);
   assert.equal(normalized.waypoints.trackedId, null);
+  assert.equal(normalized.hud.color, "theme");
+  assert.equal(normalized.hud.durabilityThreshold, 20);
   assert.equal("extra" in normalized, false);
   assert.equal(normalizeSettings({ hud: { interval: 7 } }).hud.interval, 5);
   assert.equal(normalizeSettings({ pvp: { alertThreshold: -2 } }).pvp.alertThreshold, 2);
+  assert.equal(normalizeSettings({ hud: { color: "red" } }).hud.color, "red");
+  assert.equal(normalizeSettings({ hud: { color: "nope" } }).hud.color, "theme");
+  assert.equal(normalizeSettings({ hud: { durabilityThreshold: 97 } }).hud.durabilityThreshold, 90);
+  assert.equal(normalizeSettings({ hud: { durabilityThreshold: 7 } }).hud.durabilityThreshold, 5);
+  assert.equal(normalizeSettings({ hud: { durabilityThreshold: 22 } }).hud.durabilityThreshold, 20);
   assert.equal(toggleSetting(normalizeSettings({}), "hud.coords", false).hud.coords, false);
   assert.equal(toggleSetting(normalizeSettings({}), "unknown.path", false).hud.coords, true);
 });
@@ -198,16 +243,20 @@ test("settings codes round-trip and reject damage", () => {
     for (const language of LANGUAGE_IDS) {
       const settings = normalizeSettings({ theme, language });
       settings.hud.interval = 40;
+      settings.hud.durabilityThreshold = 85;
+      settings.hud.color = "red";
       settings.pvp.alertThreshold = 2;
       TOGGLE_PATHS.forEach((path, index) => setPath(settings, path, index % 2 === 0));
       const code = settingsToCode(settings);
-      assert.match(code, /^ATLAS1-[0-9a-z]{10}$/);
+      assert.match(code, /^ATLAS2-[0-9a-z]{15}$/);
       assert.ok(code.length <= LIMITS.settingsCodeLength);
       const restored = settingsFromCode(code);
       assert.ok(restored);
       assert.equal(restored.theme, theme);
       assert.equal(restored.language, language);
       assert.equal(restored.hud.interval, 40);
+      assert.equal(restored.hud.durabilityThreshold, 85);
+      assert.equal(restored.hud.color, "red");
       assert.equal(restored.pvp.alertThreshold, 2);
       for (const path of TOGGLE_PATHS) {
         assert.equal(
@@ -220,12 +269,38 @@ test("settings codes round-trip and reject damage", () => {
     }
   }
   const base = settingsToCode(normalizeSettings({}));
-  assert.equal(base.length, 17);
+  assert.equal(base.length, 22);
   assert.equal(settingsFromCode("nope"), null);
   assert.equal(settingsFromCode(`${base.slice(0, -1)}${base.endsWith("0") ? "1" : "0"}`), null);
   assert.equal(settingsFromCode(`${base}!`), null);
   const tracked = normalizeSettings({ waypoints: { trackedId: "w_abc" } });
   assert.equal(settingsFromCode(settingsToCode(tracked)).waypoints.trackedId, null);
+
+  // ATLAS1 codes from the previous release still import the original 20
+  // toggles; new panels keep their defaults.
+  const legacySettings = normalizeSettings({ theme: "violet", language: "ar" });
+  legacySettings.hud.coords = false;
+  legacySettings.hud.durabilityAlert = false;
+  const themeIndex = THEME_IDS.indexOf(legacySettings.theme);
+  const languageIndex = LANGUAGE_IDS.indexOf(legacySettings.language);
+  let legacyMask = 0;
+  TOGGLE_PATHS.slice(0, 20).forEach((path, index) => {
+    if (getPath(legacySettings, path) === true) legacyMask += 2 ** index;
+  });
+  const legacyBody = `${themeIndex}${languageIndex}${toBase36(legacySettings.hud.interval - 5, 1)}${toBase36(legacySettings.pvp.alertThreshold - 2, 1)}${toBase36(legacyMask, 4)}`;
+  let legacyChecksum = 0;
+  for (const character of legacyBody) {
+    legacyChecksum = (legacyChecksum + character.charCodeAt(0)) % 1296;
+  }
+  const legacyCode = `ATLAS1-${legacyBody}${toBase36(legacyChecksum, 2)}`;
+  const legacyRestored = settingsFromCode(legacyCode);
+  assert.ok(legacyRestored);
+  assert.equal(legacyRestored.theme, "violet");
+  assert.equal(legacyRestored.language, "ar");
+  assert.equal(legacyRestored.hud.coords, false);
+  // This toggle was added after ATLAS1 and is not encoded by the old code.
+  assert.equal(legacyRestored.hud.durabilityAlert, true);
+  assert.equal(settingsFromCode(`${legacyCode.slice(0, -1)}x`), null);
 });
 
 test("waypoint model validates, caps and updates the death point", () => {
@@ -357,6 +432,20 @@ test("HUD text obeys toggles, theme and language", () => {
   assert.match(text, /120m/);
   assert.match(text, /§bE/);
   assert.doesNotMatch(text, /Alex/);
+  // Live panels read real values from the snapshot.
+  assert.match(text, /§lW/);
+  assert.match(text, /§lD/);
+  assert.match(text, /CPS §f3/);
+  assert.match(text, /LMB/);
+  assert.match(text, /H §f300/);
+  assert.match(text, /C §f528/);
+  assert.match(text, /L §8--/);
+  assert.match(text, /B §f20/);
+  assert.match(text, /Speed II/);
+  assert.match(text, /1:02/);
+  assert.match(text, /Night Vision/);
+  assert.match(text, /∞/);
+  assert.match(text, /Totem §f2/);
 
   const arabic = normalizeSettings({ language: "ar" });
   arabic.hud.compact = false;
@@ -388,24 +477,68 @@ test("HUD text obeys toggles, theme and language", () => {
   assert.match(visualText, /3.00/);
   assert.match(visualText, /PvP/);
 
-  for (const path of [
-    "hud.coords",
-    "hud.health",
-    "hud.name",
-    "hud.worldInfo",
-    "hud.dimension",
-    "hud.compass",
-    "hud.waypoint",
-    "visual.playerInfo",
-    "visual.worldInfo",
-    "visual.healthBar",
-    "visual.stats",
-    "pvp.showHealth",
-  ]) {
+  for (const path of TOGGLE_PATHS) {
     setPath(settings, path, false);
   }
   assert.deepEqual(buildHudSegments(SNAPSHOT, settings, "atlas"), []);
   assert.equal(buildHudPreview(SNAPSHOT, settings, "atlas"), "All HUD elements are off.");
+
+  // Each live panel can be hidden independently without touching the others.
+  const panels = normalizeSettings({});
+  panels.hud.wasd = false;
+  panels.hud.cps = false;
+  panels.hud.clickIndicators = false;
+  const withoutInput = buildHudSegments(SNAPSHOT, panels, "atlas").join("");
+  assert.doesNotMatch(withoutInput, /CPS/);
+  assert.doesNotMatch(withoutInput, /LMB/);
+  panels.hud.armor = false;
+  panels.hud.potions = false;
+  panels.hud.totems = false;
+  const withoutLive = buildHudSegments(SNAPSHOT, panels, "atlas").join("");
+  assert.doesNotMatch(withoutLive, /Speed/);
+  assert.doesNotMatch(withoutLive, /Totem/);
+  assert.doesNotMatch(withoutLive, /H §f300/);
+});
+
+test("live HUD values are real and degrade honestly", () => {
+  const settings = normalizeSettings({});
+  assert.equal(formatEffectDuration(1234), "1:02");
+  assert.equal(formatEffectDuration(-1), "∞");
+  assert.equal(formatEffectDuration(0), "0:00");
+  assert.equal(effectLabel("minecraft:speed", "en"), "Speed");
+  assert.equal(effectLabel("minecraft:speed", "ar"), "السرعة");
+  assert.equal(effectLabel("minecraft:custom_effect", "en"), "Custom Effect");
+
+  const unknownInput = {
+    ...SNAPSHOT,
+    input: { wasd: null, cps: 0, left: false, right: false },
+  };
+  const text = buildHudSegments(unknownInput, settings, "atlas").join("");
+  assert.match(text, /WASD --/);
+  assert.match(text, /CPS §f0/);
+
+  const unavailableStatus = {
+    ...SNAPSHOT,
+    armor: null,
+    effects: null,
+    totems: null,
+  };
+  const hidden = buildHudSegments(unavailableStatus, settings, "atlas").join("");
+  assert.doesNotMatch(hidden, /H §f300/);
+  assert.doesNotMatch(hidden, /Speed/);
+  assert.doesNotMatch(hidden, /Totem/);
+  assert.equal(HUD_COLOR_IDS.length, 7);
+
+  const detailed = normalizeSettings({});
+  detailed.hud.armorDetail = true;
+  assert.match(
+    buildHudSegments(SNAPSHOT, detailed, "atlas").join(""),
+    /H §f300§8\/§7363 §a83%/,
+  );
+
+  const noHelmet = normalizeSettings({});
+  noHelmet.hud.armorHelmet = false;
+  assert.doesNotMatch(buildHudSegments(SNAPSHOT, noHelmet, "atlas").join(""), /H §f300/);
 });
 
 test("tracked waypoint handles dimensions and labels", () => {

@@ -13,7 +13,7 @@ import os from "node:os";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { build } from "esbuild";
 
-import { ItemStack, Player } from "./mocks/server.js";
+import { EquipmentSlot, ItemStack, Player } from "./mocks/server.js";
 import {
   advanceTicks,
   emit,
@@ -156,6 +156,109 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     await settle();
     assertClean();
     assert.equal(state.forms.length, formsBeforeBusy + 2);
+
+    // Real armor, effects, totems, input and durability alert.
+    player.equipment.set(
+      EquipmentSlot.Head,
+      new ItemStack("minecraft:diamond_helmet", 1, { durability: 363, damage: 20 }),
+    );
+    player.equipment.set(
+      EquipmentSlot.Chest,
+      new ItemStack("minecraft:diamond_chestplate", 1, { durability: 528 }),
+    );
+    player.equipment.set(
+      EquipmentSlot.Feet,
+      new ItemStack("minecraft:iron_boots", 1, { durability: 195, damage: 190 }),
+    );
+    player.equipment.set(
+      EquipmentSlot.Mainhand,
+      new ItemStack("minecraft:diamond_sword", 1, { durability: 1561, damage: 1500 }),
+    );
+    player.effects = [
+      { typeId: "minecraft:speed", duration: 1234, amplifier: 1, isValid: true },
+      { typeId: "minecraft:night_vision", duration: -1, amplifier: 0, isValid: true },
+    ];
+    player.inventory.setItem(0, new ItemStack("minecraft:totem_of_undying", 2));
+    player.input = { x: -1, y: 1 };
+    advanceTicks(10);
+    await settle();
+    let liveBar = player.actionBars.at(-1) ?? "";
+    assert.match(liveBar, /CPS §f\d+/);
+    assert.match(liveBar, /§lW/);
+    assert.match(liveBar, /§lD/);
+    assert.match(liveBar, /H §f343 §a94%/);
+    assert.match(liveBar, /C §f528 §a100%/);
+    assert.match(liveBar, /B §f5 §c3%/);
+    assert.match(liveBar, /Speed II§r §f1:02/);
+    assert.match(liveBar, /Night Vision§r §f∞/);
+    assert.match(liveBar, /Totem §f2/);
+    assert.ok(player.messages.some((message) => /Low durability/.test(message)));
+    assert.ok(player.sounds.some((sound) => sound.soundId === "note.bass"));
+    const warningCount = player.messages.filter((message) => /Low durability/.test(message)).length;
+    assert.equal(warningCount, 1);
+
+    // A real attack and interaction are counted as observed clicks.
+    emit("entityHitEntity", { damagingEntity: player, hitEntity: {} });
+    emit("playerInteractWithBlock", { player, isFirstEvent: true });
+    advanceTicks(5);
+    await settle();
+    liveBar = player.actionBars.at(-1) ?? "";
+    const observedCps = Number((liveBar.match(/CPS §f(\d+)/) ?? [])[1]);
+    assert.ok(observedCps >= 2, `observed CPS was ${observedCps}`);
+    assert.match(liveBar, /§lLMB/);
+    assert.match(liveBar, /§lRMB/);
+    assert.equal(player.messages.filter((message) => /Low durability/.test(message)).length, 1);
+
+    // HUD editor persists per-piece toggles immediately.
+    queue(
+      click(/^\s*(?:§.)*HUD/),
+      click(/HUD editor/),
+      click(/Helmet/),
+      click(/Back/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    assert.equal(JSON.parse(player.dynamic.get("atlas:settings")).hud.armorHelmet, false);
+    assert.doesNotMatch(player.actionBars.at(-1) ?? "", /H §f343/);
+
+    // HUD colour is a real text colour change, saved immediately.
+    queue(
+      click(/HUD/),
+      click(/HUD editor/),
+      click(/HUD accent color/),
+      modal(5),
+      click(/Back/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    assert.equal(JSON.parse(player.dynamic.get("atlas:settings")).hud.color, "red");
+    assert.match(player.actionBars.at(-1) ?? "", /§c§lD/);
+
+    // Resetting the HUD layout restores defaults without touching theme/language.
+    queue(
+      click(/HUD/),
+      click(/HUD editor/),
+      click(/Reset HUD layout/),
+      click(/Reset HUD layout/),
+      click(/Back/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    const resetHud = JSON.parse(player.dynamic.get("atlas:settings"));
+    assert.equal(resetHud.hud.armorHelmet, true);
+    assert.equal(resetHud.hud.color, "theme");
+    assert.equal(resetHud.hud.durabilityThreshold, 20);
+    assert.equal(resetHud.theme, "atlas");
+    assert.match(player.actionBars.at(-1) ?? "", /H §f343/);
 
     // Theme picker: choose Violet (index 2), then return.
     queue(click(/Settings/), click(/Theme/), modal(2), click(/Back/), click(/Close/));
@@ -311,8 +414,8 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assertClean();
     const exportForm = state.forms.find((form) => form.title?.includes("Export settings"));
     assert.ok(exportForm);
-    assert.match(exportForm.body, /ATLAS1-/);
-    assert.ok(player.messages.some((message) => message.includes("ATLAS1-")));
+    assert.match(exportForm.body, /ATLAS2-/);
+    assert.ok(player.messages.some((message) => message.includes("ATLAS2-")));
 
     // Import a valid Arabic/Emerald settings code.
     const importCode = settingsToCode(normalizeSettings({ theme: "emerald", language: "ar" }));

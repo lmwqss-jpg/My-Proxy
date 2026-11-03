@@ -1,9 +1,10 @@
 # ATLAS CLIENT — Minecraft Bedrock
 
-**الإصدار / Version:** 1.0.0
+**الإصدار / Version:** 1.1.0
 **ملف التثبيت / Install file:** `ATLAS.mcaddon`
 **الهدف / Target:** Minecraft Bedrock **26.60 (1.26.60)** أو أحدث
 **المنصة الأساسية / Primary platform:** iPhone — Minecraft Bedrock 26.60+
+**PS5:** الكود يستخدم واجهات مستقلة عن الجهاز، لكن **لم يُختبر على PS5**. لا تدّعي هذه النسخة توافقاً مؤكداً مع PS5.
 **التجارب / Experiments:** لا يحتاج أي تفعيل
 
 ---
@@ -17,6 +18,11 @@
 | أيقونة صغيرة قابلة للنقر أعلى يمين الشاشة | لا توجد واجهة HUD مخصصة قابلة للنقر للإضافات، ولا يمكن تعديل Ore UI | **أداة ATLAS CLIENT** تُعطى تلقائياً في الحقيبة، + الأمر `/atlas:menu` |
 | فتح القائمة بزر ESC | لا تستطيع الإضافات قراءة لوحة المفاتيح أو التقاط ESC | نفس الأداة + الأمر `/atlas:menu` (يعمل بدون تفعيل الغش) |
 | لوحة HUD مخصصة متعددة الأسطر | غير متاحة رسمياً للإضافات | سطر HUD في **شريط الإجراءات** فوق شريط الأدوات، مع تشغيل/إيقاف كل عنصر |
+| وضع WASD أو الدروع أعلى يمين الشاشة | لا تسمح الإضافات بتحديد موضع النص؛ شريط الإجراءات هو السطح الوحيد | نفس السطر، لكن العناصر الجديدة تأتي أولاً: WASD ثم CPS ثم المؤشرات ثم الدروع |
+| تغيير حجم/شفافية/موضع كل عنصر | غير متاح في Script API | ألوان نصية، وضع مختصر/مفصّل، وتشغيل/إيقاف مستقل |
+| أيقونات قطع الدرع داخل HUD | النص فقط متاح؛ لا يمكن رسم أيقونات عناصر في شريط الإجراءات | حروف **H / C / L / B** مع متانة حقيقية ونسبة مئوية |
+| قراءة نقرات الفأرة أو أزرار يد PS5 | لا تكشف الإضافة ضغطات الفأرة أو أزرار اليد | WASD من **متجه الحركة الرسمي**، وCPS/LMB/RMB من أحداث اللعبة الفعلية |
+| عداد CPS لكل نقرة | لا توجد واجهة لنقرات الهواء | يُحسب فقط ما تسجله اللعبة: هجوم، تفاعل، أو استخدام عنصر |
 | تغيير خلفية نوافذ اللعبة أو Ore UI | غير متاح رسمياً | ثيمات للنصوص والألوان وشريط HUD وعلامات المواقع فقط |
 | نسخ رمز الإعدادات آلياً | لا توفر الإضافات وصولاً إلى الحافظة | يظهر الرمز في النموذج ويمكن إرساله إلى الدردشة أو كتابته يدوياً |
 
@@ -87,10 +93,20 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 - البُعد الحالي.
 - البوصلة والاتجاه.
 - متتبع الموقع (الموقع المتتبع والمسافة والاتجاه).
-- واجهة مختصرة أو مفصلة، ومعدل تحديث من 5 إلى 40 تكة.
+- **واجهة WASD:** تُضاء W/A/S/D من **متجه الحركة الرسمي** `Player.inputInfo.getMovementVector()`، وليس من ضغطات مفاتيح وهمية. على PS5 تمثل العصا اليسرى، وعلى الكيبورد تمثل WASD.
+- **عداد CPS:** يعرض عدد أحداث النقر التي تسجلها اللعبة خلال آخر ثانية. لا يستطيع عد النقر في الهواء لأن API لا يوفره.
+- **مؤشرا LMB / RMB:** يضيئان عند هجوم فعلي على كائن/كتلة أو تفاعل/استخدام عنصر. ليسا أزرار فأرة فيزيائية.
+- **واجهة الدروع:** الخوذة والصدرية والبنطال والحذاء، مع **المتانة المتبقية الحقيقية** ونسبتها المئوية، وتحديث تلقائي، وتمييز أحمر قرب التلف، وتشغيل/إيقاف كل قطعة. تُعرض كحروف H/C/L/B لأن رسم أيقونات العناصر غير متاح.
+- **تأثيرات الجرعات:** اسم كل تأثير ومستواه والوقت المتبقي، وتختفي التأثيرات المنتهية تلقائياً. الوقت اللانهائي يظهر `∞`.
+- **عداد التوتيم:** مجموع توتيم الخلود في الحقيبة + اليد الثانية، ويُحدَّث عند تغير الحقيبة.
+- **تنبيه المتانة:** يراقب الدروع الأربعة والأداة المحمولة (اليد الرئيسية)، ويظهر تحذيراً (وصوتاً اختيارياً) عند النزول تحت النسبة المحددة، مرة واحدة لكل هبوط. أدوات الحقيبة غير المحمولة لا تُفحص.
+- **محرر HUD:** تشغيل/إيقاف كل واجهة وقطعة درع، تغيير لون تمييز سطر HUD كله، حد المتانة، الوضع المختصر/المفصّل، وإعادة ضبط تخطيط HUD. كل تغيير يُحفظ فوراً.
+- واجهة مختصرة أو مفصلة، ومعدل تحديث من 5 إلى 40 تكة (الافتراضي 5 لتحديث لوحات الإدخال بسرعة).
 - تشغيل/إيقاف كل عنصر بشكل مستقل، وأزرار «تشغيل الكل» و«إيقاف الكل».
 
-> HUD يُرسم في **شريط الإجراءات** فوق شريط الأدوات. افتراضياً الواجهة **مختصرة** حتى لا يطول السطر على iPhone؛ يمكن جعلها مفصلة من **HUD → HUD options**.
+> HUD يُرسم في **شريط الإجراءات** فوق شريط الأدوات. لا يمكن للإضافات الرسمية وضعه أعلى يمين الشاشة أو تغيير حجم الخط/الشفافية أو تحريك الدروع عمودياً؛ لذلك لا توجد أزرار وهمية لهذه الخيارات. لتقليل طول السطر، أغلق اللوحات غير المستخدمة من **HUD → HUD editor**.
+
+> **حدود CPS:** عداد CPS حقيقي لكنه **جزئي**: يحسب النقرات التي تولّد أحداثاً في اللعبة (هجوم/تفاعل/استخدام). النقر في الهواء أو النقرات التي لا تسجلها اللعبة لا تظهر. لا يوجد أي توليد نقرات أو أتمتة قتال.
 
 ### Visual
 
@@ -131,7 +147,7 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 - اللغتان: **العربية / English**.
 - إدارة عناصر HUD.
 - حفظ فوري لكل تغيير، مع زر «حفظ الآن».
-- تصدير/استيراد رمز إعدادات قصير، مثل `ATLAS1-...`، يحتوي الثيم واللغة والتبديلات ومعدل التحديث وحد التنبيه. لا يحتوي المواقع.
+- تصدير/استيراد رمز إعدادات قصير، مثل `ATLAS2-...`، يحتوي الثيم واللغة والتبديلات ومعدل التحديث وحدّي التنبيه ولون HUD. الرموز القديمة `ATLAS1-...` ما زالت مقبولة. لا يحتوي المواقع.
 - إعادة ضبط كل الإعدادات.
 - **Diagnostics:** حالة السكربت، إصدارات API، وجود الأداة، دعم شريط التحديد، عدد المواقع واللاعبين.
 - **About:** ملخص الحدود الرسمية.
@@ -173,10 +189,17 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 | `min_engine_version` | `[1, 26, 60]` |
 | Experiments | لا شيء |
 | Script entry | `scripts/main.js` |
+| إصدار الإضافة | 1.1.0 |
 | Behavior Pack UUID | `45ec3030-7e82-4b27-b1bc-006fc4d14de5` |
 | Resource Pack UUID | `6f7b2107-421b-480f-9a07-3acdf805714d` |
 
 > 26.60 هو آخر إصدار مستقر وقت بناء هذه النسخة. التوافق مع إصدارات أحدث لم يُختبر؛ إذا تغيّر الإصدار الرئيسي للـ API مستقبلاً فقد تحتاج الحزمة إلى تحديث.
+
+### PS5 والسيرفرات العامة
+
+- **PS5:** لم يُختبر الاستيراد أو التشغيل أو الإدخال على PS5. لا توجد واجهة لقراءة أزرار يد PS5؛ WASD تعكس متجه الحركة (العصا اليسرى)، ومؤشرا LMB/RMB يعكسان أحداث اللعبة، وليسا أزراراً فيزيائية.
+- **Mega10 أو أي سيرفر عام:** الإضافة تعمل من جهة العميل عبر الحزم المفعّلة في العالم، لكن السيرفر قد يمنع الحزم المخصصة أو `/atlas:menu` أو شريط التحديد، وقد تختلف قواعد السيرفر. لا يوجد في ATLAS أي أتمتة قتال أو نقر تلقائي. لم يُختبر المشروع على Mega10.
+- **الواجهة النصية** تظهر لكل لاعب حسب إعداداته المحفوظة على اللاعب/العالم، ولا تعتمد على تعديل واجهة السيرفر.
 
 ---
 
@@ -193,7 +216,7 @@ npm run build        # ينتج ATLAS.mcaddon
 npm run validate     # يفحص الحزم والـ ZIP
 ```
 
-الاختبارات الآلية تغطي بنية الحزم والمنطق و56 مسار واجهة في محاكي APIs، لكنها **لا تغني عن التجربة داخل Minecraft**. لم يتم اختبار هذه النسخة على iPhone أو داخل Minecraft في بيئة البناء الحالية. راجع [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) للتقرير الدقيق وقائمة الاختبار اليدوي.
+الاختبارات الآلية تغطي بنية الحزم والمنطق و**76 مسار واجهة** في محاكي APIs، لكنها **لا تغني عن التجربة داخل Minecraft**. لم يتم اختبار هذه النسخة على iPhone أو PS5 أو داخل Minecraft في بيئة البناء الحالية. راجع [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) للتقرير الدقيق وقائمة الاختبار اليدوي.
 
 ### بنية المستودع
 
@@ -218,13 +241,16 @@ docs/TEST_REPORT.md           تقرير الاختبار والتوافق
 
 ### Official limits
 
-ATLAS CLIENT uses only the official Bedrock Script API. A clickable top-right overlay, ESC capture, Ore UI modification, and a multi-line custom HUD are **not available to add-ons**. The working replacements are:
+ATLAS CLIENT uses only the official Bedrock Script API. A clickable top-right overlay, ESC capture, Ore UI modification, a multi-line custom HUD, per-element positioning, font size, transparency, armor icons and a vertical armor position are **not available to add-ons**. The working replacements are:
 
 - An **ATLAS CLIENT item** given on spawn.
 - The **`/atlas:menu`** custom command, available without cheats.
-- An action-bar HUD with independently toggleable elements.
+- An action-bar HUD with independently toggleable elements. New live panels are ordered first: WASD, CPS, LMB/RMB, armor, effects and totems.
 - Native Bedrock forms for all menus and settings.
 - Optional locator-bar waypoints through the official `LocatorBar` API.
+- A HUD editor for panel toggles, per-piece armor visibility, accent colour, durability threshold and reset.
+
+**Input limits:** WASD is driven by the real movement vector (`Player.inputInfo.getMovementVector()`), not physical key events. CPS and LMB/RMB count game-reported attacks, interactions and item uses; clicks into empty air are not exposed by the API. PS5 controller buttons and mouse buttons cannot be read directly, and no fake CPS is generated.
 
 The add-on contains no X-ray, ESP, aimbot, auto-clicker, or combat automation.
 
@@ -242,15 +268,21 @@ If nothing appears: verify Minecraft 26.60+, verify the behavior pack is active 
 
 ### Features
 
-- **HUD:** coordinates, health, player name, world day/time, dimension, compass, tracked waypoint; compact/detailed modes; 5–40 tick refresh; per-element ON/OFF.
+- **HUD:** coordinates, health, player name, world day/time, dimension, compass, tracked waypoint; WASD movement panel; observed CPS and LMB/RMB indicators; real armor durability with percentages and per-piece toggles; active potion effects with remaining time; totem count; low-durability alert for equipped armor and the held item; compact/detailed modes; 5–40 tick refresh (default 5); per-element ON/OFF.
+- **HUD editor:** panel and armor-piece toggles, accent colour for the whole HUD line, durability alert threshold/sound, and HUD reset. Unsupported positioning/size/transparency controls are intentionally not shown.
 - **Visual:** player details, world details, text health bar, combat stats, official locator-bar waypoints.
 - **PvP:** combat health, low-health alert with threshold/sound/screen warning, automatic death point, persisted kills/deaths/K/D, session damage and recent combat log. No combat automation.
 - **Utilities:** add/list/rename/move/delete waypoints, distances and directions, HUD tracking, death point, restore item. Up to 30 world-shared waypoints.
-- **Settings:** four themes, English/Arabic, HUD controls, short settings export/import code, reset, diagnostics, official-limits help.
+- **Settings:** four themes, English/Arabic, HUD controls, short `ATLAS2-...` settings export/import code (legacy `ATLAS1-...` accepted), reset, diagnostics, official-limits help.
 
 ### Testing
 
-`npm run typecheck`, `npm test` (12 tests and 56 mock UI flows), `npm run build`, and `npm run validate` pass. The archive is a single `ATLAS.mcaddon`. **It has not been tested on an iPhone or inside Minecraft in this environment**; see `docs/TEST_REPORT.md` for the exact scope and the manual checklist.
+`npm run typecheck`, `npm test` (13 tests and 76 mock UI flows), `npm run build`, and `npm run validate` pass. The archive is a single `ATLAS.mcaddon`. **It has not been tested on an iPhone, PS5 or inside Minecraft in this environment**; see `docs/TEST_REPORT.md` for the exact scope and the manual checklist.
+
+### PS5 and public servers
+
+- **PS5:** import, rendering and controller input were not tested. WASD follows the movement vector (left stick on a controller); LMB/RMB are game-action indicators, not physical mouse buttons.
+- **Mega10 / public servers:** the add-on runs client-side through the activated packs, but a server may block custom packs, `/atlas:menu` or the locator bar, and server rules still apply. No combat or click automation is included. Mega10 was not tested.
 
 ### Attribution
 

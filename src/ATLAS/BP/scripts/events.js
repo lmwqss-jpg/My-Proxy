@@ -27,6 +27,7 @@ import {
 import { t } from "./i18n.js";
 import { MENU_ITEM_ID } from "./config.js";
 import { upsertDeathWaypoint } from "./waypoints.js";
+import { initInputTracking, forgetInputState } from "./input.js";
 
 function guarded(name, callback) {
   return (...args) => {
@@ -156,6 +157,7 @@ function handleScriptEvent(event) {
 }
 
 export function initEvents() {
+  initInputTracking();
   world.afterEvents.worldLoad.subscribe(
     guarded("worldLoad", () => {
       // Safe point for world storage and player queries in Script API v2.
@@ -169,12 +171,18 @@ export function initEvents() {
     guarded("playerLeave", (event) => {
       clearSettingsCache(event.playerId);
       forgetHudState(event.playerId);
+      forgetInputState(event.playerId);
       forgetLocatorState(event.playerId);
     }),
   );
   world.afterEvents.itemUse.subscribe(guarded("itemUse", handleItemUse));
   world.afterEvents.entityDie.subscribe(guarded("entityDie", handleDeath));
   world.afterEvents.entityHurt.subscribe(guarded("entityHurt", handleHurt));
+  world.afterEvents.playerInventoryItemChange.subscribe(
+    guarded("playerInventoryItemChange", (event) => {
+      if (event.player?.isValid) updateHud(event.player);
+    }),
+  );
   world.afterEvents.playerDimensionChange.subscribe(
     guarded("playerDimensionChange", (event) => {
       syncLocator(event.player);

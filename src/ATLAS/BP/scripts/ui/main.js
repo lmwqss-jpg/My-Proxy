@@ -15,6 +15,7 @@ import { getSettings } from "../store.js";
 import { t } from "../i18n.js";
 import { getTheme } from "../themes.js";
 import "./hudScreen.js";
+import "./hudEditorScreen.js";
 import "./visualScreen.js";
 import "./pvpScreen.js";
 import "./utilitiesScreen.js";

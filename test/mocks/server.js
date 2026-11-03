@@ -3,9 +3,22 @@
 import { state } from "./state.js";
 
 export class ItemStack {
-  constructor(typeId, amount = 1) {
+  constructor(typeId, amount = 1, options = {}) {
     this.typeId = typeId;
     this.amount = amount;
+    this.durability = options.durability
+      ? { maxDurability: options.durability, damage: options.damage ?? 0 }
+      : null;
+  }
+
+  getComponent(id) {
+    if (id === "minecraft:durability" && this.durability) {
+      return {
+        maxDurability: this.durability.maxDurability,
+        damage: this.durability.damage,
+      };
+    }
+    return undefined;
   }
 }
 
@@ -43,6 +56,11 @@ class MockContainer {
       }
     }
     return stack;
+  }
+
+  setItem(slot, stack) {
+    if (stack === undefined) this.items.delete(slot);
+    else this.items.set(slot, stack);
   }
 }
 
@@ -130,6 +148,12 @@ export class Player {
     this.actionBars = [];
     this.inventory = new MockContainer();
     this.locatorBar = new MockLocatorBar();
+    this.effects = [];
+    this.equipment = new Map();
+    this.input = { x: 0, y: 0 };
+    this.inputInfo = {
+      getMovementVector: () => ({ ...this.input }),
+    };
     this.onScreenDisplay = {
       setActionBar: (text) => {
         this.actionBars.push(text);
@@ -153,6 +177,11 @@ export class Player {
     if (id === "minecraft:inventory") {
       return { container: this.inventory };
     }
+    if (id === "minecraft:equippable") {
+      return {
+        getEquipment: (slot) => this.equipment.get(slot),
+      };
+    }
     return undefined;
   }
 
@@ -162,6 +191,10 @@ export class Player {
 
   getGameMode() {
     return this.gameMode;
+  }
+
+  getEffects() {
+    return this.effects;
   }
 
   getDynamicProperty(key) {
@@ -192,6 +225,12 @@ export const world = {
     entityDie: new Signal("entityDie"),
     entityHurt: new Signal("entityHurt"),
     playerDimensionChange: new Signal("playerDimensionChange"),
+    playerButtonInput: new Signal("playerButtonInput"),
+    entityHitBlock: new Signal("entityHitBlock"),
+    entityHitEntity: new Signal("entityHitEntity"),
+    playerInteractWithBlock: new Signal("playerInteractWithBlock"),
+    playerInteractWithEntity: new Signal("playerInteractWithEntity"),
+    playerInventoryItemChange: new Signal("playerInventoryItemChange"),
   },
   beforeEvents: {},
   getPlayers() {
@@ -279,6 +318,15 @@ export const WaypointTexture = {
   SmallSquare: "minecraft:small_square",
   SmallStar: "minecraft:small_star",
   Square: "minecraft:square",
+};
+
+export const EquipmentSlot = {
+  Head: "Head",
+  Chest: "Chest",
+  Legs: "Legs",
+  Feet: "Feet",
+  Mainhand: "Mainhand",
+  Offhand: "Offhand",
 };
 
 export const GameMode = {

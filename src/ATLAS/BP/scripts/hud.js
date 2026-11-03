@@ -4,6 +4,8 @@ import { system, world } from "@minecraft/server";
 import { getCombatStats, getSettings, getWaypoints } from "./store.js";
 import { findWaypoint, waypointDisplayName } from "./waypoints.js";
 import { t } from "./i18n.js";
+import { collectEffects, collectEquipment, collectTotems } from "./hudData.js";
+import { getInputSnapshot } from "./input.js";
 import {
   buildHudPreview,
   buildHudSegments,
@@ -16,6 +18,8 @@ const lastUpdate = new Map();
 const lowHealthState = new Map();
 /** @type {Set<string>} */
 const warnedPlayers = new Set();
+/** @type {Map<string, Map<string, {low: boolean, typeId: string}>>} */
+const durabilityState = new Map();
 
 function healthOf(player) {
   try {
@@ -47,6 +51,7 @@ export function collectSnapshot(player) {
         displayName,
       )
     : null;
+  const equipment = collectEquipment(player);
 
   return {
     name: player.name,
@@ -64,6 +69,10 @@ export function collectSnapshot(player) {
     kills: stats.kills,
     deaths: stats.deaths,
     trackedWaypoint: trackedSnapshot,
+    input: getInputSnapshot(player, settings.hud.interval),
+    armor: equipment ? equipment.armor : null,
+    effects: collectEffects(player),
+    totems: collectTotems(player),
   };
 }
 
@@ -142,6 +151,62 @@ function checkLowHealth(player, settings) {
   }
 }
 
+/**
+ * Sends one warning when a real armor/tool durability crosses the configured
+ * percentage. The state map keeps it from repeating every tick.
+ */
+function checkLowDurability(player, settings) {
+  if (!settings.hud.durabilityAlert) {
+    durabilityState.delete(player.id);
+    return;
+  }
+
+  const equipment = collectEquipment(player);
+  if (!equipment) return;
+
+  const threshold = settings.hud.durabilityThreshold;
+  const states = durabilityState.get(player.id) ?? new Map();
+  const warnings = [];
+  const targets = equipment.armor.concat(equipment.mainhand ?? []);
+
+  for (const target of targets) {
+    if (!target) continue;
+    const durability = target.durability;
+    if (!durability) {
+      states.delete(target.key);
+      continue;
+    }
+    const previous = states.get(target.key);
+    const low = durability.percent <= threshold;
+    const isNewItem = !previous || previous.typeId !== target.typeId;
+    if (low && (isNewItem || !previous.low)) {
+      warnings.push({
+        nameKey: target.nameKey,
+        percent: Math.max(0, Math.round(durability.percent)),
+      });
+    }
+    states.set(target.key, { low, typeId: target.typeId });
+  }
+  durabilityState.set(player.id, states);
+
+  if (warnings.length === 0) return;
+  const language = settings.language;
+  const items = warnings
+    .map((warning) => `${t(language, warning.nameKey)} ${warning.percent}%`)
+    .join(", ");
+  try {
+    player.sendMessage(`§cATLAS §8| §r§c${t(language, "hud.durabilityWarning", { items })}`);
+    if (settings.hud.durabilitySound) {
+      player.playSound("note.bass", { pitch: 1.1, volume: 0.9 });
+    }
+  } catch (error) {
+    if (!warnedPlayers.has(player.id)) {
+      warnedPlayers.add(player.id);
+      console.warn(`[ATLAS] Durability alert failed: ${error}`);
+    }
+  }
+}
+
 function tickPlayers() {
   let players;
   try {
@@ -155,6 +220,7 @@ function tickPlayers() {
       const settings = getSettings(player);
       updateHud(player);
       checkLowHealth(player, settings);
+      checkLowDurability(player, settings);
     } catch (error) {
       if (!warnedPlayers.has(player.id)) {
         warnedPlayers.add(player.id);
@@ -173,6 +239,7 @@ export function startHud() {
 export function forgetHudState(playerId) {
   lastUpdate.delete(playerId);
   lowHealthState.delete(playerId);
+  durabilityState.delete(playerId);
   warnedPlayers.delete(playerId);
 }
 
