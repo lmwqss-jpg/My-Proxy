@@ -1,8 +1,8 @@
-# ATLAS CLIENT — Technical Audit (1.4.0, with 1.5.0 addendum)
+# ATLAS CLIENT — Technical Audit (1.4.0, with 1.5.0 and 1.6.0 addenda)
 
 **Repository:** `lmwqss-jpg/My-Proxy`
 **Audited version:** 1.3.0 working tree, before the 1.4.0 changes
-**Delivered versions:** 1.4.0 and 1.5.0
+**Delivered versions:** 1.4.0, 1.5.0 and 1.6.0
 **Target:** Minecraft Bedrock 26.60 / `[1, 26, 60]`, stable Script API
 **Automated audit:** `npm run typecheck`, `npm test`, `npm run build`, `npm run validate`
 
@@ -19,6 +19,8 @@ src/ATLAS/BP/items/               atlas:client_token item definition
 src/ATLAS/BP/scripts/main.js      script entry point
 src/ATLAS/BP/scripts/config.js    version, limits, toggle list, defaults
 src/ATLAS/BP/scripts/events.js    world/player event wiring
+src/ATLAS/BP/scripts/compatibility.js      runtime compatibility engine
+src/ATLAS/BP/scripts/compatibilityModel.js pure statuses/report model
 src/ATLAS/BP/scripts/hud.js       HUD loop, alerts, live snapshot
 src/ATLAS/BP/scripts/hudData.js   armor, effects, totems
 src/ATLAS/BP/scripts/hudFormat.js pure action-bar text composition
@@ -165,3 +167,43 @@ A status manager that displayed ONLINE/OFFLINE/CONNECTING/RECONNECTING/ERROR wou
 ### Verification
 
 Unit tests cover the address model; the integration harness covers add/edit/delete/order/favourite/manual current, invalid addresses/ports, duplicates, Direct Join and reload after leave/rejoin. `npm run validate` checks the rebuilt archive. No real client, console or server was available, so device behavior remains **NOT TESTED**.
+
+
+---
+
+## 8. 1.6.0 addendum — Universal compatibility engine
+
+### Decision
+
+The request asked for ATLAS to work on any Minecraft Bedrock server and to report exactly what is supported. A world add-on cannot identify, query or connect to a server; the stable Script API exposes no networking, server-list or connection-observation API. Claiming universal server support or server status would be false.
+
+The implementation therefore separates two concerns:
+
+1. **Environment evidence.** The engine probes the actual Script API capabilities it can call. It records availability per player, not per server name.
+2. **Feature status.** Each of the 18 visible sections/entry points is reduced to `WORKING`, `LIMITED`, `READY`, `UNAVAILABLE`, `ERROR` or `NOT TESTED` from those probes plus real runtime successes and failures.
+
+### Architecture
+
+- `compatibilityModel.js` is pure: feature definitions, capability ids, status reduction, summary, report formatting and chat chunking. It has no Minecraft imports and is unit-tested.
+- `compatibility.js` is the runtime: module API probe, world probe after `worldLoad`, per-player probe on join/respawn/dimension change, lifecycle counters, bounded error history and report snapshots. It subscribes to no events, so `events.js` remains the only registration point and reinitialization cannot duplicate listeners.
+- `events.js` calls the lifecycle hooks; `hud.js` uses capability gates before health, equipment, inventory, effects, input, view, game mode, world clock and player count; `router.js` records screen successes/errors; `store.js` records storage errors and successes.
+- `diagnosticsScreen.js` shows feature rows, capability lists, reinitialization/error counters and exports a copyable report through chat chunks. It never reads passwords, tokens, server credentials or Microsoft account data.
+
+### Status semantics
+
+`WORKING` requires a recorded successful operation (form opened, action bar set, data stored, container recorded). `READY` means required APIs exist but the feature has not run. `NOT TESTED` means a required capability was never probed and is never counted as success. `LIMITED` covers documented scope limits (HUD action bar, movement vector, ESPCHEST opened-containers-only, Server Manager address book) and missing optional APIs. `UNAVAILABLE`/`ERROR` include the missing capability or last bounded error.
+
+### Reinitialization guarantees
+
+`worldLoad` increments the reinitialization count, proves world APIs by calling them, drops stale player state and re-syncs locators/HUD. Join/respawn re-probes only that player; leave deletes all per-player maps; dimension change re-probes and refreshes the HUD/locator. Settings, waypoints and the ESPCHEST log are not cleared. Guards in `initEvents`, `startHud`, `registerCommands` and `initCompatibilityEngine` prevent duplicate registration. The integration harness emits a second `worldLoad` plus a respawn and asserts unchanged listener/command counts.
+
+### Verification
+
+Unit tests cover feature definition integrity, every status transition, report contents and chat chunk bounds. The integration harness covers the diagnostics screen, **EXPORT DIAGNOSTICS**, capability-gated degradation, error counters and reinitialization without duplicate listeners. `npm run typecheck`, `npm test`, `npm run build` and `npm run validate` pass for 1.6.0.
+
+### Not claimed
+
+- No real iPhone, PS5, Realm, BDS or public-server test for 1.6.0.
+- No server identity, ping, player count, version or connection state.
+- No bypass of Microsoft login, allow-lists, anti-cheat or pack restrictions.
+- Status values describe this script session; they are not device compatibility certificates.

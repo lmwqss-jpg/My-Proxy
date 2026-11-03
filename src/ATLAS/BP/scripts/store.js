@@ -9,6 +9,12 @@ import { normalizeSettings } from "./settings.js";
 import { parseWaypoints, serializeWaypoints } from "./waypoints.js";
 import { parseContainers, serializeContainers } from "./containers.js";
 import { parseServers, serializeServers, normalizeServerTarget } from "./servers.js";
+import { markFeatureError, markFeatureSuccess, recordEngineError } from "./compatibility.js";
+
+function storageError(error, player = null, featureId = null) {
+  if (player && featureId) markFeatureError(player, featureId, error, "storage");
+  else recordEngineError("storage", error);
+}
 
 /** @type {Map<string, any>} */
 const settingsCache = new Map();
@@ -42,6 +48,7 @@ export function getSettings(player) {
   } catch (error) {
     readable = false;
     console.warn(`[ATLAS] Could not read settings: ${error}`);
+    storageError(error, player, "settings");
   }
   const settings = normalizeSettings(stored);
   // Do not cache defaults after an early-execution/unavailable read; a later
@@ -56,9 +63,11 @@ export function saveSettings(player, settings) {
     player.setDynamicProperty(STORAGE_KEYS.settings, JSON.stringify(normalized));
   } catch (error) {
     console.warn(`[ATLAS] Could not save settings: ${error}`);
+    storageError(error, player, "settings");
     return false;
   }
   settingsCache.set(player.id, normalized);
+  markFeatureSuccess(player, "settings", "settings saved");
   return true;
 }
 
@@ -76,6 +85,7 @@ export function getWaypoints() {
     stored = world.getDynamicProperty(STORAGE_KEYS.waypoints);
   } catch (error) {
     console.warn(`[ATLAS] Could not read waypoints: ${error}`);
+    storageError(error);
     return [];
   }
   waypointCache = parseWaypoints(stored);
@@ -91,6 +101,7 @@ export function saveWaypoints(list) {
       console.warn(`[ATLAS] Could not save waypoints: ${error}`);
       waypointStorageWarned = true;
     }
+    storageError(error);
     return null;
   }
   waypointCache = normalized;
@@ -107,6 +118,7 @@ export function getContainerLog(player) {
   } catch (error) {
     readable = false;
     console.warn(`[ATLAS] Could not read container log: ${error}`);
+    storageError(error, player, "espchest");
   }
   const list = parseContainers(stored);
   if (readable) containerCache.set(player.id, list);
@@ -119,9 +131,11 @@ export function saveContainerLog(player, list) {
     player.setDynamicProperty(STORAGE_KEYS.containers, serializeContainers(normalized));
   } catch (error) {
     console.warn(`[ATLAS] Could not save container log: ${error}`);
+    storageError(error, player, "espchest");
     return null;
   }
   containerCache.set(player.id, normalized);
+  markFeatureSuccess(player, "espchest", "container log saved");
   return normalized;
 }
 
@@ -135,6 +149,7 @@ export function getServers(player) {
   } catch (error) {
     readable = false;
     console.warn(`[ATLAS] Could not read server list: ${error}`);
+    storageError(error, player, "servers");
   }
   const list = parseServers(stored);
   if (readable) serverCache.set(player.id, list);
@@ -147,9 +162,11 @@ export function saveServers(player, list) {
     player.setDynamicProperty(STORAGE_KEYS.servers, serializeServers(normalized));
   } catch (error) {
     console.warn(`[ATLAS] Could not save server list: ${error}`);
+    storageError(error, player, "servers");
     return null;
   }
   serverCache.set(player.id, normalized);
+  markFeatureSuccess(player, "servers", "server list saved");
   return parseServers(normalized);
 }
 
@@ -159,6 +176,7 @@ export function getServerTarget(player) {
     return normalizeServerTarget(player.getDynamicProperty(STORAGE_KEYS.serverTarget));
   } catch (error) {
     console.warn(`[ATLAS] Could not read last server address: ${error}`);
+    storageError(error, player, "servers");
     return null;
   }
 }
@@ -168,9 +186,11 @@ export function saveServerTarget(player, target) {
   if (!normalized) return false;
   try {
     player.setDynamicProperty(STORAGE_KEYS.serverTarget, JSON.stringify(normalized));
+    markFeatureSuccess(player, "servers", "direct join target saved");
     return true;
   } catch (error) {
     console.warn(`[ATLAS] Could not save last server address: ${error}`);
+    storageError(error, player, "servers");
     return false;
   }
 }
@@ -214,6 +234,7 @@ export function getCombatStats(player) {
   } catch (error) {
     readable = false;
     console.warn(`[ATLAS] Could not read combat stats: ${error}`);
+    storageError(error, player, "combat");
   }
   if (readable) combatCache.set(player.id, stats);
   return stats;
@@ -230,9 +251,11 @@ export function saveCombatStats(player, stats) {
     }
   } catch (error) {
     console.warn(`[ATLAS] Could not save combat stats: ${error}`);
+    storageError(error, player, "combat");
     return false;
   }
   combatCache.set(player.id, stats);
+  markFeatureSuccess(player, "combat", "combat stats saved");
   return true;
 }
 
@@ -251,8 +274,10 @@ export function resetCombatStats(player) {
     player.setDynamicProperty(STORAGE_KEYS.lastDeath, undefined);
   } catch (error) {
     console.warn(`[ATLAS] Could not reset combat stats: ${error}`);
+    storageError(error, player, "combat");
     return false;
   }
+  markFeatureSuccess(player, "combat", "combat stats reset");
   return true;
 }
 
@@ -269,6 +294,7 @@ export function markWelcomed(player) {
     player.setDynamicProperty(STORAGE_KEYS.welcomed, true);
   } catch (error) {
     console.warn(`[ATLAS] Could not store the welcome flag: ${error}`);
+    storageError(error);
   }
 }
 
@@ -287,5 +313,6 @@ export function markBootVersion(player, version) {
     player.setDynamicProperty(STORAGE_KEYS.bootVersion, version);
   } catch (error) {
     console.warn(`[ATLAS] Could not store the boot version: ${error}`);
+    storageError(error);
   }
 }

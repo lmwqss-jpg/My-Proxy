@@ -1,11 +1,11 @@
-# ATLAS CLIENT 1.5.0 — Full Test Report
+# ATLAS CLIENT 1.6.0 — Full Test Report
 
-**Add-on version:** 1.5.0
+**Add-on version:** 1.6.0
 **Archive:** `ATLAS.mcaddon` (single BP + RP)
 **Target:** Minecraft Bedrock 26.60 / `1.26.60`+
 **Script modules:** `@minecraft/server 2.11.0`, `@minecraft/server-ui 2.3.0`
 **Experiments:** none
-**Report scope:** automated/static tests actually run for 1.5.0. Device and in-game tests are listed separately as **NOT TESTED**.
+**Report scope:** automated/static tests actually run for 1.6.0. Device and in-game tests are listed separately as **NOT TESTED**.
 
 > This is not a claim that the add-on works on iPhone, PS5, Mega10 or inside a real Minecraft client. No such test environment was available here.
 
@@ -19,9 +19,9 @@ Linux, Node.js 24.22.1, npm 11.19.1, TypeScript 5.9.3, esbuild 0.25.12.
 |---|---|---|
 | `npm ci` | PASS | 8 packages installed, 0 vulnerabilities |
 | `npm run typecheck` | PASS | pack scripts checked against the official 2.11.0 / 2.3.0 types |
-| `npm test` | PASS | 16 tests; 15 unit/static tests + 1 integration test with **271 native form flows** |
-| `npm run build` | PASS | `ATLAS.mcaddon`, **48 files, 78.5 KiB**, 50 ZIP entries including pack roots |
-| `npm run validate` | PASS | **6 checks**: manifests, 5 JSON files, item/PNG/texture references, localisation, 31 scripts/imports, ZIP |
+| `npm test` | PASS | 20 tests; 19 unit/static tests + 1 integration test with **278 native form flows** |
+| `npm run build` | PASS | `ATLAS.mcaddon`, **51 files, 92.4 KiB**, 53 ZIP entries including pack roots |
+| `npm run validate` | PASS | **6 checks**: manifests, 5 JSON files, item/PNG/texture references, localisation, 34 scripts/imports, ZIP |
 | `npm run check` | PASS | the four commands above in sequence |
 | `unzip -l ATLAS.mcaddon` | PASS | `ATLAS_BP/` and `ATLAS_RP/` manifests, `scripts/main.js`, item and textures at the expected roots |
 | `unzip -t ATLAS.mcaddon` | PASS | archive integrity: no compressed-data errors |
@@ -43,7 +43,7 @@ The integration harness loads the real bundled `scripts/main.js` against mock Mi
 | A6 | Dependencies and API versions | PASS | BP depends on RP and stable `@minecraft/server 2.11.0` / `@minecraft/server-ui 2.3.0`; RP depends on BP; no beta/preview |
 | A7 | Missing files | PASS | script entry, item definition, texture map, icons, language file and pack icons all exist |
 | A8 | Paths | PASS | all relative imports resolve; item texture references resolve; archive paths are not nested |
-| A9 | Old code conflicts | PASS | version 1.5.0 aligns across `package.json`, manifests, dependency versions and runtime; ATLAS1 and older ATLAS2 codes still import |
+| A9 | Old code conflicts | PASS | version 1.6.0 aligns across `package.json`, manifests, dependency versions and runtime; ATLAS1 and older ATLAS2 codes still import |
 
 Static forbidden checks also passed: no `eval`/`new Function`, no experiment or `script_eval` capability, no unsupported `ar_SA` locale, no legacy branding in pack files.
 
@@ -57,7 +57,7 @@ Static forbidden checks also passed: no `eval`/`new Function`, no experiment or 
 | B2 | Command opens the main menu | PASS (harness) | player callback returns success and the main form opens |
 | B3 | Open and close the menu | PASS (harness) | item, custom command and close button exercised |
 | B4 | Navigate every section | PASS (harness) | all 16 sections opened and returned to the main menu |
-| B5 | No freeze while opening forms | PASS (harness) | 271 sequential forms handled; no unresolved UI queue |
+| B5 | No freeze while opening forms | PASS (harness) | 278 sequential forms handled; no unresolved UI queue |
 | B6 | Handle form failure | PASS (harness) | `UserBusy` retry path and form error message covered |
 | B7 | No duplicate command/event registration | PASS (harness) | 1 command registration; expected listener counts; double item use opens one menu |
 
@@ -107,7 +107,7 @@ Each section was opened from the real main menu and exited back to it. Section c
 | Test | Result | Detail |
 |---|---|---|
 | Change settings, close and reopen the menu | PASS (harness) | settings remain in player dynamic properties |
-| Leave the world and rejoin | PASS (harness) | cache is cleared; a changed stored JSON is loaded instead of the old cache |
+| Leave the world and rejoin | PASS (harness) | cache is cleared; changed settings JSON is reloaded; waypoints and the ESPCHEST container log survive |
 | New 1.4.0 section controls persist | PASS (harness) | CPS, helmet, player name, potions, totems, session and armor threshold round-trip |
 | Old ATLAS2 codes | PASS (unit) | 33-toggle and current codes import; new session toggle stays off for old codes |
 | Legacy ATLAS1 codes | PASS (unit + harness) | original 20 toggles restored; newer panels keep defaults |
@@ -122,7 +122,7 @@ Each section was opened from the real main menu and exited back to it. Section c
 | Each element independently | PASS (unit + harness) | coordinates, health, name, world, dimension, compass, waypoint, session, WASD, CPS, clicks, armor, potions, totems, visual stats |
 | Toggle every element on/off | PASS (unit + harness) | all-on, all-off, per-element toggles and reset |
 | XYZ / health / name / world / dimension / compass | PASS (unit + harness) | real snapshot values; Arabic labels checked |
-| Missing data does not fake values | PASS (unit + harness) | missing health/view/dimension/day/time/mode hides only that element; no `null`/`NaN`/fake north |
+| Missing data does not fake values | PASS (unit + harness) | missing health/view/dimension/day/time/mode/combat storage hides only that element; no `null`/`NaN`/fake north or fake K/D |
 | Armor durability | PASS (harness) | real remaining/max/percent, low color and per-piece toggles |
 | Potions | PASS (harness) | real duration/amplifier, infinite `∞`, expired effects disappear |
 | Totems | PASS (harness) | main inventory + offhand, updates on inventory event |
@@ -156,6 +156,22 @@ Each section was opened from the real main menu and exited back to it. Section c
 
 ---
 
+## 8A. Compatibility engine and diagnostics export (1.6.0)
+
+| # | Test | Result | Detail |
+|---|---|---|---|
+| X1 | Feature definitions are unique and complete | PASS (unit) | 18 features; every required/optional capability exists; screen-to-feature mapping covers section and detail screens |
+| X2 | Status reduction | PASS (unit) | `READY` before use, `WORKING` only after a real success, `ERROR` after a later failure, `UNAVAILABLE` for a missing required API, `NOT TESTED` for an unprobed capability, `LIMITED` for documented scope |
+| X3 | Report contents | PASS (unit) | Version, feature statuses, API available/unavailable/not-probed lists, stored-data context, bounded errors |
+| X4 | Chat chunking | PASS (unit) | Long reports split below 100/200 character limits without an oversized message |
+| X5 | Second `worldLoad` and respawn | PASS (harness) | One command registration and unchanged listener counts; settings, waypoints and containers remain; no repeated boot message |
+| X6 | Diagnostics screen | PASS (harness) | Real per-feature statuses, `HUD: LIMITED`, `Settings: WORKING`, capability counts, session duration and error counters |
+| X7 | Export diagnostics | PASS (harness) | Form shows the real report; sending it adds copyable chat chunks and a message count; no clipboard or fake success |
+| X8 | Capability gating | PASS (harness + unit) | Missing optional view/game-mode/effects APIs hide only their elements; the rest of the HUD and menu continue |
+| X9 | Error tracking | PASS (harness) | Router/HUD/store failures are counted by category without stopping other features |
+
+`WORKING` in this table means the harness observed a successful operation. It does not mean the feature was verified on a device.
+
 ## 9. H. Performance and stability
 
 | Test | Result | Detail |
@@ -180,13 +196,13 @@ No memory-leak or long-run soak test was possible outside Minecraft. The test co
 
 `npm run build` produced:
 
-- `ATLAS.mcaddon` with 48 files, 78.5 KiB, 50 ZIP entries.
+- `ATLAS.mcaddon` with 51 files, 92.4 KiB, 53 ZIP entries.
 - `ATLAS_BP/manifest.json`, `ATLAS_BP/scripts/main.js`, `ATLAS_BP/items/atlas_client.json`.
 - `ATLAS_RP/manifest.json`, textures (including `atlas_servers.png`), `texts/en_US.lang`, `texts/languages.json`.
 - No nested pack folder, no `__MACOSX`, no `.DS_Store`, no stale archived files.
 - Every archived file matches its source byte-for-byte.
 
-`npm run validate` passed 6 checks and confirmed version 1.5.0, 5 unique UUIDs, 5 parsed JSON files, item/texture/PNG references, localisation and 31 script import graphs.
+`npm run validate` passed 6 checks and confirmed version 1.6.0, 5 unique UUIDs, 5 parsed JSON files, item/texture/PNG references, localisation and 34 script import graphs.
 
 ---
 
@@ -208,7 +224,7 @@ Not verified:
 - SERVER MANAGER add/edit forms on a touch or controller keyboard, and the platform-specific connection guide;
 - long HUD lines at different screen sizes.
 
-The 1.2.0 build previously loaded its scripts and registered events on Bedrock Dedicated Server 1.26.60.6. That is historical startup evidence only; **1.5.0 was not run on BDS or in a client for this report.**
+The 1.2.0 build previously loaded its scripts and registered events on Bedrock Dedicated Server 1.26.60.6. That is historical startup evidence only; **1.6.0 was not run on BDS or in a client for this report.**
 
 ---
 
@@ -220,13 +236,13 @@ The 1.2.0 build previously loaded its scripts and registered events on Bedrock D
 | PS5 | NOT TESTED | primary target; local import, controller input and custom-server entry (PS5 has no Add Server button) are unverified |
 | Bedrock Arab | NOT TESTED | file-picker flow and real import are unverified |
 | Mega10 | NOT TESTED | public-server packs, commands and storage may be restricted |
-| Bedrock Dedicated Server | NOT TESTED for 1.5.0 | no server binary in this environment |
+| Bedrock Dedicated Server | NOT TESTED for 1.6.0 | no server binary in this environment |
 
 No compatibility claim is made for any of these.
 
 ---
 
-## 13. L. Defects found and fixed during 1.4.0–1.5.0 work
+## 13. L. Defects found and fixed during 1.4.0–1.6.0 work
 
 | Defect | Impact | Fix | Re-tested |
 |---|---|---|---|
@@ -234,7 +250,7 @@ No compatibility claim is made for any of these.
 | Container detail used `getViewDirection()` without a guard | detail could fail on a client without view data | distance/cardinal direction remain; relative label is omitted on failure | container detail integration flow |
 | A non-container block (`beacon`) was in the recognition list | an interaction with a non-container could be logged as a container | removed; only real container types and chest/shulker variants are accepted | container unit test |
 
-No failing product assertion remained in the final automated run. The earlier `action indicator` test timing was corrected in the harness; it was a test-order issue, not a product defect.
+No failing product assertion remained in the final automated run. The earlier `action indicator` test timing was corrected in the harness; it was a test-order issue, not a product defect. The 1.6.0 compatibility work found no regression in the existing sections; its new unit and harness cases are listed in section 8A.
 
 ---
 
@@ -255,6 +271,8 @@ No failing product assertion remained in the final automated run. The earlier `a
 | SERVER MANAGER | PASS (harness) / NOT CONNECTED | validated address book and guides; no connection, status or auto-reconnect by design |
 | Settings / ATLAS1+ATLAS2 | PASS (harness) | dynamic properties; server may block |
 | Arabic / English | PASS (unit + harness) | device shaping unverified |
+| Universal compatibility engine | PASS (unit + harness) | statuses and reinit; real environments NOT TESTED |
+| Diagnostics export | PASS (harness) | chat chunks; no clipboard |
 | PS5 / iPhone / Mega10 | NOT TESTED | no compatibility claim |
 
 ---
@@ -272,7 +290,7 @@ No failing product assertion remained in the final automated run. The earlier `a
 - Public servers must already contain and allow the pack. ATLAS does not bypass server rules.
 - SERVER MANAGER never connects. Minecraft exposes no networking, server-list or connection-observation API to world add-ons; `@minecraft/server-admin.transferPlayer` is BDS-only and experimental.
 - No clipboard API, no way to open the Add Server screen, and no PS5 Add Server button.
-- IPv6 addresses are intentionally rejected in 1.5.0; only IPv4 and domain names are validated.
+- IPv6 addresses are intentionally rejected; only IPv4 and domain names are validated.
 
 ---
 
@@ -283,8 +301,8 @@ No failing product assertion remained in the final automated run. The earlier `a
 3. Do not enable experiments.
 4. Enter the world.
 5. Open the menu with the **ATLAS CLIENT** item or `/atlas:menu` (no cheats required).
-6. Expected Content Log lines: `[ATLAS] Scripts loaded: v1.5.0`, `[ATLAS] Event handlers registered: 10`, `[ATLAS] Custom command /atlas:menu registered`, `[ATLAS] World loaded`.
-7. Expected chat line once per player/version: `Scripts v1.5.0 are running`.
+6. Expected Content Log lines: `[ATLAS] Scripts loaded: v1.6.0`, `[ATLAS] Compatibility engine initialized`, `[ATLAS] Event handlers registered: 10`, `[ATLAS] Custom command /atlas:menu registered`, `[ATLAS] World loaded`.
+7. Expected chat line once per player/version: `Scripts v1.6.0 are running`.
 
 Detailed device steps: [`DEVICE_TESTING.md`](DEVICE_TESTING.md). Installation: [`INSTALL.md`](INSTALL.md). Troubleshooting: [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md). Limits: [`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md).
 

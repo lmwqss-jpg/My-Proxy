@@ -40,6 +40,16 @@ import { ADDON_VERSION, MENU_ITEM_ID } from "./config.js";
 import { upsertDeathWaypoint } from "./waypoints.js";
 import { initInputTracking, forgetInputState } from "./input.js";
 import { isContainerBlock, recordContainer } from "./containers.js";
+import {
+  markFeatureSuccess,
+  onPlayerDimensionChanged,
+  onPlayerLeft,
+  onPlayerSession,
+  onWorldLoaded,
+  recordEngineError,
+} from "./compatibility.js";
+
+let eventsInitialized = false;
 
 function guarded(name, callback) {
   return (...args) => {
@@ -47,6 +57,7 @@ function guarded(name, callback) {
       callback(...args);
     } catch (error) {
       console.warn(`[ATLAS] ${name} event failed: ${error}`);
+      recordEngineError("event", error);
     }
   };
 }
@@ -84,6 +95,7 @@ function welcome(player) {
 function handleSpawn(event) {
   const { player, initialSpawn } = event;
   if (!player.isValid) return;
+  onPlayerSession(player, initialSpawn ? "join" : "respawn");
   getSettings(player);
   clearLowHealthState(player.id);
   system.runTimeout(() => {
@@ -159,6 +171,7 @@ function handleDeath(event) {
       syncAllLocators();
     }
   }
+  // saveCombatStats records the combat success/error for this player.
   updateHud(player, true);
 }
 
@@ -172,6 +185,10 @@ function handleHurt(event) {
   const attacker = event.damageSource.damagingEntity;
   if (attacker && attacker.typeId === "minecraft:player" && attacker.id !== hurt.id) {
     getCombatStats(attacker).damageDealt += damage;
+    markFeatureSuccess(attacker, "combat", "damage");
+  }
+  if (hurt.typeId === "minecraft:player") {
+    markFeatureSuccess(hurt, "combat", "damage");
   }
 }
 
@@ -199,7 +216,10 @@ function handleContainerOpen(event) {
     y: location.y,
     z: location.z,
   });
-  if (result.entry) saveContainerLog(player, result.list);
+  if (result.entry) {
+    // saveContainerLog records success/error for the ESPCHEST feature.
+    saveContainerLog(player, result.list);
+  }
 }
 
 function handleItemUse(event) {
@@ -216,10 +236,14 @@ function handleScriptEvent(event) {
 }
 
 export function initEvents() {
+  if (eventsInitialized) return;
+  eventsInitialized = true;
+
   try {
     initInputTracking();
   } catch (error) {
     console.warn(`[ATLAS] Input tracking failed to initialize: ${error}`);
+    recordEngineError("event", error);
   }
 
   let count = 0;
@@ -231,6 +255,7 @@ export function initEvents() {
   track(
     on(world.afterEvents.worldLoad, "worldLoad", () => {
       // Safe point for world storage and player queries in Script API v2.
+      onWorldLoaded();
       getWaypoints();
       syncAllLocators();
       for (const player of world.getPlayers()) updateHud(player, true);
@@ -244,6 +269,7 @@ export function initEvents() {
       forgetHudState(event.playerId);
       forgetInputState(event.playerId);
       forgetLocatorState(event.playerId);
+      onPlayerLeft(event.playerId);
     }),
   );
   track(on(world.afterEvents.itemUse, "itemUse", handleItemUse));
@@ -259,6 +285,7 @@ export function initEvents() {
   );
   track(
     on(world.afterEvents.playerDimensionChange, "playerDimensionChange", (event) => {
+      onPlayerDimensionChanged(event.player);
       syncLocator(event.player);
       updateHud(event.player, true);
     }),

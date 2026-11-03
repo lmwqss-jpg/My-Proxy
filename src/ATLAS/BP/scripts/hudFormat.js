@@ -343,7 +343,11 @@ export function buildHudSegments(snapshot, settings, themeId) {
     elements.push(healthBar(snapshot.health, snapshot.maxHealth));
   }
 
-  if (settings.visual.stats) {
+  if (
+    settings.visual.stats &&
+    Number.isFinite(snapshot.kills) &&
+    Number.isFinite(snapshot.deaths)
+  ) {
     elements.push(
       `§7${t(language, "hud.kills")} §f${snapshot.kills} §7${t(language, "hud.deaths")} §f${snapshot.deaths} §7${t(language, "hud.kd")} §f${formatKd(snapshot.kills, snapshot.deaths)}`,
     );

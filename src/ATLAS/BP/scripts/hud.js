@@ -11,6 +11,11 @@ import {
   buildHudSegments,
   trackedWaypointSnapshot,
 } from "./hudFormat.js";
+import {
+  getMergedCapabilities,
+  markFeatureError,
+  markFeatureSuccess,
+} from "./compatibility.js";
 
 /** @type {Map<string, number>} */
 const lastUpdate = new Map();
@@ -69,14 +74,23 @@ export function getSessionSeconds(playerId) {
 
 export function collectSnapshot(player) {
   const settings = getSettings(player);
-  const health = healthOf(player);
-  const stats = getCombatStats(player);
+  // Capability gates prevent a panel from calling an API that this client or
+  // server has already reported as unavailable. Unknown values are probed by
+  // the lazy capability read, so a first join cannot disable a working panel.
+  const capabilities = getMergedCapabilities(player);
+  const health = capabilities["player.health"] ? healthOf(player) : { current: null, max: null };
+  const stats = capabilities["player.dynamic"] ? getCombatStats(player) : null;
   const trackedId = settings.waypoints.trackedId;
   const tracked = trackedId ? findWaypoint(getWaypoints(), trackedId) : null;
   const displayName = tracked
     ? waypointDisplayName(tracked, t, settings.language)
     : null;
-  const equipment = collectEquipment(player);
+  const equipment = capabilities["player.equipment"] ? collectEquipment(player) : null;
+  const effects = capabilities["player.effects"] ? collectEffects(player) : null;
+  const totems = capabilities["player.inventory"] ? collectTotems(player) : null;
+  const input = capabilities["player.input"]
+    ? getInputSnapshot(player, settings.hud.interval)
+    : null;
   const dimensionId = readOptional(() => player.dimension.id);
   const trackedSnapshot = tracked && dimensionId
     ? trackedWaypointSnapshot(
@@ -87,27 +101,32 @@ export function collectSnapshot(player) {
       )
     : null;
 
+  if (input?.wasd) markFeatureSuccess(player, "movement", "movement vector");
+  if (equipment) markFeatureSuccess(player, "armor", "equipment");
+  if (effects) markFeatureSuccess(player, "potions", "effects");
+  if (totems !== null) markFeatureSuccess(player, "totems", "inventory");
+
   return {
     name: player.name,
     health: health.current,
     maxHealth: health.max,
     location: { x: player.location.x, y: player.location.y, z: player.location.z },
     dimensionId,
-    view: readOptional(() => player.getViewDirection()),
-    day: readOptional(() => world.getDay()),
-    timeOfDay: readOptional(() => world.getTimeOfDay()),
-    difficulty: readOptional(() => world.getDifficulty()),
-    playerCount: readOptional(() => world.getPlayers().length),
-    level: readOptional(() => player.level),
-    gameMode: readOptional(() => player.getGameMode()),
+    view: capabilities["player.view"] ? readOptional(() => player.getViewDirection()) : null,
+    day: capabilities["world.clock"] ? readOptional(() => world.getDay()) : null,
+    timeOfDay: capabilities["world.clock"] ? readOptional(() => world.getTimeOfDay()) : null,
+    difficulty: capabilities["world.clock"] ? readOptional(() => world.getDifficulty()) : null,
+    playerCount: capabilities["world.api"] ? readOptional(() => world.getPlayers().length) : null,
+    level: capabilities["player.session"] ? readOptional(() => player.level) : null,
+    gameMode: capabilities["player.gameMode"] ? readOptional(() => player.getGameMode()) : null,
     sessionSeconds: sessionSecondsFor(player.id),
-    kills: stats.kills,
-    deaths: stats.deaths,
+    kills: stats ? stats.kills : null,
+    deaths: stats ? stats.deaths : null,
     trackedWaypoint: trackedSnapshot,
-    input: getInputSnapshot(player, settings.hud.interval),
+    input,
     armor: equipment ? equipment.armor : null,
-    effects: collectEffects(player),
-    totems: collectTotems(player),
+    effects,
+    totems,
   };
 }
 
@@ -128,8 +147,10 @@ export function updateHud(player, force = false) {
     const segments = buildHudSegments(snapshot, settings, settings.theme);
     player.onScreenDisplay.setActionBar(segments.length > 0 ? segments.join("") : "");
     lastUpdate.set(player.id, system.currentTick);
+    markFeatureSuccess(player, "hud", "action bar");
     return true;
   } catch (error) {
+    markFeatureError(player, "hud", error, "script");
     if (!warnedPlayers.has(player.id)) {
       warnedPlayers.add(player.id);
       console.warn(`[ATLAS] HUD update failed: ${error}`);
@@ -161,6 +182,10 @@ export function getHudPreview(player) {
 }
 
 function checkLowHealth(player, settings) {
+  if (!getMergedCapabilities(player)["player.health"]) {
+    lowHealthState.set(player.id, false);
+    return;
+  }
   const { current } = healthOf(player);
   if (!Number.isFinite(current)) {
     lowHealthState.set(player.id, false);
@@ -192,7 +217,9 @@ function checkLowHealth(player, settings) {
       if (settings.pvp.alertSound) {
         player.playSound("note.pling", { pitch: 0.8, volume: 0.9 });
       }
+      markFeatureSuccess(player, "combat", "low health alert");
     } catch (error) {
+      markFeatureError(player, "combat", error, "script");
       if (!warnedPlayers.has(player.id)) {
         warnedPlayers.add(player.id);
         console.warn(`[ATLAS] Low-health alert failed: ${error}`);
@@ -209,6 +236,10 @@ function checkLowHealth(player, settings) {
  */
 function checkLowDurability(player, settings) {
   if (!settings.hud.durabilityAlert) {
+    durabilityState.delete(player.id);
+    return;
+  }
+  if (!getMergedCapabilities(player)["player.equipment"]) {
     durabilityState.delete(player.id);
     return;
   }
@@ -251,7 +282,9 @@ function checkLowDurability(player, settings) {
     if (settings.hud.durabilitySound) {
       player.playSound("note.bass", { pitch: 1.1, volume: 0.9 });
     }
+    markFeatureSuccess(player, "armor", "durability alert");
   } catch (error) {
+    markFeatureError(player, "armor", error, "script");
     if (!warnedPlayers.has(player.id)) {
       warnedPlayers.add(player.id);
       console.warn(`[ATLAS] Durability alert failed: ${error}`);
@@ -274,6 +307,7 @@ function tickPlayers() {
       checkLowHealth(player, settings);
       checkLowDurability(player, settings);
     } catch (error) {
+      markFeatureError(player, "hud", error, "script");
       if (!warnedPlayers.has(player.id)) {
         warnedPlayers.add(player.id);
         console.warn(`[ATLAS] HUD tick failed: ${error}`);
@@ -282,9 +316,13 @@ function tickPlayers() {
   }
 }
 
+let hudStarted = false;
+
 export function startHud() {
   // Five ticks keeps low-health detection responsive while the configurable
   // HUD interval controls how often the action-bar text is rebuilt.
+  if (hudStarted) return;
+  hudStarted = true;
   system.runInterval(tickPlayers, 5);
 }
 

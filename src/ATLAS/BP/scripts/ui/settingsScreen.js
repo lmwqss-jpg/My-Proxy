@@ -1,6 +1,5 @@
 /** Theme, language, HUD access, transfer codes, diagnostics and reset. */
 
-import { system, world } from "@minecraft/server";
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui";
 import { registerScreen, openScreen } from "./router.js";
 import {
@@ -14,12 +13,10 @@ import {
 } from "./common.js";
 import {
   getSettings,
-  getWaypoints,
   saveSettings,
 } from "../store.js";
-import { getHudPreview, getSessionSeconds, updateHud } from "../hud.js";
-import { isLocatorSupported, syncLocator, syncAllLocators } from "../locator.js";
-import { hasMenuItem } from "../items.js";
+import { getHudPreview, updateHud } from "../hud.js";
+import { syncLocator, syncAllLocators } from "../locator.js";
 import {
   normalizeSettings,
   settingsFromCode,
@@ -30,11 +27,8 @@ import { getTheme } from "../themes.js";
 import {
   ADDON_VERSION,
   LANGUAGE_IDS,
-  SCRIPT_MODULES,
-  TARGET_GAME_VERSION,
   THEME_IDS,
 } from "../config.js";
-import { formatSessionDuration } from "../util.js";
 
 function persist(player, settings, language) {
   if (!saveSettings(player, settings)) {
@@ -120,47 +114,6 @@ async function importScreen(player) {
   if (!persist(player, imported, imported.language)) return;
   syncAllLocators();
   send(player, t(imported.language, "settings.importDone"));
-}
-
-async function diagnosticsScreen(player) {
-  if (!player.isValid) return;
-  {
-    const settings = getSettings(player);
-    const language = settings.language;
-    const locator = isLocatorSupported(player);
-    const body = [
-      `§7${t(language, "diag.scripts", { status: `§a${t(language, "diag.statusOk")}` })}`,
-      `§8${t(language, "diag.api", {
-        game: TARGET_GAME_VERSION.join("."),
-        server: SCRIPT_MODULES.server,
-        ui: SCRIPT_MODULES.serverUi,
-      })}`,
-      `§7${t(language, "diag.menuItem", {
-        status: hasMenuItem(player)
-          ? `§a${t(language, "diag.statusOk")}`
-          : `§c${t(language, "diag.statusMissing")}`,
-      })}`,
-      `§8${t(language, "diag.command")}`,
-      `§7${t(language, "diag.locator", {
-        status: locator
-          ? `§a${t(language, "diag.statusOk")}`
-          : `§c${t(language, "diag.statusUnsupported")}`,
-      })}`,
-      emptyLine(),
-      `§7${t(language, "diag.waypoints", { count: getWaypoints().length })}`,
-      `§7${t(language, "diag.online", { count: world.getPlayers().length })}`,
-      `§7${t(language, "diag.session", {
-        duration: formatSessionDuration(getSessionSeconds(player.id)),
-      })}`,
-      `§8${t(language, "diag.uptime", { ticks: system.currentTick })}`,
-      `§8${t(language, "diag.footer")}`,
-    ].join("\n");
-    const form = new ActionFormData()
-      .title(formTitle(settings, t(language, "diag.title")))
-      .body(body)
-      .button(`§8${t(language, "common.back")}`);
-    await safeShow(player, () => form);
-  }
 }
 
 async function aboutScreen(player) {
@@ -257,5 +210,4 @@ async function settingsScreen(player) {
 registerScreen("settings", settingsScreen);
 registerScreen("settings.export", exportScreen);
 registerScreen("settings.import", importScreen);
-registerScreen("settings.diagnostics", diagnosticsScreen);
 registerScreen("settings.about", aboutScreen);

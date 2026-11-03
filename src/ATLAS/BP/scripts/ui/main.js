@@ -24,6 +24,7 @@ import "./pvpScreen.js";
 import "./utilitiesScreen.js";
 import "./serversScreen.js";
 import "./settingsScreen.js";
+import "./diagnosticsScreen.js";
 
 function homeSummary(player, language) {
   const lines = [`§7${t(language, "menu.player", { name: player.name })}`];

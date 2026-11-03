@@ -6,6 +6,11 @@ import {
   system,
 } from "@minecraft/server";
 import { openMenu } from "./menu.js";
+import {
+  markCommandRegistered,
+  markCommandUnavailable,
+  recordEngineError,
+} from "./compatibility.js";
 
 let registered = false;
 
@@ -16,6 +21,7 @@ export function registerCommands() {
     try {
       if (!event.customCommandRegistry) {
         console.warn("[ATLAS] Custom command registry is unavailable on this game version.");
+        markCommandUnavailable();
         return;
       }
       event.customCommandRegistry.registerCommand(
@@ -39,9 +45,12 @@ export function registerCommands() {
           return { status: CustomCommandStatus.Success };
         },
       );
+      markCommandRegistered();
       console.log("[ATLAS] Custom command /atlas:menu registered (no cheats required).");
     } catch (error) {
       console.warn(`[ATLAS] Could not register /atlas:menu: ${error}`);
+      markCommandUnavailable();
+      recordEngineError("script", error);
     }
   });
 }

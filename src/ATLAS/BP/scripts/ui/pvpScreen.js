@@ -16,6 +16,7 @@ import {
   resetCombatStats,
   saveSettings,
 } from "../store.js";
+import { getMergedCapabilities } from "../compatibility.js";
 import { updateHud } from "../hud.js";
 import { t } from "../i18n.js";
 import { dimensionLabel } from "../hudFormat.js";
@@ -93,10 +94,12 @@ async function combatLogScreen(player) {
     if (!player.isValid) return;
     const settings = getSettings(player);
     const language = settings.language;
-    const stats = getCombatStats(player);
+    const stats = getMergedCapabilities(player)["player.dynamic"]
+      ? getCombatStats(player)
+      : null;
     const form = new ActionFormData()
       .title(formTitle(settings, t(language, "pvp.statsTitle")))
-      .body(combatBody(stats, language))
+      .body(stats ? combatBody(stats, language) : `§8${t(language, "common.notAvailable")}`)
       .button(`§c${t(language, "pvp.resetStats")}`)
       .button(`§8${t(language, "common.back")}`);
     const response = await safeShow(player, () => form);

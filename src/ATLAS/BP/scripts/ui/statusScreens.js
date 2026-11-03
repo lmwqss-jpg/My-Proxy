@@ -172,7 +172,9 @@ async function playerScreen(player) {
       `§7${t(language, "common.level")}: ${valueOrUnavailable(snapshot.level, language)}`,
       `§7${t(language, "player.session")}: §f${formatSessionDuration(snapshot.sessionSeconds)}`,
       emptyLine(),
-      `§7${t(language, "pvp.kills")}: §f${snapshot.kills} §8| §7${t(language, "pvp.deaths")}: §f${snapshot.deaths} §8| §7${t(language, "pvp.kd")}: §f${formatKd(snapshot.kills, snapshot.deaths)}`,
+      Number.isFinite(snapshot.kills) && Number.isFinite(snapshot.deaths)
+        ? `§7${t(language, "pvp.kills")}: §f${snapshot.kills} §8| §7${t(language, "pvp.deaths")}: §f${snapshot.deaths} §8| §7${t(language, "pvp.kd")}: §f${formatKd(snapshot.kills, snapshot.deaths)}`
+        : `§8${t(language, "common.notAvailable")}`,
     ].join("\n");
     const form = new ActionFormData()
       .title(formTitle(settings, t(language, "player.title")))

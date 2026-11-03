@@ -87,6 +87,18 @@ import {
   toggleFavorite,
   updateServer,
 } from "../src/ATLAS/BP/scripts/servers.js";
+import {
+  buildCompatibilitySummary,
+  buildFeatureRow,
+  CAPABILITY_IDS,
+  computeFeatureStatus,
+  FEATURE_DEFINITIONS,
+  FEATURE_STATUS,
+  featureById,
+  featureIdForScreen,
+  formatCompatibilityReport,
+  splitForChat,
+} from "../src/ATLAS/BP/scripts/compatibilityModel.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -538,6 +550,13 @@ test("HUD text obeys toggles, theme and language", () => {
   assert.match(visualText, /K\/D/);
   assert.match(visualText, /3.00/);
   assert.match(visualText, /PvP/);
+  const noStatsText = buildHudSegments(
+    { ...SNAPSHOT, kills: null, deaths: null },
+    visual,
+    "violet",
+  ).join("");
+  assert.doesNotMatch(noStatsText, /K\/D/);
+  assert.doesNotMatch(noStatsText, /null|undefined|NaN/);
 
   for (const path of TOGGLE_PATHS) {
     setPath(settings, path, false);
@@ -883,4 +902,143 @@ test("server registry keeps order, favourites and one manual current entry", () 
   });
   assert.equal(normalizeServerTarget("bad json"), null);
   assert.equal(normalizeServerTarget({ address: "bad host", port: 19132 }), null);
+});
+
+test("compatibility feature definitions cover every section and capability", () => {
+  const ids = new Set();
+  for (const definition of FEATURE_DEFINITIONS) {
+    assert.ok(definition.id.length > 0);
+    assert.equal(ids.has(definition.id), false, `duplicate feature id ${definition.id}`);
+    ids.add(definition.id);
+    assert.match(definition.labelKey, /^compat\.feature\./);
+    assert.ok(TRANSLATIONS.en[definition.labelKey], `missing EN label ${definition.labelKey}`);
+    assert.ok(TRANSLATIONS.ar[definition.labelKey], `missing AR label ${definition.labelKey}`);
+    if (definition.scopeKey) {
+      assert.ok(TRANSLATIONS.en[definition.scopeKey], `missing EN scope ${definition.scopeKey}`);
+      assert.ok(TRANSLATIONS.ar[definition.scopeKey], `missing AR scope ${definition.scopeKey}`);
+    }
+    for (const capability of definition.require) {
+      assert.ok(CAPABILITY_IDS.includes(capability), `unknown required capability ${capability}`);
+    }
+    for (const capability of definition.optional) {
+      assert.ok(CAPABILITY_IDS.includes(capability), `unknown optional capability ${capability}`);
+    }
+  }
+  assert.equal(ids.size, FEATURE_DEFINITIONS.length);
+  assert.equal(featureIdForScreen("main"), "menu");
+  assert.equal(featureIdForScreen("espchest.detail"), "espchest");
+  assert.equal(featureIdForScreen("utilities.detail"), "waypoints");
+  assert.equal(featureIdForScreen("utilities.list"), "waypoints");
+  assert.equal(featureIdForScreen("pvp.log"), "combat");
+  assert.equal(featureIdForScreen("settings.diagnostics.export"), "diagnostics");
+  assert.equal(featureIdForScreen("unknown.screen"), null);
+
+  // Every real registerScreen id must map to a feature, otherwise router.js
+  // cannot record its success/error in diagnostics.
+  const uiDir = path.join(__dirname, "../src/ATLAS/BP/scripts/ui");
+  const registered = new Set();
+  for (const file of fs.readdirSync(uiDir).filter((name) => name.endsWith(".js"))) {
+    const source = fs.readFileSync(path.join(uiDir, file), "utf8");
+    for (const match of source.matchAll(/registerScreen\("([^"]+)"/g)) {
+      registered.add(match[1]);
+    }
+  }
+  assert.ok(registered.size > 0);
+  for (const screenId of registered) {
+    assert.ok(
+      featureIdForScreen(screenId),
+      `registered screen has no compatibility feature: ${screenId}`,
+    );
+  }
+});
+
+test("compatibility statuses only claim WORKING after a real success", () => {
+  const allAvailable = Object.fromEntries(CAPABILITY_IDS.map((id) => [id, true]));
+  const armor = featureById("armor");
+  const servers = featureById("servers");
+  const visual = featureById("visual");
+
+  let result = computeFeatureStatus(armor, allAvailable, null);
+  assert.equal(result.status, FEATURE_STATUS.READY);
+
+  result = computeFeatureStatus(armor, allAvailable, { lastSuccessTick: 10 });
+  assert.equal(result.status, FEATURE_STATUS.WORKING);
+
+  result = computeFeatureStatus(armor, allAvailable, {
+    lastSuccessTick: 10,
+    lastError: { tick: 11, category: "script", message: "broken" },
+  });
+  assert.equal(result.status, FEATURE_STATUS.ERROR);
+  assert.equal(result.lastError.message, "broken");
+
+  result = computeFeatureStatus(armor, allAvailable, {
+    lastSuccessTick: 12,
+    lastError: { tick: 11, category: "script", message: "recovered" },
+  });
+  assert.equal(result.status, FEATURE_STATUS.WORKING);
+
+  result = computeFeatureStatus(armor, { ...allAvailable, "player.equipment": false }, null);
+  assert.equal(result.status, FEATURE_STATUS.UNAVAILABLE);
+  assert.deepEqual(result.missing, ["player.equipment"]);
+
+  const unknown = { ...allAvailable };
+  delete unknown["player.equipment"];
+  result = computeFeatureStatus(armor, unknown, null);
+  assert.equal(result.status, FEATURE_STATUS.NOT_TESTED);
+  assert.deepEqual(result.unknown, ["player.equipment"]);
+
+  result = computeFeatureStatus(visual, { ...allAvailable, "player.locator": false }, null);
+  assert.equal(result.status, FEATURE_STATUS.LIMITED);
+  assert.deepEqual(result.optionalMissing, ["player.locator"]);
+
+  result = computeFeatureStatus(servers, allAvailable, { lastSuccessTick: 4 });
+  assert.equal(result.status, FEATURE_STATUS.LIMITED);
+  assert.equal(result.scopeKey, "compat.scope.servers");
+});
+
+test("compatibility report lists status, API gaps and stored counts", () => {
+  const allAvailable = Object.fromEntries(CAPABILITY_IDS.map((id) => [id, true]));
+  const armor = buildFeatureRow(featureById("armor"), allAvailable, { lastSuccessTick: 7 });
+  const servers = buildFeatureRow(featureById("servers"), allAvailable, null);
+  const summary = buildCompatibilitySummary([armor, servers]);
+  const text = formatCompatibilityReport({
+    version: "1.6.0",
+    gameVersion: "1.26.60",
+    serverModule: "2.11.0",
+    uiModule: "2.3.0",
+    engine: {
+      worldLoads: 2,
+      reinitCount: 2,
+      lastReinitReason: "worldLoad",
+      lastCheckTick: 90,
+      uptimeTicks: 900,
+      errors: { script: 1, event: 0, storage: 2, form: 0 },
+      recentErrors: [{ tick: 80, category: "storage", message: "blocked" }],
+    },
+    features: [armor, servers],
+    capabilities: CAPABILITY_IDS.map((id) => ({
+      id,
+      available: id === "player.input" ? false : id === "player.locator" ? null : true,
+    })),
+    summary,
+    contextLines: ["Stored data: waypoints 3 | containers 1 | servers 2"],
+  });
+  assert.match(text, /ATLAS DIAGNOSTICS v1\.6\.0/);
+  assert.match(text, /WORKING \(1\): armor/);
+  assert.match(text, /servers: LIMITED/);
+  assert.match(text, /documented scope limit/);
+  assert.match(text, /API unavailable \(1\): player\.input/);
+  assert.match(text, /API not probed \(1\): player\.locator/);
+  assert.match(text, /Stored data: waypoints 3/);
+  assert.match(text, /storage @80: blocked/);
+  assert.doesNotMatch(text, /password|microsoft account/i);
+});
+
+test("long reports split into bounded chat chunks", () => {
+  const text = `${"A".repeat(450)}\nshort line\n${"B".repeat(120)}`;
+  const chunks = splitForChat(text, 100);
+  assert.ok(chunks.length > 1);
+  for (const chunk of chunks) assert.ok(chunk.length <= 100, `chunk was ${chunk.length}`);
+  assert.ok(chunks.join("").includes("A".repeat(450)));
+  assert.ok(chunks.join("").includes("short line"));
 });

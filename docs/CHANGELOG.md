@@ -4,6 +4,35 @@ All notable changes to ATLAS CLIENT are recorded here. The archive is a single `
 
 ---
 
+## 1.6.0 — Universal compatibility release
+
+### Added
+
+- **ATLAS UNIVERSAL COMPATIBILITY ENGINE** (`scripts/compatibility.js`) and a pure feature-status model (`scripts/compatibilityModel.js`).
+- Per-feature states: `WORKING`, `LIMITED`, `READY`, `UNAVAILABLE`, `ERROR` and `NOT TESTED`. `WORKING` requires a real successful operation in the current script session; `NOT TESTED` is never counted as success.
+- Lifecycle handling for `worldLoad`, player join, respawn, leave, dimension change and a deferred world-ready fallback. Reinitialization keeps settings, waypoints and the ESPCHEST log, and does not add duplicate listeners, tick loops or commands.
+- Capability gating in the HUD, armor alerts and health alerts so a missing optional API disables only that element.
+- Bounded error tracking by category (script, event, storage, form) with a last-check tick and recent-error list.
+- **DIAGNOSTICS** now lists every feature status, required/optional API gaps, engine counters and reinitialization counts.
+- **EXPORT DIAGNOSTICS** produces a copyable chat report in bounded chunks; the report contains no passwords, tokens or Microsoft account data.
+- Unit tests for the feature/status model, report formatting and chat chunking; integration coverage for diagnostics export and for a second `worldLoad` plus respawn without duplicated listeners.
+
+### Changed
+
+- Version bumped to **1.6.0** in `package.json`, both manifests, module versions, dependency versions and the runtime.
+- All 1.5.0 HUD, input, armor, effects, totems, waypoints, ESPCHEST, combat, Server Manager, themes, Arabic/English, settings and diagnostics behavior is preserved.
+- `ATLAS2` settings codes and legacy `ATLAS1` import remain compatible.
+
+### Verification
+
+- `npm run typecheck` — passed.
+- `npm test` — 20 tests passed, including 278 mocked form flows.
+- `npm run build` — produced a 51-file `ATLAS.mcaddon` (92.4 KiB).
+- `npm run validate` — passed 6 checks, including every JSON file, manifests, UUIDs, textures, imports and ZIP contents.
+- **Not tested inside Minecraft, on iPhone, PS5, a Realm or a public server.** See [`TEST_REPORT.md`](TEST_REPORT.md) and [`COMPATIBILITY.md`](COMPATIBILITY.md).
+
+---
+
 ## 1.5.0 — Server Manager release
 
 ### Added

@@ -1,6 +1,6 @@
 # ATLAS CLIENT — Server Manager
 
-**Version:** 1.5.0
+**Version:** 1.6.0
 **Target:** Minecraft Bedrock 26.60 / `1.26.60`+
 **Official APIs:** `@minecraft/server 2.11.0`, `@minecraft/server-ui 2.3.0`
 
@@ -68,7 +68,7 @@ Rejected input:
 - A duplicate address + port, or a blank name.
 - More than 40 entries.
 
-There is one deliberate omission: **IPv6 is not accepted**. Bedrock's `Add Server` field and port handling differ between platforms, so 1.5.0 validates IPv4 and domain names only instead of pretending every IPv6 form works.
+There is one deliberate omission: **IPv6 is not accepted**. Bedrock's `Add Server` field and port handling differ between platforms, so 1.6.0 validates IPv4 and domain names only instead of pretending every IPv6 form works.
 
 ---
 

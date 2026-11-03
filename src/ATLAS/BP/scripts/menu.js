@@ -3,6 +3,7 @@
 import { system } from "@minecraft/server";
 import { openScreen } from "./ui/router.js";
 import "./ui/main.js";
+import { markFeatureError } from "./compatibility.js";
 
 /** @type {Set<string>} */
 const activeMenus = new Set();
@@ -16,6 +17,7 @@ export function openMenu(player) {
       if (player.isValid) await openScreen("main", player);
     } catch (error) {
       console.warn(`[ATLAS] Could not open the menu: ${error}`);
+      markFeatureError(player, "menu", error, "form");
     } finally {
       activeMenus.delete(player.id);
     }

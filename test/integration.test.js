@@ -818,6 +818,36 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.match(diagForm.body, /2\.11\.0/);
     assert.match(diagForm.body, /2\.3\.0/);
     assert.match(diagForm.body, /Session duration: \d+:\d{2}/);
+    // Status comes from capabilities and real operations, not a static label.
+    assert.match(diagForm.body, /HUD: §eLIMITED/);
+    assert.match(diagForm.body, /Settings: §aWORKING/);
+    assert.match(diagForm.body, /Available \(\d+\)/);
+    assert.ok(diagForm.buttons.some((button) => /EXPORT DIAGNOSTICS/.test(button)));
+
+    // EXPORT DIAGNOSTICS produces the real report and sends copyable chunks
+    // to chat. No clipboard or fake success is involved.
+    queue(
+      click(/Settings/),
+      click(/Diagnostics/),
+      click(/EXPORT DIAGNOSTICS/),
+      click(/Send report to chat/),
+      click(/Back/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    const exportDiagForm = state.forms.find((form) =>
+      form.title?.includes("Diagnostics report"),
+    );
+    assert.ok(exportDiagForm);
+    assert.match(exportDiagForm.body, /ATLAS DIAGNOSTICS v1\.6\.0/);
+    assert.match(exportDiagForm.body, /WORKING \(\d+\): .*armor/);
+    assert.ok(
+      player.messages.some((message) => message.includes("ATLAS DIAGNOSTICS v1.6.0")),
+    );
+    assert.ok(player.messages.some((message) => /Diagnostics report sent in \d+ messages/.test(message)));
 
     // Export produces a code; send it to chat.
     queue(
@@ -882,6 +912,20 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.ok(player.messages.some((message) => /تم استيراد الإعدادات/.test(message)));
     assert.match(player.actionBars.at(-1) ?? "", /الصحة/);
 
+    // Record one container so the rejoin can prove the ESPCHEST log survives
+    // alongside settings and waypoints.
+    emit("playerInteractWithBlock", {
+      player,
+      isFirstEvent: true,
+      block: {
+        typeId: "minecraft:chest",
+        location: { x: 40, y: 64, z: -5 },
+        dimension: player.dimension,
+      },
+    });
+    await settle();
+    assert.equal(JSON.parse(player.dynamic.get("atlas:containers")).length, 1);
+
     // Snapshot the values written by the UI, then leave and change the stored
     // JSON to a distinct state. A rejoin must read that storage instead of
     // reusing the old in-memory cache. This is the data path used when a world
@@ -930,6 +974,9 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
       address: "play.example.com",
       port: 19132,
     });
+    const reloadedContainers = JSON.parse(returning.dynamic.get("atlas:containers"));
+    assert.equal(reloadedContainers.length, 1);
+    assert.equal(reloadedContainers[0].typeId, "minecraft:chest");
     queue(
       click(/Server Manager/),
       click(/My SMP/),
@@ -1057,6 +1104,30 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.ok(degradedDetail);
     assert.match(degradedDetail.body, /20 64 -5/);
     returning.getViewDirection = originalDetailView;
+
+    // A second worldLoad and a respawn reinitialize the relevant systems only.
+    // Listener and command counts must not grow, and the HUD must keep working.
+    const listenerCounts = Object.fromEntries(
+      Object.keys(state.events).map((name) => [name, state.events[name].length]),
+    );
+    const registrationsBefore = state.commandRegistrations;
+    emit("worldLoad", {});
+    emit("playerSpawn", { player: returning, initialSpawn: false });
+    advanceTicks(35);
+    await settle();
+    assertClean();
+    assert.equal(state.commandRegistrations, registrationsBefore);
+    for (const [name, expected] of Object.entries(listenerCounts)) {
+      assert.equal(state.events[name].length, expected, `reinit duplicated ${name}`);
+    }
+    assert.ok((returning.actionBars.at(-1) ?? "").includes("20/20"));
+    assert.equal(
+      returning.messages.filter((message) =>
+        message.includes(`Scripts v${ADDON_VERSION} are running`),
+      ).length,
+      0,
+      "respawn must not repeat the one-time boot message",
+    );
 
     originalWarn(`Integration harness complete: ${state.forms.length} forms exercised.`);
   } finally {

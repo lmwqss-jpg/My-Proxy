@@ -1,8 +1,8 @@
 # ATLAS CLIENT — Known Limitations
 
-**Version:** 1.5.0
+**Version:** 1.6.0
 **Platform:** Minecraft Bedrock 26.60 / `1.26.60`+
-**Status:** automated checks pass; in-game, iPhone, PS5 and public-server behaviour are not verified for this build.
+**Status:** automated checks pass; in-game, iPhone, PS5, Realm and public-server behaviour are not verified for this build.
 
 This document separates **unsupported by the official platform**, **implemented with a narrower scope**, and **not yet tested**.
 
@@ -43,12 +43,13 @@ This document separates **unsupported by the official platform**, **implemented 
 - **Combat history.** Kills, deaths and the last death are persisted. Damage totals and recent event history are session-only.
 - **Themes.** Form text colours, HUD accent and locator colours only; native form backgrounds and Ore UI cannot change.
 - **Settings.** Player dynamic properties. Servers that block dynamic properties or reset worlds cannot persist them.
-- **SERVER MANAGER.** A per-player address book of up to 40 entries. It validates IPv4/domain names and ports, remembers ordering, favourites, category, region, one manually marked current entry and the last Direct Join target. It does not connect, ping, detect a server or show its status. IPv6 is intentionally not accepted in 1.5.0. The region label is organisational only.
+- **SERVER MANAGER.** A per-player address book of up to 40 entries. It validates IPv4/domain names and ports, remembers ordering, favourites, category, region, one manually marked current entry and the last Direct Join target. It does not connect, ping, detect a server or show its status. IPv6 is intentionally not accepted. The region label is organisational only.
 - **Locator bar.** Uses Minecraft's official locator bar. It can be hidden by the world's player-waypoint setting or unsupported on a client.
 - **Totem counter.** Main inventory plus offhand only; shulker boxes and other containers are not scanned.
 - **Session timer.** Starts when the player is first seen by the script in the current session; it is not a persisted play-time statistic.
 - **ESPCHEST.** Interaction-based, not a wall scanner. It stores up to 20 containers per player, only when the player opens/interacts with them. It does not read contents or detect containers that were never opened, are unloaded, or are out of reach. The log is cleared by the player and does not modify the world.
 - **Status screens.** HOME, PLAYER, MOVEMENT, ARMOR, ITEMS, POTIONS and TOTEMS show only API values. If a component is unavailable, the row says unavailable or is hidden; no placeholder stat is generated.
+- **Compatibility status.** The engine can only observe the environment signals Minecraft exposes: world load, player join/respawn/leave and dimension change. It cannot identify a server, read its IP, ping it, or observe connection state. `WORKING`/`LIMITED` describe this script session after a real operation; `READY` is not a device-certification claim.
 
 ---
 
@@ -70,6 +71,7 @@ The following are **unverified**, not proven working:
 - Arabic glyph shaping and right-to-left layout in the Bedrock form font.
 - Item icon in the hotbar/inventory and form button icons.
 - Settings persistence after a real **Save & Quit** and world reopen.
+- Per-feature compatibility statuses and the `EXPORT DIAGNOSTICS` chat report on a device.
 - Entering an `ATLAS1`/`ATLAS2` code on a device keyboard.
 - Opening the menu from the item or `/atlas:menu` on PS5.
 - PS5 local import, joining a packed world/Realm, or adding a custom server (PS5 has no Add Server button).
@@ -78,7 +80,7 @@ The following are **unverified**, not proven working:
 - Performance with many players, long HUD lines or slow devices.
 - Minecraft versions other than 26.60.
 
-The BDS evidence recorded for 1.2.0 proved script startup and event registration on a server runtime. It did not render a player UI and is not repeated for 1.5.0 in this environment.
+The BDS evidence recorded for 1.2.0 proved script startup and event registration on a server runtime. It did not render a player UI and is not repeated for 1.6.0 in this environment.
 
 ---
 
@@ -98,8 +100,8 @@ These are not “missing features”; they conflict with the official API and th
 ## 5. Platform statements
 
 - **PS5:** primary target for development, but **not tested**. The code does not use device-specific input APIs. Whether PS5 can import a local file or join a packed world is unknown. PS5 also lacks Minecraft's Add Server button, so SERVER MANAGER cannot make a custom server joinable there.
-- **iPhone:** supported target, not tested for 1.5.0. Touch item use, Arabic shaping and the native Add Server flow need a device check.
+- **iPhone:** supported target, not tested for 1.6.0. Touch item use, Arabic shaping and the native Add Server flow need a device check.
 - **Public servers:** the pack is world-bound. If the server does not contain and allow it, no feature runs.
 - **Mega10:** not tested. No compatibility is claimed.
 
-For the exact device steps, use [`DEVICE_TESTING.md`](DEVICE_TESTING.md). For the automated evidence, use [`TEST_REPORT.md`](TEST_REPORT.md).
+For the exact device steps, use [`DEVICE_TESTING.md`](DEVICE_TESTING.md). For the engine and environment matrix, use [`COMPATIBILITY.md`](COMPATIBILITY.md). For the automated evidence, use [`TEST_REPORT.md`](TEST_REPORT.md).
