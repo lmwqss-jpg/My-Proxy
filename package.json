@@ -1,0 +1,22 @@
+{
+  "name": "atlas-client-bedrock",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "ATLAS CLIENT - a scripted HUD, utilities and settings add-on for Minecraft Bedrock.",
+  "scripts": {
+    "assets": "node scripts/generate-assets.mjs",
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.js",
+    "validate": "node scripts/validate.mjs",
+    "check": "npm run typecheck && npm test && npm run build && npm run validate"
+  },
+  "devDependencies": {
+    "@minecraft/server": "2.11.0",
+    "@minecraft/server-ui": "2.3.0",
+    "esbuild": "^0.25.0",
+    "fflate": "^0.8.2",
+    "typescript": "^5.9.0"
+  }
+}

@@ -1,0 +1,338 @@
+/**
+ * End-to-end harness: bundles the real script entry with mock Minecraft
+ * modules, then drives the actual forms, settings, HUD, waypoints and events.
+ *
+ * This is not a substitute for launching Minecraft. It verifies the control
+ * flow and data contracts that failed silently in previous pack builds.
+ */
+
+import test from "node:test";
+import assert from "node:assert/strict";
+import path from "node:path";
+import os from "node:os";
+import { pathToFileURL, fileURLToPath } from "node:url";
+import { build } from "esbuild";
+
+import { ItemStack, Player } from "./mocks/server.js";
+import {
+  advanceTicks,
+  emit,
+  fireStartup,
+  resetState,
+  runTasks,
+  state,
+} from "./mocks/state.js";
+import { normalizeSettings, settingsToCode } from "../src/ATLAS/BP/scripts/settings.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(__dirname, "..");
+const MENU_ITEM_ID = "atlas:client_token";
+
+const click = (pattern) => (form) => {
+  const index = form.buttons.findIndex((button) =>
+    pattern instanceof RegExp ? pattern.test(button) : button.includes(pattern),
+  );
+  if (index < 0) {
+    throw new Error(`No button matching ${pattern} in: ${form.buttons.join(" | ")}`);
+  }
+  return { canceled: false, selection: index };
+};
+
+const modal = (...values) => () => ({ canceled: false, formValues: values });
+const close = () => ({ canceled: true, cancelationReason: "UserClosed" });
+
+function queue(...responses) {
+  state.uiQueue.push(...responses);
+}
+
+async function settle() {
+  for (let i = 0; i < 8; i++) {
+    runTasks();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+}
+
+function assertClean() {
+  assert.deepEqual(state.errors.map(String), [], "mock/UI errors");
+  assert.deepEqual(state.warnings, [], "add-on warnings");
+  assert.equal(state.uiQueue.length, 0, "unconsumed form responses");
+}
+
+function openWithItem(player) {
+  emit("itemUse", { itemStack: new ItemStack(MENU_ITEM_ID, 1), source: player });
+  advanceTicks(1);
+}
+
+function openWithCommand(player) {
+  const command = state.commands.get("atlas:menu");
+  assert.ok(command, "custom command was not registered");
+  const result = command.callback({ sourceEntity: player, sourceType: "Entity" });
+  assert.equal(result.status, 0);
+  advanceTicks(1);
+}
+
+test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
+  const originalWarn = console.warn;
+  console.warn = (...args) => state.warnings.push(args.map(String).join(" "));
+
+  const outfile = path.join(os.tmpdir(), `atlas-integration-${process.pid}.mjs`);
+  await build({
+    entryPoints: [path.join(ROOT, "src/ATLAS/BP/scripts/main.js")],
+    bundle: true,
+    format: "esm",
+    platform: "neutral",
+    target: "node20",
+    outfile,
+    logLevel: "silent",
+    alias: {
+      "@minecraft/server": path.join(__dirname, "mocks/server.js"),
+      "@minecraft/server-ui": path.join(__dirname, "mocks/server-ui.js"),
+    },
+  });
+
+  try {
+    await import(`${pathToFileURL(outfile).href}?v=${Date.now()}`);
+    const earlyWorldReads = state.worldReads;
+    const earlyWorldWrites = state.worldWrites;
+    resetState();
+    assert.equal(earlyWorldReads, 0, "module scope must not read world data in early execution");
+    assert.equal(earlyWorldWrites, 0, "module scope must not write world data in early execution");
+    assert.ok(state.startupHandlers.length > 0, "startup event was not subscribed");
+    fireStartup();
+    emit("worldLoad", {});
+
+    const player = new Player("player-1", "Alex");
+    state.players.push(player);
+    emit("playerSpawn", { player, initialSpawn: true });
+    advanceTicks(30);
+    await settle();
+
+    const command = state.commands.get("atlas:menu");
+    assert.ok(command);
+    assert.equal(command.spec.permissionLevel, 0);
+    assert.equal(command.spec.cheatsRequired, false);
+    assert.ok(state.startupFired);
+    assert.equal(player.inventory.items.size, 1, "menu item was not given");
+    assert.equal([...player.inventory.items.values()][0].typeId, MENU_ITEM_ID);
+    assert.ok(player.titles.some((entry) => entry.text.includes("ATLAS CLIENT")));
+    assert.ok(player.messages.some((message) => message.includes("/atlas:menu")));
+    assert.ok((player.actionBars.at(-1) ?? "").includes("10 64 -4"));
+    assert.ok((player.actionBars.at(-1) ?? "").includes("20/20"));
+
+    // Open through the item, toggle coordinates off, then close.
+    queue(
+      click(/HUD/),
+      click(/Coordinates/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    assert.ok(state.forms.some((form) => form.type === "action" && form.buttons.some((b) => /Visual/.test(b))));
+    const afterHud = JSON.parse(player.dynamic.get("atlas:settings"));
+    assert.equal(afterHud.hud.coords, false);
+    assert.ok(!(player.actionBars.at(-1) ?? "").includes("10 64 -4"));
+    assert.ok((player.actionBars.at(-1) ?? "").includes("20/20"));
+
+    // Open through the custom command as a second, independent entry point.
+    queue(click(/Close/));
+    openWithCommand(player);
+    await settle();
+    assertClean();
+    assert.ok(state.forms.at(-1).title.includes("ATLAS"));
+    assert.ok(state.forms.at(-1).buttons.some((b) => /Close/.test(b)));
+
+    // A busy client (for example the chat screen still closing) is retried,
+    // then the menu opens normally on the next attempt.
+    const formsBeforeBusy = state.forms.length;
+    queue(
+      () => ({ canceled: true, cancelationReason: "UserBusy" }),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    advanceTicks(10);
+    await settle();
+    assertClean();
+    assert.equal(state.forms.length, formsBeforeBusy + 2);
+
+    // Theme picker: choose Violet (index 2), then return.
+    queue(click(/Settings/), click(/Theme/), modal(2), click(/Back/), click(/Close/));
+    openWithItem(player);
+    await settle();
+    assertClean();
+    assert.equal(JSON.parse(player.dynamic.get("atlas:settings")).theme, "violet");
+    const themeForm = state.forms.find((form) => form.type === "modal" && form.fields[0]?.items?.length === 4);
+    assert.ok(themeForm, "theme picker did not contain four themes");
+
+    // Language picker: Arabic, then back to English.
+    queue(
+      click(/Settings/),
+      click(/Language/),
+      modal(1),
+      click(/Back|رجوع/),
+      click(/Close|إغلاق/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    assert.equal(JSON.parse(player.dynamic.get("atlas:settings")).language, "ar");
+    assert.ok(state.forms.some((form) => form.buttons?.some((b) => /الإعدادات/.test(b))));
+
+    queue(
+      click(/الإعدادات/),
+      click(/اللغة/),
+      modal(0),
+      click(/Back|رجوع/),
+      click(/Close|إغلاق/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    assert.equal(JSON.parse(player.dynamic.get("atlas:settings")).language, "en");
+
+    // Add a waypoint through the modal, which should also become the HUD target.
+    queue(
+      click(/Utilities/),
+      click(/Add waypoint here/),
+      modal("Base"),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    const waypointList = JSON.parse(state.worldProps.get("atlas:waypoints"));
+    assert.equal(waypointList.length, 1);
+    assert.equal(waypointList[0].name, "Base");
+    assert.equal(waypointList[0].dimensionId, "minecraft:overworld");
+    const afterAdd = JSON.parse(player.dynamic.get("atlas:settings"));
+    assert.equal(afterAdd.waypoints.trackedId, waypointList[0].id);
+    assert.equal(player.locatorBar.waypoints.size, 1);
+    assert.ok((player.actionBars.at(-1) ?? "").includes("Base"));
+
+    // Rename it through the detail screen.
+    queue(
+      click(/Utilities/),
+      click(/Waypoints/),
+      click(/Base/),
+      click(/Rename/),
+      modal("HQ"),
+      click(/Back/),
+      click(/Back/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    const renamed = JSON.parse(state.worldProps.get("atlas:waypoints"));
+    assert.equal(renamed.length, 1);
+    assert.equal(renamed[0].name, "HQ");
+    assert.ok((player.actionBars.at(-1) ?? "").includes("HQ"));
+
+    // Low-health alert fires once per low-health episode.
+    player.health = 5;
+    advanceTicks(5);
+    await settle();
+    assert.ok(player.titles.some((entry) => entry.text.includes("LOW HEALTH")));
+    assert.ok(player.sounds.some((sound) => sound.soundId === "note.pling"));
+    assert.equal(player.titles.filter((entry) => entry.text.includes("LOW HEALTH")).length, 1);
+    player.health = 20;
+    advanceTicks(5);
+    player.health = 4;
+    advanceTicks(5);
+    await settle();
+    assert.equal(player.titles.filter((entry) => entry.text.includes("LOW HEALTH")).length, 2);
+
+    // A player kill updates both combat records and creates a death waypoint.
+    const killer = new Player("player-2", "Steve");
+    state.players.push(killer);
+    emit("entityDie", {
+      deadEntity: player,
+      damageSource: { cause: "entityAttack", damagingEntity: killer },
+    });
+    advanceTicks(1);
+    await settle();
+    assertClean();
+    assert.equal(player.dynamic.get("atlas:deaths"), 1);
+    assert.equal(killer.dynamic.get("atlas:kills"), 1);
+    const withDeath = JSON.parse(state.worldProps.get("atlas:waypoints"));
+    assert.equal(withDeath.length, 2);
+    assert.ok(withDeath.some((waypoint) => waypoint.kind === "death"));
+    assert.equal(player.locatorBar.waypoints.size, 2);
+    assert.ok(player.dynamic.get("atlas:last_death"));
+
+    // Combat log displays the persisted stats and the death event.
+    queue(
+      click(/PvP/),
+      click(/Combat log/),
+      click(/Back/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    const combatForm = state.forms.find((form) => form.body?.includes("Recent combat"));
+    assert.ok(combatForm);
+    assert.match(combatForm.body, /Deaths: §f1/);
+    assert.match(combatForm.body, /Last death/);
+    assert.match(combatForm.body, /Steve/);
+
+    // Diagnostics exposes the real target versions and feature status.
+    queue(
+      click(/Settings/),
+      click(/Diagnostics/),
+      click(/Back/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    const diagForm = state.forms.find((form) => form.title?.includes("Diagnostics"));
+    assert.ok(diagForm);
+    assert.match(diagForm.body, /1\.26\.60/);
+    assert.match(diagForm.body, /2\.11\.0/);
+    assert.match(diagForm.body, /2\.3\.0/);
+
+    // Export produces a code; send it to chat.
+    queue(
+      click(/Settings/),
+      click(/Export/),
+      click(/Send code to chat/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    const exportForm = state.forms.find((form) => form.title?.includes("Export settings"));
+    assert.ok(exportForm);
+    assert.match(exportForm.body, /ATLAS1-/);
+    assert.ok(player.messages.some((message) => message.includes("ATLAS1-")));
+
+    // Import a valid Arabic/Emerald settings code.
+    const importCode = settingsToCode(normalizeSettings({ theme: "emerald", language: "ar" }));
+    queue(
+      click(/Settings/),
+      click(/Import/),
+      modal(importCode),
+      click(/Back|رجوع/),
+      click(/Close|إغلاق/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    const imported = JSON.parse(player.dynamic.get("atlas:settings"));
+    assert.equal(imported.theme, "emerald");
+    assert.equal(imported.language, "ar");
+    assert.ok(state.forms.some((form) => form.buttons?.some((b) => /الإعدادات/.test(b))));
+
+    originalWarn(`Integration harness complete: ${state.forms.length} forms exercised.`);
+  } finally {
+    console.warn = originalWarn;
+  }
+});
