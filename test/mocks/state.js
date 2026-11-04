@@ -81,6 +81,12 @@ export function fireStartup() {
     registerCommand(spec, callback) {
       state.commandRegistrations += 1;
       state.commands.set(spec.name, { spec, callback });
+      // Bedrock automatically exposes the un-namespaced alias in chat. Model
+      // it so tests can resolve `/atlas` exactly as a player types it.
+      const alias = spec.name.includes(":") ? spec.name.split(":")[1] : null;
+      if (alias && !state.commands.has(alias)) {
+        state.commands.set(alias, { spec, callback, aliasOf: spec.name });
+      }
     },
     registerEnum() {},
   };

@@ -335,6 +335,7 @@ export function formatCompatibilityReport(snapshot) {
   const engine = snapshot?.engine ?? {};
   const features = snapshot?.features ?? [];
   const capabilities = snapshot?.capabilities ?? [];
+  const entryPoints = snapshot?.entryPoints ?? {};
   const summary = snapshot?.summary ?? buildCompatibilitySummary(features);
   const lines = [];
 
@@ -349,6 +350,14 @@ export function formatCompatibilityReport(snapshot) {
   );
   lines.push(
     `Errors: script ${engine.errors?.script ?? 0} | event ${engine.errors?.event ?? 0} | storage ${engine.errors?.storage ?? 0} | form ${engine.errors?.form ?? 0}`,
+  );
+  const commandText = Array.isArray(entryPoints.commands) && entryPoints.commands.length > 0
+    ? entryPoints.commands
+        .map((entry) => `/${entry.name} (chat /${entry.chatAlias})`)
+        .join(", ")
+    : "none registered";
+  lines.push(
+    `Entry points: ${commandText} | item ${entryPoints.item ?? "?"} | scriptevent ${entryPoints.scriptEvent ?? "?"}`,
   );
   lines.push(`Features: ${summarizeStatuses(summary)}`);
   lines.push("");

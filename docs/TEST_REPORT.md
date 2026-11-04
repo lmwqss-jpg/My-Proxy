@@ -1,11 +1,11 @@
-# ATLAS CLIENT 1.6.0 — Full Test Report
+# ATLAS CLIENT 1.7.0 — Full Test Report
 
-**Add-on version:** 1.6.0
+**Add-on version:** 1.7.0
 **Archive:** `ATLAS.mcaddon` (single BP + RP)
 **Target:** Minecraft Bedrock 26.60 / `1.26.60`+
 **Script modules:** `@minecraft/server 2.11.0`, `@minecraft/server-ui 2.3.0`
 **Experiments:** none
-**Report scope:** automated/static tests actually run for 1.6.0. Device and in-game tests are listed separately as **NOT TESTED**.
+**Report scope:** automated/static tests actually run for 1.7.0. Device and in-game tests are listed separately as **NOT TESTED**.
 
 > This is not a claim that the add-on works on iPhone, PS5, Mega10 or inside a real Minecraft client. No such test environment was available here.
 
@@ -19,8 +19,8 @@ Linux, Node.js 24.22.1, npm 11.19.1, TypeScript 5.9.3, esbuild 0.25.12.
 |---|---|---|
 | `npm ci` | PASS | 8 packages installed, 0 vulnerabilities |
 | `npm run typecheck` | PASS | pack scripts checked against the official 2.11.0 / 2.3.0 types |
-| `npm test` | PASS | 20 tests; 19 unit/static tests + 1 integration test with **278 native form flows** |
-| `npm run build` | PASS | `ATLAS.mcaddon`, **51 files, 92.4 KiB**, 53 ZIP entries including pack roots |
+| `npm test` | PASS | **27 tests**: 26 unit/static (including 6 command-registration tests) + 1 integration test with **279 native form flows** |
+| `npm run build` | PASS | `ATLAS.mcaddon`, **51 files, 94.5 KiB**, 53 ZIP entries including pack roots |
 | `npm run validate` | PASS | **6 checks**: manifests, 5 JSON files, item/PNG/texture references, localisation, 34 scripts/imports, ZIP |
 | `npm run check` | PASS | the four commands above in sequence |
 | `unzip -l ATLAS.mcaddon` | PASS | `ATLAS_BP/` and `ATLAS_RP/` manifests, `scripts/main.js`, item and textures at the expected roots |
@@ -43,25 +43,41 @@ The integration harness loads the real bundled `scripts/main.js` against mock Mi
 | A6 | Dependencies and API versions | PASS | BP depends on RP and stable `@minecraft/server 2.11.0` / `@minecraft/server-ui 2.3.0`; RP depends on BP; no beta/preview |
 | A7 | Missing files | PASS | script entry, item definition, texture map, icons, language file and pack icons all exist |
 | A8 | Paths | PASS | all relative imports resolve; item texture references resolve; archive paths are not nested |
-| A9 | Old code conflicts | PASS | version 1.6.0 aligns across `package.json`, manifests, dependency versions and runtime; ATLAS1 and older ATLAS2 codes still import |
+| A9 | Old code conflicts | PASS | version 1.7.0 aligns across `package.json`, manifests, dependency versions and runtime; ATLAS1 and older ATLAS2 codes still import |
 
 Static forbidden checks also passed: no `eval`/`new Function`, no experiment or `script_eval` capability, no unsupported `ar_SA` locale, no legacy branding in pack files.
 
 ---
 
-## 3. B. `/atlas:menu` and menu entry tests
+## 3. B. Command entry points and menu tests
+
+### B.1 Command registration
 
 | # | Test | Result | Detail |
 |---|---|---|---|
-| B1 | Command registered correctly | PASS (harness) | name `atlas:menu`, permission `Any`, `cheatsRequired: false`; exactly one registration |
-| B2 | Command opens the main menu | PASS (harness) | player callback returns success and the main form opens |
-| B3 | Open and close the menu | PASS (harness) | item, custom command and close button exercised |
-| B4 | Navigate every section | PASS (harness) | all 16 sections opened and returned to the main menu |
-| B5 | No freeze while opening forms | PASS (harness) | 278 sequential forms handled; no unresolved UI queue |
-| B6 | Handle form failure | PASS (harness) | `UserBusy` retry path and form error message covered |
-| B7 | No duplicate command/event registration | PASS (harness) | 1 command registration; expected listener counts; double item use opens one menu |
+| B1 | `/atlas:menu` is registered | PASS (harness) | name `atlas:menu`, permission `Any`, `cheatsRequired: false` |
+| B2 | `/atlas` is registered | PASS (harness) | name `atlas:atlas`; the mock resolves the un-namespaced alias `/atlas` |
+| B3 | `/menu` alias is available | PASS (harness) | automatic alias of `atlas:menu` |
+| B4 | Both commands open the main menu | PASS (harness) | `/atlas` and `/atlas:menu` callbacks return success and open the main form on the next tick |
+| B5 | Non-player origin | PASS (command suite) | console origin returns `Failure` with an in-game message; an `initiator` player is accepted |
+| B6 | Name collision | PASS (command suite) | when `atlas:atlas` is rejected, `/atlas:menu` and `/menu` stay registered and the failure is logged |
+| B7 | Missing command registry | PASS (command suite) | no exception, zero registrations, warning logged |
+| B8 | No duplicate registration | PASS (harness + suite) | exactly 2 registrations, one per name; a repeated startup event and a second `registerCommands()` call do nothing |
+| B9 | Command names in diagnostics | PASS (harness) | DIAGNOSTICS lists `/atlas` and `/atlas:menu`; the exported report contains an `Entry points:` line |
 
-Command failure outside a player context returns a controlled failure message instead of throwing.
+Registration marks the command capability available; the feature becomes `WORKING` only after the real command callback runs. The command suite bundles the real `scripts/commands.js` against the mock registry. The `/atlas` alias relies on **documented Bedrock behavior** (Bedrock Wiki, *Custom Commands*: Minecraft registers the un-namespaced version of a custom command in chat). It was verified in the mock, **not typed into a real Minecraft client**, and the underlying `CustomCommand` reference from Microsoft only confirms that the registered name requires a namespace.
+
+### B.2 Menu control flow
+
+| # | Test | Result | Detail |
+|---|---|---|---|
+| B10 | Open and close the menu | PASS (harness) | item, `/atlas:menu`, `/atlas` and close button exercised |
+| B11 | Navigate every section | PASS (harness) | all 16 sections opened and returned to the main menu |
+| B12 | No freeze while opening forms | PASS (harness) | **279** sequential forms handled; no unresolved UI queue |
+| B13 | Handle form failure | PASS (harness) | `UserBusy` retry path and form error message covered |
+| B14 | No duplicate listeners or menus | PASS (harness) | expected listener counts; double item use opens one menu |
+
+`/atlas` and `/atlas:menu` require no cheats or operator permissions. Commands exist only while ATLAS is installed and active in the world; a server that does not run the pack cannot expose them, and ATLAS does not claim otherwise.
 
 ---
 
@@ -156,19 +172,20 @@ Each section was opened from the real main menu and exited back to it. Section c
 
 ---
 
-## 8A. Compatibility engine and diagnostics export (1.6.0)
+## 8A. Compatibility engine and diagnostics export (1.7.0)
 
 | # | Test | Result | Detail |
 |---|---|---|---|
 | X1 | Feature definitions are unique and complete | PASS (unit) | 18 features; every required/optional capability exists; screen-to-feature mapping covers section and detail screens |
 | X2 | Status reduction | PASS (unit) | `READY` before use, `WORKING` only after a real success, `ERROR` after a later failure, `UNAVAILABLE` for a missing required API, `NOT TESTED` for an unprobed capability, `LIMITED` for documented scope |
-| X3 | Report contents | PASS (unit) | Version, feature statuses, API available/unavailable/not-probed lists, stored-data context, bounded errors |
+| X3 | Report contents | PASS (unit) | Version, feature statuses, entry points, API available/unavailable/not-probed lists, stored-data context, bounded errors |
 | X4 | Chat chunking | PASS (unit) | Long reports split below 100/200 character limits without an oversized message |
-| X5 | Second `worldLoad` and respawn | PASS (harness) | One command registration and unchanged listener counts; settings, waypoints and containers remain; no repeated boot message |
-| X6 | Diagnostics screen | PASS (harness) | Real per-feature statuses, `HUD: LIMITED`, `Settings: WORKING`, capability counts, session duration and error counters |
+| X5 | Second `worldLoad` and respawn | PASS (harness) | Exactly two command registrations (one per name) and unchanged listener counts; settings, waypoints and containers remain; no repeated boot message |
+| X6 | Diagnostics screen | PASS (harness) | Real per-feature statuses, command entry points, `HUD: LIMITED`, `Settings: WORKING`, capability counts, session duration and error counters |
 | X7 | Export diagnostics | PASS (harness) | Form shows the real report; sending it adds copyable chat chunks and a message count; no clipboard or fake success |
 | X8 | Capability gating | PASS (harness + unit) | Missing optional view/game-mode/effects APIs hide only their elements; the rest of the HUD and menu continue |
 | X9 | Error tracking | PASS (harness) | Router/HUD/store failures are counted by category without stopping other features |
+| X10 | Entry-point reporting | PASS (harness + unit) | Accepted command names and aliases come from `MENU_COMMANDS`; a missing registry reports `not registered` in the report instead of claiming `/atlas` |
 
 `WORKING` in this table means the harness observed a successful operation. It does not mean the feature was verified on a device.
 
@@ -180,7 +197,7 @@ Each section was opened from the real main menu and exited back to it. Section c
 | Repeated data updates | PASS (harness) | 100+ form actions and repeated HUD updates without failure |
 | Leave/join | PASS (harness) | state caches cleared, settings and waypoints reloaded |
 | No duplicate listeners | PASS (harness) | expected subscription counts for all 13 event signals used |
-| No duplicate command | PASS (harness) | one registration even after menu/command use |
+| No duplicate command | PASS (harness + suite) | exactly two registrations, one per name, even after repeated startup calls or menu/command use |
 | Inventory bursts | PASS (harness) | two same-tick inventory changes produce one HUD rebuild |
 | Missing optional APIs | PASS (harness) | HUD and new screens omit unavailable values and do not crash |
 | Container log cap | PASS (unit) | 20 entries maximum; oldest entries drop |
@@ -196,13 +213,13 @@ No memory-leak or long-run soak test was possible outside Minecraft. The test co
 
 `npm run build` produced:
 
-- `ATLAS.mcaddon` with 51 files, 92.4 KiB, 53 ZIP entries.
+- `ATLAS.mcaddon` with 51 files, 94.5 KiB, 53 ZIP entries.
 - `ATLAS_BP/manifest.json`, `ATLAS_BP/scripts/main.js`, `ATLAS_BP/items/atlas_client.json`.
 - `ATLAS_RP/manifest.json`, textures (including `atlas_servers.png`), `texts/en_US.lang`, `texts/languages.json`.
 - No nested pack folder, no `__MACOSX`, no `.DS_Store`, no stale archived files.
 - Every archived file matches its source byte-for-byte.
 
-`npm run validate` passed 6 checks and confirmed version 1.6.0, 5 unique UUIDs, 5 parsed JSON files, item/texture/PNG references, localisation and 34 script import graphs.
+`npm run validate` passed 6 checks and confirmed version 1.7.0, 5 unique UUIDs, 5 parsed JSON files, item/texture/PNG references, localisation and 34 script import graphs.
 
 ---
 
@@ -216,7 +233,7 @@ Not verified:
 - activating both packs in a real world;
 - rendering native forms, titles, action-bar HUD text, icons or locator markers;
 - touch/controller navigation;
-- real item use and `/atlas:menu` in chat;
+- real item use and `/atlas` / `/atlas:menu` / `/menu` in chat; the `/atlas` alias has not been typed into a real client;
 - real armor/effect/totem/inventory updates;
 - Arabic shaping and right-to-left layout;
 - settings persistence after a real **Save & Quit**;
@@ -224,7 +241,7 @@ Not verified:
 - SERVER MANAGER add/edit forms on a touch or controller keyboard, and the platform-specific connection guide;
 - long HUD lines at different screen sizes.
 
-The 1.2.0 build previously loaded its scripts and registered events on Bedrock Dedicated Server 1.26.60.6. That is historical startup evidence only; **1.6.0 was not run on BDS or in a client for this report.**
+The 1.2.0 build previously loaded its scripts and registered events on Bedrock Dedicated Server 1.26.60.6. That is historical startup evidence only; **1.7.0 was not run on BDS or in a client for this report.**
 
 ---
 
@@ -236,21 +253,22 @@ The 1.2.0 build previously loaded its scripts and registered events on Bedrock D
 | PS5 | NOT TESTED | primary target; local import, controller input and custom-server entry (PS5 has no Add Server button) are unverified |
 | Bedrock Arab | NOT TESTED | file-picker flow and real import are unverified |
 | Mega10 | NOT TESTED | public-server packs, commands and storage may be restricted |
-| Bedrock Dedicated Server | NOT TESTED for 1.6.0 | no server binary in this environment |
+| Bedrock Dedicated Server | NOT TESTED for 1.7.0 | no server binary in this environment |
 
 No compatibility claim is made for any of these.
 
 ---
 
-## 13. L. Defects found and fixed during 1.4.0–1.6.0 work
+## 13. L. Defects found and fixed during 1.4.0–1.7.0 work
 
 | Defect | Impact | Fix | Re-tested |
 |---|---|---|---|
 | ITEMS would say `Empty` if the equippable API failed | could present a missing API as a real empty hand | show `Not available` instead | items section integration flow |
 | Container detail used `getViewDirection()` without a guard | detail could fail on a client without view data | distance/cardinal direction remain; relative label is omitted on failure | container detail integration flow |
 | A non-container block (`beacon`) was in the recognition list | an interaction with a non-container could be logged as a container | removed; only real container types and chest/shulker variants are accepted | container unit test |
+| `/atlas` answered **Command Not Found** | 1.6.0 registered only the namespaced `atlas:menu`; a bare `/atlas` was never a command | register `atlas:atlas` so Bedrock exposes `/atlas`; register each name once and independently; report accepted entry points in DIAGNOSTICS | command suite + integration harness; real client **NOT TESTED** |
 
-No failing product assertion remained in the final automated run. The earlier `action indicator` test timing was corrected in the harness; it was a test-order issue, not a product defect. The 1.6.0 compatibility work found no regression in the existing sections; its new unit and harness cases are listed in section 8A.
+No failing product assertion remained in the final automated run. The earlier `action indicator` test timing was corrected in the harness; it was a test-order issue, not a product defect. The 1.6.0 compatibility work found no regression in the existing sections; its new unit and harness cases are listed in section 8A. The 1.7.0 command fix is covered by the command suite and the integration harness.
 
 ---
 
@@ -259,7 +277,7 @@ No failing product assertion remained in the final automated run. The earlier `a
 | Feature | Status | Scope |
 |---|---|---|
 | Main menu and 16 sections | PASS (harness) | native forms; device render unverified |
-| `/atlas:menu` | PASS (harness) | no cheats; device command path unverified |
+| `/atlas` and `/atlas:menu` | PASS (harness) | no cheats; `/atlas` is Bedrock's automatic short alias; device command path unverified |
 | HUD text | PASS (harness) | action bar only; no positioning/size/opacity |
 | WASD | PARTIAL | movement vector, not physical keys; device unverified |
 | CPS / LMB / RMB | PARTIAL | game-reported actions only; empty-air clicks unavailable |
@@ -300,9 +318,9 @@ No failing product assertion remained in the final automated run. The earlier `a
 2. Activate **ATLAS CLIENT** (Behavior Pack) and **ATLAS CLIENT Resources** in the world.
 3. Do not enable experiments.
 4. Enter the world.
-5. Open the menu with the **ATLAS CLIENT** item or `/atlas:menu` (no cheats required).
-6. Expected Content Log lines: `[ATLAS] Scripts loaded: v1.6.0`, `[ATLAS] Compatibility engine initialized`, `[ATLAS] Event handlers registered: 10`, `[ATLAS] Custom command /atlas:menu registered`, `[ATLAS] World loaded`.
-7. Expected chat line once per player/version: `Scripts v1.6.0 are running`.
+5. Open the menu with the **ATLAS CLIENT** item, `/atlas` or `/atlas:menu` (no cheats required); `/menu` is the automatic short form.
+6. Expected Content Log lines: `[ATLAS] Scripts loaded: v1.7.0`, `[ATLAS] Compatibility engine initialized`, `[ATLAS] Event handlers registered: 10`, `[ATLAS] Custom command /atlas:menu registered`, `[ATLAS] Custom command /atlas:atlas registered`, `[ATLAS] World loaded`.
+7. Expected chat line once per player/version: `Scripts v1.7.0 are running`.
 
 Detailed device steps: [`DEVICE_TESTING.md`](DEVICE_TESTING.md). Installation: [`INSTALL.md`](INSTALL.md). Troubleshooting: [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md). Limits: [`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md).
 

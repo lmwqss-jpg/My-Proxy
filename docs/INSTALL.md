@@ -1,10 +1,10 @@
-# ATLAS CLIENT 1.6.0 — Installation Guide
+# ATLAS CLIENT 1.7.0 — Installation Guide
 
 **Required game version:** Minecraft Bedrock 26.60 / `1.26.60` or newer
 **Install file:** `ATLAS.mcaddon`
 **Inside the archive:** `ATLAS_BP/` (Behavior Pack) and `ATLAS_RP/` (Resource Pack)
 **Experiments:** none
-**Cheats for `/atlas:menu`:** not required
+**Cheats for `/atlas` and `/atlas:menu`:** not required
 
 > **PS5 is the primary target, but PS5 import and gameplay were not tested for this build.**
 > The add-on itself is platform-independent and uses stable Script API calls. Do not assume that a PS5 file picker, import or local world installation works until you test it.
@@ -54,19 +54,22 @@ The Behavior Pack declares a dependency on the Resource Pack, so activating the 
 
 You should see:
 
-- a one-time chat line `ATLAS | Scripts v1.6.0 are running.`
+- a one-time chat line `ATLAS | Scripts v1.7.0 are running.`
 - the ATLAS CLIENT item in your inventory (if there is space)
 - a HUD line in the action bar above the hotbar
 
 Open the menu with the item or with:
 
 ```text
+/atlas
 /atlas:menu
 ```
 
-`/atlas:menu` has permission level `Any` and does not require cheats. The optional `/scriptevent atlas:menu` does require cheats.
+`/atlas` and `/atlas:menu` have permission level `Any` and do not require cheats. `/menu` is Bedrock's automatic short form of `atlas:menu`. The optional `/scriptevent atlas:menu` does require cheats.
 
-The 1.6.0 menu contains: **HOME, ESPCHEST, HUD, VISUAL, PLAYER, MOVEMENT, ARMOR, ITEMS, POTIONS, TOTEMS, COMBAT, WAYPOINTS, SERVER MANAGER, SETTINGS, DIAGNOSTICS, ABOUT**.
+**Why `/atlas` exists in 1.7.0:** 1.6.0 registered only the namespaced name `atlas:menu`, so `/atlas` correctly answered **Command Not Found**. Bedrock requires a namespace and automatically adds the un-namespaced chat alias; ATLAS now registers `atlas:atlas` as well, which produces `/atlas`. Every name is registered separately, so a conflict on one name does not remove the other. Commands exist only while the pack is active in that world; a public server must run the pack itself.
+
+The 1.7.0 menu contains: **HOME, ESPCHEST, HUD, VISUAL, PLAYER, MOVEMENT, ARMOR, ITEMS, POTIONS, TOTEMS, COMBAT, WAYPOINTS, SERVER MANAGER, SETTINGS, DIAGNOSTICS, ABOUT**.
 
 **ESPCHEST** is a log of containers you actually open, not a wall scanner. Opening a chest/barrel/furnace/etc. records its type, position, distance and direction. It never reads hidden contents and does not change the world.
 
@@ -92,7 +95,8 @@ Double-click `ATLAS.mcaddon`. Minecraft imports both packs. Then activate them i
 2. Copy `ATLAS_BP/` into `behavior_packs/`.
 3. Copy `ATLAS_RP/` into `resource_packs/`.
 4. Add both to the world's `world_behavior_packs.json` and `world_resource_packs.json`.
-5. Restart the server and check the console for `[ATLAS] Scripts loaded: v1.6.0`.
+5. Restart the server and check the console for `[ATLAS] Scripts loaded: v1.7.0`.
+6. A player who joins that server can use `/atlas` or `/atlas:menu` only if the server itself loaded the pack and allowed custom commands.
 
 The BDS has no player UI, so the HUD and forms cannot be visually verified there.
 
@@ -100,7 +104,7 @@ The BDS has no player UI, so the HUD and forms cannot be visually verified there
 
 ## 4. PS5 and Bedrock Arab
 
-**No PS5 import or gameplay test was performed for 1.6.0.** The following are the only known paths, and all remain unverified:
+**No PS5 import or gameplay test was performed for 1.7.0.** The following are the only known paths, and all remain unverified:
 
 1. **Local file import** — if your PS5 build offers a way to open a local `.mcaddon`, use the same activation steps as iPhone. Do not assume this exists.
 2. **Join a packed world or Realm** — activate both packs on a world hosted from another device that can import them, then join from PS5. This depends on the world's pack settings and on the server allowing custom packs.
@@ -112,8 +116,8 @@ Before claiming compatibility, verify on the PS5:
 - both packs appear;
 - both packs activate;
 - the item is available;
-- `[ATLAS] Scripts loaded: v1.6.0` appears in the log;
-- `/atlas:menu` opens;
+- `[ATLAS] Scripts loaded: v1.7.0` appears in the log;
+- `/atlas` and `/atlas:menu` open (and `/menu` if the platform exposes it);
 - the HUD renders;
 - settings survive leaving and rejoining.
 
@@ -121,13 +125,14 @@ Until then, treat PS5 support as **untested**, not as working or broken.
 
 ---
 
-## 5. Updating from 1.5.0, 1.4.0, 1.3.0, 1.2.0, 1.1.0 or 1.0.0
+## 5. Updating from 1.6.0, 1.5.0, 1.4.0, 1.3.0, 1.2.0, 1.1.0 or 1.0.0
 
-The pack UUIDs are stable, so a higher `header.version` replaces the older installation. The archive is version **1.6.0**.
+The pack UUIDs are stable, so a higher `header.version` replaces the older installation. The archive is version **1.7.0**.
 
 1. Import the new `ATLAS.mcaddon`.
-2. If the old packs remain listed in the world, remove them and add the 1.6.0 packs again.
-3. Rejoin and look for `Scripts v1.6.0 are running`.
+2. If the old packs remain listed in the world, remove them and add the 1.7.0 packs again.
+3. Rejoin and look for `Scripts v1.7.0 are running`.
+4. Type `/atlas`. If it is still missing, check that the world uses 1.7.0 and that the Behavior Pack is active.
 
 Settings are stored per player and world. They are kept when the pack version changes. Existing `ATLAS2` and `ATLAS1` settings codes remain importable. Server entries are stored separately from settings and are also kept across pack updates.
 

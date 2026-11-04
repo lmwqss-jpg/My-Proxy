@@ -1,6 +1,6 @@
-# ATLAS CLIENT 1.6.0 — Universal Compatibility
+# ATLAS CLIENT 1.7.0 — Universal Compatibility
 
-**Version:** 1.6.0
+**Version:** 1.7.0
 **Target:** Minecraft Bedrock 26.60 / `[1, 26, 60]`
 **Script modules:** `@minecraft/server 2.11.0`, `@minecraft/server-ui 2.3.0`
 **Experiments:** none
@@ -10,7 +10,7 @@ per-feature compatibility manager and what ATLAS can and cannot do when the
 world is opened as a local world, Realm, private server, public server or
 dedicated server.
 
-> Automated and mocked checks pass for 1.6.0. **No 1.6.0 test was performed on
+> Automated and mocked checks pass for 1.7.0. **No 1.7.0 test was performed on
 > iPhone, PS5, a Realm, Mega10, a public server or inside a real Minecraft
 > client.** The tables below separate what was exercised in the harness from
 > what still needs a device check.
@@ -67,7 +67,7 @@ degrade that feature.
 | Feature | Required APIs | Optional | Known scope | Harness |
 |---|---|---|---|---|
 | Menu entry | native forms | item-use event, script event, command | item or command; no overlay or ESC | PASS |
-| `/atlas:menu` | custom command registry | — | unavailable before startup or on a client without custom commands | PASS |
+| `/atlas` and `/atlas:menu` | custom command registry | — | namespaced registration; Minecraft adds `/atlas`, `/atlas:atlas` and `/menu` chat aliases; unavailable before startup or on an environment without custom commands | PASS (harness) |
 | HOME | forms, player session | — | live values only | PASS |
 | ESPCHEST | block-interaction event, player dynamic properties | — | only containers actually opened | PASS |
 | HUD | action bar, player session | — | one action-bar line; no free positioning | PASS |
@@ -91,19 +91,62 @@ features keep working.
 
 ---
 
+## 3A. Command entry points
+
+Bedrock requires a namespace in every `CustomCommand.name`. 1.6.0 registered
+`atlas:menu` only, so `/atlas` returned **Command Not Found**. Minecraft adds
+the un-namespaced alias of a custom command automatically in chat:
+
+| Registered name | Namespaced command | Chat alias |
+|---|---|---|
+| `atlas:menu` | `/atlas:menu` | `/menu` |
+| `atlas:atlas` | `/atlas:atlas` | **`/atlas`** |
+
+Bedrock Wiki, *Custom Commands*: "Minecraft will automatically register a
+version of your custom command without the provided namespace." That is the
+documented behavior this alias relies on; Microsoft's `CustomCommand` reference
+only states that a namespace is required in the registered name.
+
+Both names use `permissionLevel: Any` and `cheatsRequired: false`. Each name is
+registered once during `system.beforeEvents.startup`, inside its own try/catch:
+a collision on `/atlas` leaves `/atlas:menu` working, and a missing registry is
+reported without stopping the item or the rest of the client. The callback accepts
+the player from `sourceEntity` or `initiator`, rejects console/command-block
+origins with a readable failure, and the form opens on the next tick.
+
+DIAGNOSTICS lists the names the game actually accepted. `EXPORT DIAGNOSTICS`
+adds an `Entry points:` line. A registered name is reported as such; ATLAS does
+not assume `/atlas` exists just because the code asked for it. Registration marks
+the command capability available, while the `command` feature becomes `WORKING`
+only after a player actually runs a menu command in this session.
+
+| Environment | `/atlas` | `/atlas:menu` | Evidence |
+|---|---|---|---|
+| Local world with the pack active | expected | expected | harness only |
+| Realm with the pack installed by the owner | expected | expected | NOT TESTED |
+| Private server / BDS running the pack | expected | expected | NOT TESTED |
+| Public server without the pack | no | no | by design: no script, no add-on |
+| Server running the pack but blocking custom commands | no | no | item remains the fallback; NOT TESTED |
+
+Commands exist only while ATLAS is installed and active in that world. A pack on
+a player's phone cannot register a command on a remote server. `/scriptevent
+atlas:menu` requires cheats and is not a replacement for the custom commands.
+
+---
+
 ## 4. Server environments
 
 ATLAS is a **world-bound Behavior Pack**. It runs only where the world/server
 already has the pack installed and active. It cannot inject itself into a
 server from a player's device.
 
-| Environment | What can work when the pack is active | What may be blocked | Tested in 1.6.0 |
+| Environment | What can work when the pack is active | What may be blocked | Tested in 1.7.0 |
 |---|---|---|---|
 | Local world | All feature categories | nothing by ATLAS | Harness only |
 | Realm | HUD, settings, waypoints, container log, diagnostics | custom command, dynamic properties, locator bar, add-on policy | NOT TESTED |
 | Private server | Same as local, depending on server policy | storage, commands, event availability | NOT TESTED |
-| Public server | Only features the server allows | custom packs, `/atlas:menu`, storage, locator, combat events | NOT TESTED |
-| Dedicated Bedrock Server | Same script runtime as BDS 1.26.60.6 | per-world pack activation, server settings | NOT TESTED for 1.6.0 |
+| Public server | Only features the server allows | custom packs, `/atlas` and `/atlas:menu`, storage, locator, combat events | NOT TESTED |
+| Dedicated Bedrock Server | Same script runtime as BDS 1.26.60.6 | per-world pack activation, server settings | NOT TESTED for 1.7.0 |
 | Cross-platform | Same features once the world has the pack | device UI differences, controller/touch behavior | NOT TESTED |
 | Mega10 / other named servers | No special integration | no bypass of rules, anti-cheat or login | NOT TESTED |
 
@@ -120,7 +163,7 @@ a real environment result, not a compatibility claim.
 
 ## 5. Diagnostics export
 
-1. Open `/atlas:menu` or use the ATLAS item.
+1. Open `/atlas` or `/atlas:menu`, or use the ATLAS item.
 2. Open **Settings → Diagnostics**.
 3. Read the per-feature status, API list, reinitialization count and error
    counters.
@@ -146,5 +189,5 @@ account data.
 - ESPCHEST records opened containers, never hidden containers or contents.
 - Public-server anti-cheat and pack restrictions apply. ATLAS contains no
   X-ray, ESP, aimbot, auto-clicker or combat automation.
-- No 1.6.0 device, console, Realm or public-server test was performed. Treat
+- No 1.7.0 device, console, Realm or public-server test was performed. Treat
   the harness statuses as development evidence only.

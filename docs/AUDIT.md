@@ -1,8 +1,8 @@
-# ATLAS CLIENT — Technical Audit (1.4.0, with 1.5.0 and 1.6.0 addenda)
+# ATLAS CLIENT — Technical Audit (1.4.0, with 1.5.0–1.7.0 addenda)
 
 **Repository:** `lmwqss-jpg/My-Proxy`
 **Audited version:** 1.3.0 working tree, before the 1.4.0 changes
-**Delivered versions:** 1.4.0, 1.5.0 and 1.6.0
+**Delivered versions:** 1.4.0, 1.5.0, 1.6.0 and 1.7.0
 **Target:** Minecraft Bedrock 26.60 / `[1, 26, 60]`, stable Script API
 **Automated audit:** `npm run typecheck`, `npm test`, `npm run build`, `npm run validate`
 
@@ -55,7 +55,7 @@ The pack has no website, no external runtime and no client injection. Everything
 7. **Persistence.** Settings, combat totals and the last death are player dynamic properties; waypoints are world dynamic properties. Settings are validated and normalised on every read.
 8. **UI.** All menus are native Bedrock forms. There is no Ore UI modification, no clickable HUD widget and no ESC capture. The 1.4.0 main menu exposes HOME, ESPCHEST, HUD, VISUAL, PLAYER, MOVEMENT, ARMOR, ITEMS, POTIONS, TOTEMS, COMBAT, WAYPOINTS, SETTINGS, DIAGNOSTICS and ABOUT.
 9. **Container log.** ESPCHEST is interaction-based. `playerInteractWithBlock` records known container blocks with real coordinates in per-player dynamic properties; the screen never scans hidden blocks or contents.
-9. **Entry points.** The ATLAS item (`atlas:client_token`) and `/atlas:menu` (permission `Any`, `cheatsRequired: false`). `/scriptevent atlas:menu` remains an optional cheats-only fallback.
+10. **Entry points.** The ATLAS item (`atlas:client_token`), `/atlas` and `/atlas:menu` (permission `Any`, `cheatsRequired: false`; Bedrock also exposes `/menu`). `/scriptevent atlas:menu` remains an optional cheats-only fallback.
 
 ---
 
@@ -207,3 +207,41 @@ Unit tests cover feature definition integrity, every status transition, report c
 - No server identity, ping, player count, version or connection state.
 - No bypass of Microsoft login, allow-lists, anti-cheat or pack restrictions.
 - Status values describe this script session; they are not device compatibility certificates.
+
+---
+
+## 9. 1.7.0 addendum — command entry-point fix
+
+### Decision
+
+The reported failure was `/atlas` returning **Command Not Found**. Bedrock requires every `CustomCommand.name` to contain a namespace, and 1.6.0 registered only `atlas:menu`. The canonical command was therefore `/atlas:menu`; `/atlas` was never registered.
+
+Bedrock automatically exposes the un-namespaced alias of a custom command in chat. 1.7.0 registers a second name, `atlas:atlas`, solely so `/atlas` exists; the canonical command remains `atlas:menu`. The alias is a documented Bedrock behavior, not a namespace bypass.
+
+### Architecture
+
+- `config.js` owns `MENU_COMMANDS`, so the names and chat aliases have one source of truth for runtime, tests and diagnostics.
+- `commands.js` subscribes once to `system.beforeEvents.startup`, registers each name in its own try/catch, records the accepted names and marks the command capability unavailable only when both fail.
+- `compatibility.js` stores the accepted command names and exposes `getEntryPointStatus()`; `getCompatibilitySnapshot()` includes it and `formatCompatibilityReport()` prints an `Entry points:` line.
+- `diagnosticsScreen.js` shows the real command names/aliases and a note that commands exist only while ATLAS runs in this world.
+- The command callback resolves the player from `sourceEntity` or `initiator`, rejects console/command-block origins, and catches synchronous errors before returning a readable failure.
+
+### Failure isolation
+
+| Failure | Result |
+|---|---|
+| Both names accepted | `/atlas`, `/atlas:menu` and `/menu` work |
+| `atlas:atlas` rejected (name collision) | `/atlas:menu` and `/menu` still work; the failure is logged |
+| `atlas:menu` rejected | `/atlas` still works |
+| Registry missing / startup not available | No command; item and optional scriptevent remain; DIAGNOSTICS reports it |
+| Repeated startup event | No duplicate registration |
+
+### Verification
+
+A dedicated command suite bundles the real `commands.js` against the mock registry and covers both names, the un-namespaced aliases, opening the menu from `/atlas`, a one-name collision, a missing registry, non-player origins and repeated startup calls. The integration harness asserts two registrations, four resolvable command names, menu opening through `/atlas:menu` and `/atlas`, and the diagnostics entry-point rows.
+
+### Not claimed
+
+- `/atlas` was not typed into a real Minecraft client in this environment.
+- No Realm, private server, BDS, public server, iPhone or PS5 test.
+- The add-on cannot create commands on a server that does not run the pack.

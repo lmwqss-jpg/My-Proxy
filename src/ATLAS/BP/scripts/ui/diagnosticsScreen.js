@@ -126,6 +126,12 @@ async function diagnosticsScreen(player) {
     const context = contextLines(player, settings);
     const snapshot = getCompatibilitySnapshot(player, context);
     const engine = snapshot.engine;
+    const entryPoints = snapshot.entryPoints;
+    const commandList = entryPoints.commands.length > 0
+      ? entryPoints.commands
+          .map((entry) => `§f/${entry.chatAlias}§8 /${entry.name}`)
+          .join("§7, ")
+      : `§c${t(language, "diag.commandMissing")}`;
     const capabilities = getCapabilitySummary(player);
     const inventoryAvailable = capabilities.available.includes("player.inventory");
     const waypointCount = safeCount(() => getWaypoints().length);
@@ -157,7 +163,8 @@ async function diagnosticsScreen(player) {
             ? `§a${t(language, "diag.statusOk")}`
             : `§c${t(language, "diag.statusMissing")}`,
       })}`,
-      `§8${t(language, "diag.command")}`,
+      `§7${t(language, "diag.command", { list: commandList })}`,
+      `§8${t(language, "diag.commandNote")}`,
       `§7${t(language, "diag.locator", {
         status: isLocatorSupported(player)
           ? `§a${t(language, "diag.statusOk")}`

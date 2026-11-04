@@ -4,6 +4,36 @@ All notable changes to ATLAS CLIENT are recorded here. The archive is a single `
 
 ---
 
+## 1.7.0 — Command entry-point fix
+
+### Fixed
+
+- **`/atlas` was never registered.** Bedrock requires a namespace in every custom command name, so 1.6.0 only registered `atlas:menu` (`/atlas:menu`). The add-on now also registers `atlas:atlas`, which Minecraft exposes as **`/atlas`** and `/atlas:atlas`; `atlas:menu` also provides Bedrock's automatic `/menu` chat alias.
+- Command registration is now attempted per name, so a collision or an unsupported registry disables only that entry point instead of the whole command path.
+- A missing registry, a failed registration or a repeated startup event no longer risks a duplicate or half-registered command.
+- The command callback accepts the player from `sourceEntity` or `initiator`, rejects console/command-block origins with a readable message, and catches form errors.
+
+### Added
+
+- **DIAGNOSTICS** shows the command names Minecraft actually accepted, their short chat aliases, the menu item and the optional scriptevent path. Registration is reported separately from execution: the command feature becomes `WORKING` only after a player runs it.
+- **EXPORT DIAGNOSTICS** includes an `Entry points:` line, so a missing command can be reported without guessing.
+- A dedicated command test suite covers both names, the `/atlas` alias, the alias callback, a name collision and a missing registry.
+
+### Changed
+
+- Version bumped to **1.7.0** in `package.json`, both manifests, module versions, dependency versions and the runtime.
+- Welcome, boot, HUD, about and error strings now show `/atlas` as the short form and `/atlas:menu` as the canonical command.
+- Documentation explains that commands exist only while ATLAS is active in that world, and that a public server must run the pack itself.
+- Every 1.6.0 HUD, input, armor, effects, totems, waypoints, ESPCHEST, combat, Server Manager, compatibility, themes, Arabic/English and settings behavior is preserved. `ATLAS2`/`ATLAS1` settings remain compatible.
+
+### Verification
+
+- `npm run check` — passed: typecheck, **27 tests** (including a new command suite), **279 mocked form flows**, 51-file/94.5 KiB build, 6 validation checks.
+- `unzip -t ATLAS.mcaddon` — passed.
+- **Not tested inside Minecraft, on iPhone, PS5, a Realm, BDS or a public server.** The alias behavior is documented Bedrock behavior, not an in-game test result.
+
+---
+
 ## 1.6.0 — Universal compatibility release
 
 ### Added

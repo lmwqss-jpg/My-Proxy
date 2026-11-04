@@ -15,6 +15,9 @@ import * as mc from "@minecraft/server";
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui";
 import {
   ADDON_VERSION,
+  MENU_COMMANDS,
+  MENU_ITEM_ID,
+  MENU_SCRIPT_EVENT_ID,
   SCRIPT_MODULES,
   TARGET_GAME_VERSION,
 } from "./config.js";
@@ -39,6 +42,8 @@ let lastCheckTick = 0;
 let dimensionChanges = 0;
 let playerSessions = 0;
 let playerRespawns = 0;
+/** @type {string[]} */
+let registeredCommandNames = [];
 
 /** @type {Record<string, boolean | undefined>} */
 let globalCapabilities = {};
@@ -268,17 +273,40 @@ export function initCompatibilityEngine() {
   // status list readable instead of logging one warning per missing API.
 }
 
-export function markCommandRegistered() {
-  if (!initialized) return;
-  globalCapabilities.command = true;
+/**
+ * Records which command names the startup event accepted. Called by
+ * commands.js so DIAGNOSTICS can report real entry points instead of assuming
+ * that `/atlas` exists.
+ */
+export function markCommandRegistered(names = []) {
+  registeredCommandNames = Array.isArray(names)
+    ? [...new Set(names.filter((name) => typeof name === "string" && name.length > 0))]
+    : [];
+  globalCapabilities.command = registeredCommandNames.length > 0;
   lastCheckTick = currentTick();
-  writeRuntime(null, "command", { lastSuccessTick: lastCheckTick });
+  // Registration proves the command capability but not that a player has run
+  // the command. The feature becomes WORKING only after a real execution.
 }
 
 export function markCommandUnavailable() {
-  if (!initialized) return;
+  registeredCommandNames = [];
   globalCapabilities.command = false;
   lastCheckTick = currentTick();
+}
+
+/** Real command names, chat aliases, item and scriptevent entry points. */
+export function getEntryPointStatus() {
+  const registered = new Set(registeredCommandNames);
+  return {
+    commandAvailable: globalCapabilities.command === true,
+    commands: MENU_COMMANDS.filter((entry) => registered.has(entry.name)).map((entry) => ({
+      name: entry.name,
+      chatAlias: entry.chatAlias,
+      primary: entry.primary,
+    })),
+    item: MENU_ITEM_ID,
+    scriptEvent: MENU_SCRIPT_EVENT_ID,
+  };
 }
 
 /** Called from events.js after worldLoad. Idempotent per world session. */
@@ -430,6 +458,7 @@ export function getCompatibilitySnapshot(player, extraContext = []) {
     serverModule: SCRIPT_MODULES.server,
     uiModule: SCRIPT_MODULES.serverUi,
     engine: getEngineStats(),
+    entryPoints: getEntryPointStatus(),
     features,
     capabilities,
     summary,

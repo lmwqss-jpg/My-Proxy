@@ -3,7 +3,7 @@
  *
  * Each event is subscribed independently. If one event is unavailable on a
  * particular client/server build, the rest of the add-on (including the menu
- * item and /atlas:menu) still initializes instead of aborting the whole module.
+ * item, /atlas and /atlas:menu) still initializes instead of aborting the module.
  */
 
 import { system, world } from "@minecraft/server";
@@ -36,7 +36,7 @@ import {
   syncLocator,
 } from "./locator.js";
 import { t } from "./i18n.js";
-import { ADDON_VERSION, MENU_ITEM_ID } from "./config.js";
+import { ADDON_VERSION, MENU_ITEM_ID, MENU_SCRIPT_EVENT_ID } from "./config.js";
 import { upsertDeathWaypoint } from "./waypoints.js";
 import { initInputTracking, forgetInputState } from "./input.js";
 import { isContainerBlock, recordContainer } from "./containers.js";
@@ -228,7 +228,7 @@ function handleItemUse(event) {
 }
 
 function handleScriptEvent(event) {
-  if (event.id !== "atlas:menu") return;
+  if (event.id !== MENU_SCRIPT_EVENT_ID) return;
   const source = event.sourceEntity;
   if (source && source.typeId === "minecraft:player") {
     openMenu(source);

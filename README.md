@@ -1,6 +1,6 @@
 # ATLAS CLIENT — Minecraft Bedrock
 
-**الإصدار / Version:** 1.6.0
+**الإصدار / Version:** 1.7.0
 **ملف التثبيت / Install file:** `ATLAS.mcaddon`
 **الهدف / Target:** Minecraft Bedrock **26.60 (1.26.60)** أو أحدث
 **المنصة الأساسية / Primary platform:** PS5 — **لم يُختبر بعد / not tested**
@@ -9,7 +9,7 @@
 **التجارب / Experiments:** لا يحتاج أي تفعيل
 **دليل التثبيت:** [`docs/INSTALL.md`](docs/INSTALL.md) · **حل المشاكل:** [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) · **السيرفرات:** [`docs/SERVERS.md`](docs/SERVERS.md) · **التوافق:** [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) · **القيود:** [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) · **التدقيق:** [`docs/AUDIT.md`](docs/AUDIT.md) · **السجل:** [`docs/CHANGELOG.md`](docs/CHANGELOG.md)
 **دليل الاختبار الفعلي / Device test plan:** [`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md)
-**حالة الاختبار:** `npm run check` يمر بالكامل لنسخة 1.6.0: typecheck، و20 اختباراً، و**278 مسار واجهة**، وبناء 51 ملفاً (92.4 KiB)، وتحقق (6 فحوص). **لم يُختبر 1.6.0 داخل Minecraft أو على iPhone أو PS5 أو Mega10.** النسخة 1.2.0 سبق أن حمّلت سكربتاتها وأحداثها التسعة والأمر و`worldLoad` على Bedrock Dedicated Server 1.26.60.6؛ هذا لا يُثبت عمل الواجهة أو الاستيراد على جهاز حقيقي.
+**حالة الاختبار:** `npm run check` يمر بالكامل لنسخة 1.7.0: typecheck، و**27 اختباراً**، و**279 مسار واجهة**، وبناء 51 ملفاً (94.5 KiB)، وتحقق (6 فحوص). **لم يُختبر 1.7.0 داخل Minecraft أو على iPhone أو PS5 أو Mega10.** النسخة 1.2.0 سبق أن حمّلت سكربتاتها وأحداثها التسعة والأمر و`worldLoad` على Bedrock Dedicated Server 1.26.60.6؛ هذا لا يُثبت عمل الواجهة أو الاستيراد على جهاز حقيقي.
 
 ---
 
@@ -19,8 +19,8 @@
 
 | الطلب | الواقع في Bedrock | البديل المستخدم فعلياً |
 |---|---|---|
-| أيقونة صغيرة قابلة للنقر أعلى يمين الشاشة | لا توجد واجهة HUD مخصصة قابلة للنقر للإضافات، ولا يمكن تعديل Ore UI | **أداة ATLAS CLIENT** تُعطى تلقائياً في الحقيبة، + الأمر `/atlas:menu` |
-| فتح القائمة بزر ESC | لا تستطيع الإضافات قراءة لوحة المفاتيح أو التقاط ESC | نفس الأداة + الأمر `/atlas:menu` (يعمل بدون تفعيل الغش) |
+| أيقونة صغيرة قابلة للنقر أعلى يمين الشاشة | لا توجد واجهة HUD مخصصة قابلة للنقر للإضافات، ولا يمكن تعديل Ore UI | **أداة ATLAS CLIENT** تُعطى تلقائياً في الحقيبة، + الأمر `/atlas` أو `/atlas:menu` |
+| فتح القائمة بزر ESC | لا تستطيع الإضافات قراءة لوحة المفاتيح أو التقاط ESC | نفس الأداة + الأمر `/atlas` أو `/atlas:menu` (يعمل بدون تفعيل الغش) |
 | لوحة HUD مخصصة متعددة الأسطر | غير متاحة رسمياً للإضافات | سطر HUD في **شريط الإجراءات** فوق شريط الأدوات، مع تشغيل/إيقاف كل عنصر |
 | وضع WASD أو الدروع أعلى يمين الشاشة | لا تسمح الإضافات بتحديد موضع النص؛ شريط الإجراءات هو السطح الوحيد | نفس السطر، لكن العناصر الجديدة تأتي أولاً: WASD ثم CPS ثم المؤشرات ثم الدروع |
 | تغيير حجم/شفافية/موضع كل عنصر | غير متاح في Script API | ألوان نصية، وضع مختصر/مفصّل، وتشغيل/إيقاف مستقل |
@@ -39,9 +39,34 @@
 
 ---
 
-## محرك التوافق العالمي (1.6.0)
+## 1.7.0 — لماذا لم يعمل `/atlas`؟
 
-تضيف 1.6.0 **ATLAS UNIVERSAL COMPATIBILITY ENGINE** ومدير توافق مستقل لكل ميزة. عند دخول أي عالم أو سيرفر تكون فيه الحزمة مفعّلة:
+كان `/atlas` يعطي **Command Not Found** لأن Bedrock **يشترط وجود namespace** في اسم أي أمر مخصص. النسخة 1.6.0 سجّلت `atlas:menu` فقط، فكان الأمر الصحيح `/atlas:menu` وليس `/atlas`.
+
+في 1.7.0:
+
+- سجّلنا `atlas:atlas` أيضاً. ماينكرافت تضيف تلقائياً الاسم المختصر لكل أمر مخصص في الدردشة، فيصبح **`/atlas`** متاحاً (و`/atlas:atlas`).
+- بقي `atlas:menu` هو الأمر الأساسي، ويعطيك أيضاً `/atlas:menu` و`/menu`.
+- كل اسم يُسجّل منفصلاً: تعارض اسم واحد لا يعطّل الاسم الآخر، ولا يعطّل الأداة.
+- **DIAGNOSTICS** يعرض أسماء الأوامر التي قبلها اللعبة فعلاً، و`EXPORT DIAGNOSTICS` يضيف سطر `Entry points:`.
+
+> **مهم:** الأوامر لا توجد إلا عندما تكون ATLAS مثبتة ومفعّلة **في العالم نفسه**. على سيرفر عام لا تشغّله الحزمة، لا يمكن للأمر أن يظهر؛ الإضافة لا تستطيع تسجيل أوامر داخل سيرفر لا يشغّلها. الأداة تعمل فقط في البيئة التي شغّلت السكربت. لا يحتاج `/atlas` أو `/atlas:menu` إلى صلاحيات Operator أو تفعيل الغش.
+
+| البيئة | `/atlas` | `/atlas:menu` | الأداة | الحالة |
+|---|---|---|---|---|
+| عالم محلي مع تفعيل Behavior Pack | متوقع | متوقع | متوقع | تم التحقق من التسجيل في محاكي API فقط؛ لم يُختبر داخل اللعبة |
+| Realm مع تثبيت الحزمة من المالك | متوقع | متوقع | متوقع | **NOT TESTED** |
+| سيرفر خاص / BDS يشغّل الحزمة | متوقع | متوقع | متوقع | **NOT TESTED** |
+| سيرفر عام لا يشغّل الحزمة | لا | لا | لا | متوقع بالتصميم: لا سكربت = لا إضافة |
+| PS5 | غير مختبر | غير مختبر | غير مختبر | **NOT TESTED** |
+
+التفاصيل الكاملة في [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) و[`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md).
+
+---
+
+## محرك التوافق العالمي
+
+تضيف **ATLAS UNIVERSAL COMPATIBILITY ENGINE** ومدير توافق مستقل لكل ميزة. عند دخول أي عالم أو سيرفر تكون فيه الحزمة مفعّلة:
 
 - يفحص المحرك واجهات Script API الفعلية عند تحميل العالم ودخول اللاعب وإعادة الظهور وتغيير البُعد، ويعيد تهيئة الأنظمة المطلوبة فقط.
 - كل قسم يحصل على حالة حقيقية: `WORKING` أو `LIMITED` أو `READY` أو `UNAVAILABLE` أو `ERROR` أو `NOT TESTED`. لا تُعرض `WORKING` إلا بعد نجاح عملية فعلية في الجلسة.
@@ -78,7 +103,7 @@
 5. من إعدادات العالم:
    - **Add-Ons / Behavior Packs** ← **My Packs** ← **ATLAS CLIENT** ← **Activate**
    - **Resource Packs** ← **My Packs** ← **ATLAS CLIENT Resources** ← **Activate**
-6. لا تفعّل أي Experiments. لا تحتاج تفعيل الغش من أجل `/atlas:menu`.
+6. لا تفعّل أي Experiments. لا تحتاج تفعيل الغش من أجل `/atlas` أو `/atlas:menu`.
 7. ادخل العالم. ستظهر رسالة تأكيد مرة واحدة لكل إصدار، ورسالة ترحيب، وأداة **ATLAS CLIENT** في الحقيبة.
 
 > إذا لم تظهر الحزم ضمن «My Packs»، أعد استيراد الملف وتأكد أن Minecraft نسخة **26.60 أو أحدث**. إذا كانت لديك نسخة قديمة من ATLAS بنفس UUID، احذف الحزم القديمة أولاً ثم استورد الملف الجديد.
@@ -88,32 +113,41 @@
 - **الحزمة غير مفعّلة داخل العالم:** التثبيت وحده لا يشغّل السلوك. يجب تفعيل Behavior Pack من إعدادات العالم.
 - **إصدار Minecraft أقدم من 26.60:** ملف `manifest.json` يطلب `min_engine_version` مساوياً لـ `[1, 26, 60]`، لذلك لن تُحمّل الحزمة على إصدار أقدم.
 - **إصدار API غير موجود:** الحزم تعتمد على `@minecraft/server 2.11.0` و`@minecraft/server-ui 2.3.0` (إصدارات مستقرة في 26.60).
-- **أخطاء تحميل أخرى:** فعّل **Settings → Creator → Content Log GUI**، ثم افتح العالم وابحث عن `[ATLAS] Scripts loaded`. يجب أن ترى أيضاً `Event handlers registered` و`Custom command /atlas:menu registered` و`World loaded`. إذا توقف السجل قبلها فالسكربت لم يُحمّل؛ تحقق من إصدار اللعبة وتفعيل Behavior Pack.
-- **نسخة قديمة عالقة:** إذا كنت جرّبت 1.0.0 أو 1.1.0 أو 1.2.0 أو 1.3.0 أو 1.4.0 أو 1.5.0، احذف الحزمتين القديمتين من العالم أولاً. النسخة الجديدة 1.6.0 لها نفس UUID لكن رقم إصدار أعلى، لذا يستبدلها Minecraft عند الاستيراد.
-- **الأداة مفقودة لكن السكربت يعمل:** استخدم `/atlas:menu`، أو من القائمة **Waypoints → Restore ATLAS item**.
-- **الأمر غير موجود:** إذا لم يظهر `/atlas:menu` في الإكمال التلقائي، فالBehavior Pack غير مفعّل أو السكربت لم يُحمّل؛ راجع Content Log.
+- **أخطاء تحميل أخرى:** فعّل **Settings → Creator → Content Log GUI**، ثم افتح العالم وابحث عن `[ATLAS] Scripts loaded`. يجب أن ترى أيضاً `Event handlers registered` و`Custom command /atlas:menu registered` و`Custom command /atlas:atlas registered` و`World loaded`. إذا توقف السجل قبلها فالسكربت لم يُحمّل؛ تحقق من إصدار اللعبة وتفعيل Behavior Pack.
+- **نسخة قديمة عالقة:** إذا كنت جرّبت 1.0.0 أو 1.1.0 أو 1.2.0 أو 1.3.0 أو 1.4.0 أو 1.5.0 أو 1.6.0، احذف الحزمتين القديمتين من العالم أولاً. النسخة الجديدة 1.7.0 لها نفس UUID لكن رقم إصدار أعلى، لذا يستبدلها Minecraft عند الاستيراد.
+- **الأداة مفقودة لكن السكربت يعمل:** استخدم `/atlas` أو `/atlas:menu`، أو من القائمة **Waypoints → Restore ATLAS item**.
+- **الأمر غير موجود:** إذا لم يظهر `/atlas` أو `/atlas:menu` في الإكمال التلقائي، فالBehavior Pack غير مفعّل أو السكربت لم يُحمّل؛ راجع Content Log. على سيرفر عام يجب أن يشغّل السيرفر الحزمة بنفسه.
 
 ---
 
 ## 2. فتح القائمة
 
-بعد دخول العالم، لديك ثلاث طرق رسمية:
+بعد دخول العالم، لديك هذه الطرق الرسمية:
 
-1. **أداة ATLAS CLIENT** في الحقيبة: اخترها واستخدمها. على اللمس قد تحتاج إلى الضغط على الشاشة/الاستخدام حسب إعدادات التحكم. إن لم تعمل الأداة، استخدم الطريقة الثانية.
-2. **الأمر:** افتح الدردشة واكتب:
+1. **أداة ATLAS CLIENT** في الحقيبة: اخترها واستخدمها. على اللمس قد تحتاج إلى الضغط على الشاشة/الاستخدام حسب إعدادات التحكم. إن لم تعمل الأداة، استخدم الأمر.
+2. **الأمر المختصر:** افتح الدردشة واكتب:
+
+   ```
+   /atlas
+   ```
+
+3. **الأمر الأساسي:**
 
    ```
    /atlas:menu
    ```
 
-   الأمر مسجّل بمستوى `Any` و`cheatsRequired: false`، لذلك لا يحتاج تفعيل الغش.
-3. **اختياري:** إذا كانت الغش مفعّلة:
+   ويمكن أيضاً كتابة `/menu`، وهو الاسم المختصر الذي تضيفه ماينكرافت لأمر `atlas:menu`.
+
+4. **اختياري:** إذا كانت الغش مفعّلة:
 
    ```
    /scriptevent atlas:menu
    ```
 
-ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط أزرار لوحة المفاتيح. لا يوجد زر وهمي بديل؛ الأداة والأمر هما الطريقان الفعليان.
+كل الأوامر مسجّلة بمستوى `Any` و`cheatsRequired: false`، لذلك لا تحتاج تفعيل الغش. الأوامر لا تظهر إن لم تكن الحزمة مفعّلة في العالم/السيرفر.
+
+ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط أزرار لوحة المفاتيح. لا يوجد زر وهمي بديل؛ الأداة والأوامر هي الطرق الفعلية.
 
 ---
 
@@ -297,7 +331,7 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 | `min_engine_version` | `[1, 26, 60]` |
 | Experiments | لا شيء |
 | Script entry | `scripts/main.js` |
-| إصدار الإضافة | 1.6.0 |
+| إصدار الإضافة | 1.7.0 |
 | Behavior Pack UUID | `45ec3030-7e82-4b27-b1bc-006fc4d14de5` |
 | Resource Pack UUID | `6f7b2107-421b-480f-9a07-3acdf805714d` |
 
@@ -307,7 +341,7 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 
 - **PS5:** لم يُختبر الاستيراد أو التشغيل أو الإدخال على PS5. لا توجد واجهة لقراءة أزرار يد PS5؛ WASD تعكس متجه الحركة (العصا اليسرى)، ومؤشرا LMB/RMB يعكسان أحداث اللعبة، وليسا أزراراً فيزيائية. ماينكرافت على PS5 **لا يعرض زر Add Server**، لذلك SERVER MANAGER لا يجعل السيرفرات المخصصة قابلة للاتصال هناك. إذا كانت PS5 لا تسمح بفتح ملف محلي، فجرّب الانضمام إلى عالم/Realm تكون فيه الحزمتان مفعّلتان؛ هذا أيضاً غير مُختبر.
 - **طبيعة الإضافات:** الإضافات مرتبطة بالعالم، وليست تعديلاً على جهاز اللاعب. لا تستطيع نسخة مفعّلة على iPhone حقن HUD أو أوامر في عالم سيرفر عام لا يملك الحزمة.
-- **Mega10 أو أي سيرفر عام:** إذا لم تكن الحزمة مثبتة ومفعّلة في العالم، فلن تعمل أي ميزة. وإذا كانت مثبتة، فقد يمنع السيرفر الحزم المخصصة أو `/atlas:menu` أو شريط التحديد أو حفظ البيانات. لا يوجد في ATLAS أي أتمتة قتال أو نقر تلقائي. لم يُختبر المشروع على Mega10.
+- **Mega10 أو أي سيرفر عام:** إذا لم تكن الحزمة مثبتة ومفعّلة في العالم، فلن تعمل أي ميزة، ولن يظهر `/atlas` ولا `/atlas:menu`. وإذا كانت مثبتة، فقد يمنع السيرفر الحزم المخصصة أو الأوامر أو شريط التحديد أو حفظ البيانات. لا يوجد في ATLAS أي أتمتة قتال أو نقر تلقائي. لم يُختبر المشروع على Mega10.
 - **الواجهة النصية** تظهر فقط عندما تعمل الحزمة في العالم؛ الإعدادات محفوظة لكل لاعب/عالم وليست تعديلاً لواجهة السيرفر.
 
 ---
@@ -325,7 +359,7 @@ npm run build        # ينتج ATLAS.mcaddon
 npm run validate     # يفحص الحزم والـ ZIP
 ```
 
-الاختبارات الآلية تغطي بنية الحزم والمنطق و**278 مسار واجهة** في محاكي APIs، كما تتحقق من حفظ الإعدادات والسيرفرات بعد خروج اللاعب وعودته، واستيراد رموز `ATLAS1` القديمة، وإعادة تهيئة المحرك دون تكرار المستمعات بعد `worldLoad` وإعادة الظهور، وحالات التوافق `WORKING`/`LIMITED`/`UNAVAILABLE`/`ERROR`/`NOT TESTED`، وتصدير تقرير التشخيص، وتدهور HUD عند غياب API اختياري. لكنها **لا تغني عن التجربة داخل Minecraft**. لم يتم اختبار 1.6.0 على iPhone أو PS5 أو داخل Minecraft في بيئة البناء الحالية. راجع [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) و[`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) للتقرير الآلي، و[`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) لقوائم iPhone وPS5 والسيرفرات.
+الاختبارات الآلية تغطي بنية الحزم والمنطق و**279 مسار واجهة** في محاكي APIs، كما تتحقق من تسجيل `/atlas` و`/atlas:menu` ومن الاسم المختصر ومن تعارض اسم واحد دون تعطيل الآخر، ومن حفظ الإعدادات والسيرفرات بعد خروج اللاعب وعودته، واستيراد رموز `ATLAS1` القديمة، وإعادة تهيئة المحرك دون تكرار المستمعات بعد `worldLoad` وإعادة الظهور، وحالات التوافق `WORKING`/`LIMITED`/`UNAVAILABLE`/`ERROR`/`NOT TESTED`، وتصدير تقرير التشخيص، وتدهور HUD عند غياب API اختياري. لكنها **لا تغني عن التجربة داخل Minecraft**. لم يتم اختبار 1.7.0 على iPhone أو PS5 أو داخل Minecraft في بيئة البناء الحالية. راجع [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) و[`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) للتقرير الآلي، و[`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) لقوائم iPhone وPS5 والسيرفرات.
 
 ### بنية المستودع
 
@@ -340,7 +374,7 @@ test/                         اختبارات Node + محاكي Minecraft
 docs/TEST_REPORT.md           تقرير الاختبار الآلي والتوافق
 docs/COMPATIBILITY.md         محرك التوافق ومصفوفة العوالم والسيرفرات
 docs/DEVICE_TESTING.md        قوائم اختبار iPhone وPS5 والسيرفرات
-docs/AUDIT.md                 التدقيق التقني وقرارات 1.4.0–1.6.0
+docs/AUDIT.md                 التدقيق التقني وقرارات 1.4.0–1.7.0
 docs/INSTALL.md               دليل التثبيت لكل منصة
 docs/SERVERS.md               حدود وطريقة عمل SERVER MANAGER والاتصال اليدوي
 docs/TROUBLESHOOTING.md       حل مشاكل التحميل وHUD والإعدادات
@@ -356,12 +390,16 @@ docs/KNOWN_LIMITATIONS.md    القيود غير المدعومة وغير ال�
 
 ## English
 
+### Command entry points (1.7.0)
+
+1.6.0 registered only `atlas:menu`, so `/atlas` returned **Command Not Found**. Bedrock requires a namespace in a custom command name and automatically exposes the un-namespaced alias in chat. 1.7.0 therefore registers both `atlas:menu` (`/atlas:menu`, `/menu`) and `atlas:atlas` (**`/atlas`**, `/atlas:atlas`). Each name is registered independently; a collision disables only that entry point. Cheats and operator permissions are not required. Commands exist only while ATLAS is installed and active in that world: a public server must run the pack itself. **DIAGNOSTICS** and **EXPORT DIAGNOSTICS** now list the names the game actually accepted. The `/atlas` alias is documented Bedrock behavior, verified in the mock harness but **not yet in a real Minecraft client**.
+
 ### Official limits
 
 ATLAS CLIENT uses only the official Bedrock Script API. A clickable top-right overlay, ESC capture, Ore UI modification, a multi-line custom HUD, per-element positioning, font size, transparency, armor icons and a vertical armor position are **not available to add-ons**. The working replacements are:
 
 - An **ATLAS CLIENT item** given on spawn.
-- The **`/atlas:menu`** custom command, available without cheats.
+- The **`/atlas`** and **`/atlas:menu`** custom commands (plus `/menu`), available without cheats.
 - An action-bar HUD with independently toggleable elements. New live panels are ordered first: WASD, CPS, LMB/RMB, armor, effects and totems.
 - Native Bedrock forms for all menus and settings.
 - Optional locator-bar waypoints through the official `LocatorBar` API.
@@ -373,7 +411,7 @@ ATLAS CLIENT uses only the official Bedrock Script API. A clickable top-right ov
 
 The add-on contains no X-ray, ESP, aimbot, auto-clicker, or combat automation.
 
-**1.6.0 compatibility engine:** ATLAS probes the real Script API capabilities on world load and player join/respawn. Every section reports `WORKING`, `LIMITED`, `READY`, `UNAVAILABLE`, `ERROR` or `NOT TESTED`; `WORKING` requires a real successful operation, never a static claim. Reinitialization keeps settings, waypoints and the ESPCHEST log and does not duplicate listeners or commands. **Settings → Diagnostics → EXPORT DIAGNOSTICS** sends a copyable report to chat. Servers can still block packs, commands, storage, locator bar or events; ATLAS reports that as `UNAVAILABLE` instead of pretending support. See [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md).
+**Compatibility engine (introduced in 1.6.0, preserved in 1.7.0):** ATLAS probes the real Script API capabilities on world load and player join/respawn. Every section reports `WORKING`, `LIMITED`, `READY`, `UNAVAILABLE`, `ERROR` or `NOT TESTED`; `WORKING` requires a real successful operation, never a static claim. Reinitialization keeps settings, waypoints and the ESPCHEST log and does not duplicate listeners or commands. **Settings → Diagnostics → EXPORT DIAGNOSTICS** sends a copyable report to chat. Servers can still block packs, commands, storage, locator bar or events; ATLAS reports that as `UNAVAILABLE` instead of pretending support. See [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md).
 
 ### iPhone installation
 
@@ -382,10 +420,10 @@ The add-on contains no X-ray, ESP, aimbot, auto-clicker, or combat automation.
 3. Wait for both packs to import.
 4. Create/edit a world → **Add-Ons → Behavior Packs → My Packs → ATLAS CLIENT → Activate**.
 5. **Resource Packs → My Packs → ATLAS CLIENT Resources → Activate**.
-6. Do not enable experiments. Cheats are not required for `/atlas:menu`.
-7. Enter the world and use the ATLAS item, or type `/atlas:menu` in chat.
+6. Do not enable experiments. Cheats are not required for `/atlas` or `/atlas:menu`.
+7. Enter the world and use the ATLAS item, or type `/atlas` (or `/atlas:menu`, or `/menu`) in chat.
 
-If nothing appears: verify Minecraft 26.60+, verify the behavior pack is active in the world, enable **Settings → Creator → Content Log GUI**, and look for `[ATLAS] Scripts loaded`. If the item is missing, use `/atlas:menu` or **Waypoints → Restore ATLAS item**. The optional `/scriptevent atlas:menu` requires cheats.
+If nothing appears: verify Minecraft 26.60+, verify the behavior pack is active in the world, enable **Settings → Creator → Content Log GUI**, and look for `[ATLAS] Scripts loaded`. If the item is missing, use `/atlas` or `/atlas:menu`, or **Waypoints → Restore ATLAS item**. The optional `/scriptevent atlas:menu` requires cheats.
 
 ### Features
 
@@ -406,19 +444,19 @@ If nothing appears: verify Minecraft 26.60+, verify the behavior pack is active 
 - [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) — unsupported, partially supported and untested items
 - [`docs/SERVERS.md`](docs/SERVERS.md) — Server Manager scope, validation, platform connection steps and limits
 - [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) — compatibility engine, reinitialization rules, per-feature status and world/server matrix
-- [`docs/AUDIT.md`](docs/AUDIT.md) — architecture and the 1.4.0–1.6.0 audits
+- [`docs/AUDIT.md`](docs/AUDIT.md) — architecture and the 1.4.0–1.7.0 audits
 - [`docs/CHANGELOG.md`](docs/CHANGELOG.md) — version history
 - [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) and [`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) — automated evidence and device checklists
 
 ### Testing
 
-`npm run typecheck`, `npm test` (20 tests and 278 mock UI flows), `npm run build` (51 files, 92.4 KiB), and `npm run validate` (6 checks) pass for 1.6.0. The archive is a single `ATLAS.mcaddon`. The harness also covers settings and server-list reload after a leave/rejoin, legacy `ATLAS1` and older `ATLAS2` import, session timing, coalesced inventory refresh, server address/port validation, the compatibility status model, diagnostics export, reinitialization without duplicate listeners, and graceful degradation when an optional API is unavailable. **1.6.0 was not tested inside Minecraft, on iPhone, PS5 or Mega10.** The 1.2.0 scripts, nine event registrations, `/atlas:menu` and `worldLoad` were observed on Bedrock Dedicated Server 1.26.60.6 without script errors; that proved startup only and did not render a player UI. See `docs/TEST_REPORT.md`, `docs/COMPATIBILITY.md` for the exact scope and `docs/DEVICE_TESTING.md` for the iPhone/PS5/server checklists.
+`npm run typecheck`, `npm test` (27 tests and 279 mock UI flows), `npm run build` (51 files, 94.5 KiB), and `npm run validate` (6 checks) pass for 1.7.0. The archive is a single `ATLAS.mcaddon`. The harness also covers `/atlas` and `/atlas:menu` registration and opening, a single-name collision, settings and server-list reload after a leave/rejoin, legacy `ATLAS1` and older `ATLAS2` import, session timing, coalesced inventory refresh, server address/port validation, the compatibility status model, diagnostics export, reinitialization without duplicate listeners, and graceful degradation when an optional API is unavailable. **1.7.0 was not tested inside Minecraft, on iPhone, PS5 or Mega10.** The 1.2.0 scripts, nine event registrations, `/atlas:menu` and `worldLoad` were observed on Bedrock Dedicated Server 1.26.60.6 without script errors; that proved startup only and did not render a player UI. See `docs/TEST_REPORT.md`, `docs/COMPATIBILITY.md` for the exact scope and `docs/DEVICE_TESTING.md` for the iPhone/PS5/server checklists.
 
 ### PS5 and public servers
 
 - **PS5:** import, rendering and controller input were not tested. WASD follows the movement vector (left stick on a controller); LMB/RMB are game-action indicators, not physical mouse buttons. PS5 Minecraft has **no Add Server button**, so SERVER MANAGER cannot make a custom server joinable there. If PS5 cannot open a local file, joining a world/Realm that already has the packs active is the only possible path, and it is also unverified.
 - **World-bound packs:** Bedrock add-ons belong to the world, not the player's device. A pack activated on an iPhone cannot inject a HUD or commands into a public server world that does not contain it.
-- **Mega10 / public servers:** if the world does not have the pack installed and active, no ATLAS feature runs. If it does, the server may still block custom packs, `/atlas:menu`, the locator bar or data storage, and server rules apply. No combat or click automation is included. Mega10 was not tested.
+- **Mega10 / public servers:** if the world does not have the pack installed and active, no ATLAS feature runs and neither `/atlas` nor `/atlas:menu` exists. If it does, the server may still block custom packs, commands, the locator bar or data storage, and server rules apply. No combat or click automation is included. Mega10 was not tested.
 
 ### Attribution
 

@@ -5,9 +5,30 @@
  * settings and data model can be tested with plain Node.js.
  */
 
-export const ADDON_VERSION = "1.6.0";
+export const ADDON_VERSION = "1.7.0";
 
 export const MENU_ITEM_ID = "atlas:client_token";
+
+/**
+ * Custom menu commands.
+ *
+ * Bedrock requires a namespace in `CustomCommand.name`, so `/atlas` cannot be
+ * registered directly. Minecraft automatically exposes the un-namespaced
+ * alias of every custom command in chat, which means:
+ *
+ *   atlas:menu  -> /atlas:menu  and /menu
+ *   atlas:atlas -> /atlas:atlas and /atlas
+ *
+ * The second name exists so the short `/atlas` form players actually type is
+ * registered. `atlas:menu` stays the canonical, documented command.
+ */
+export const MENU_COMMANDS = Object.freeze([
+  Object.freeze({ name: "atlas:menu", chatAlias: "menu", primary: true }),
+  Object.freeze({ name: "atlas:atlas", chatAlias: "atlas", primary: false }),
+]);
+
+/** Cheats-only fallback handled by events.js; not a replacement for the command. */
+export const MENU_SCRIPT_EVENT_ID = "atlas:menu";
 
 /** Stable Minecraft Bedrock script modules used by the pack. */
 export const SCRIPT_MODULES = Object.freeze({

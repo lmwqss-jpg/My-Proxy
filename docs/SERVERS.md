@@ -1,6 +1,6 @@
 # ATLAS CLIENT — Server Manager
 
-**Version:** 1.6.0
+**Version:** 1.7.0
 **Target:** Minecraft Bedrock 26.60 / `1.26.60`+
 **Official APIs:** `@minecraft/server 2.11.0`, `@minecraft/server-ui 2.3.0`
 
@@ -10,7 +10,7 @@ This document explains exactly what **SERVER MANAGER** does, what Minecraft does
 
 ## 1. What it is
 
-SERVER MANAGER is a **validated, persistent server address book** inside `/atlas:menu`.
+SERVER MANAGER is a **validated, persistent server address book** inside `/atlas` or `/atlas:menu`.
 
 It stores the details you type, keeps your order, favourites, category and region, and shows the exact host and port to enter in Minecraft's own server screen. It does **not** open a network connection, join a world or change the game's current server. No CONNECT button is shown because a button that cannot connect would be fake.
 
@@ -68,7 +68,7 @@ Rejected input:
 - A duplicate address + port, or a blank name.
 - More than 40 entries.
 
-There is one deliberate omission: **IPv6 is not accepted**. Bedrock's `Add Server` field and port handling differ between platforms, so 1.6.0 validates IPv4 and domain names only instead of pretending every IPv6 form works.
+There is one deliberate omission: **IPv6 is not accepted**. Bedrock's `Add Server` field and port handling differ between platforms, so 1.7.0 validates IPv4 and domain names only instead of pretending every IPv6 form works.
 
 ---
 
@@ -85,7 +85,7 @@ There is one deliberate omission: **IPv6 is not accepted**. Bedrock's `Add Serve
 
 ## 5. Using the screen
 
-Open `/atlas:menu` → **SERVER MANAGER**.
+Open `/atlas` or `/atlas:menu` → **SERVER MANAGER**.
 
 - **Add server** opens the six-field form (name, address, port, description, category, region). Invalid values reopen the form with a clear message; nothing invalid is saved.
 - Selecting a saved server opens its details: real stored host/port, category, region, favourite state, manual current mark, last-marked time, and the connection guide.
@@ -121,7 +121,7 @@ Their addresses are not published to add-ons. ATLAS can store a note, category a
 
 ### Microsoft sign-in and server protection
 
-Sign in through Minecraft itself. ATLAS does not collect credentials and cannot bypass authentication, allow-lists, anti-cheat, server permissions or region restrictions. A server that rejects custom packs can also block `/atlas:menu`, dynamic properties or the locator bar.
+Sign in through Minecraft itself. ATLAS does not collect credentials and cannot bypass authentication, allow-lists, anti-cheat, server permissions or region restrictions. A server that rejects custom packs can also block `/atlas`, `/atlas:menu`, dynamic properties or the locator bar. The pack must be installed on the server itself; entering a server address in ATLAS cannot install it.
 
 ### Custom ports
 

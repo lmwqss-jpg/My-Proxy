@@ -82,9 +82,9 @@ function openWithItem(player) {
   advanceTicks(1);
 }
 
-function openWithCommand(player) {
-  const command = state.commands.get("atlas:menu");
-  assert.ok(command, "custom command was not registered");
+function openWithCommand(player, name = "atlas:menu") {
+  const command = state.commands.get(name);
+  assert.ok(command, `custom command ${name} was not registered`);
   const result = command.callback({ sourceEntity: player, sourceType: "Entity" });
   assert.equal(result.status, 0);
   advanceTicks(1);
@@ -130,8 +130,15 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.ok(command);
     assert.equal(command.spec.permissionLevel, 0);
     assert.equal(command.spec.cheatsRequired, false);
-    assert.equal(state.commandRegistrations, 1, "command registered more than once");
-    assert.equal(state.commands.size, 1);
+    const atlasCommand = state.commands.get("atlas:atlas");
+    assert.ok(atlasCommand, "the short /atlas command was not registered");
+    assert.equal(atlasCommand.spec.permissionLevel, 0);
+    assert.equal(atlasCommand.spec.cheatsRequired, false);
+    // Bedrock adds the un-namespaced chat alias for each registered name.
+    assert.equal(state.commands.get("atlas")?.aliasOf, "atlas:atlas");
+    assert.equal(state.commands.get("menu")?.aliasOf, "atlas:menu");
+    assert.equal(state.commandRegistrations, 2, "a command was registered more than once");
+    assert.equal(state.commands.size, 4);
     assert.ok(state.startupFired);
     const consoleCommand = command.callback({ sourceEntity: undefined, sourceType: "Server" });
     assert.equal(consoleCommand.status, 1);
@@ -202,9 +209,17 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assertClean();
     assert.equal(state.forms.length, formsBeforeDoubleUse + 1);
 
-    // Open through the custom command as a second, independent entry point.
+    // Open through /atlas:menu as a second, independent entry point.
     queue(click(/Close/));
     openWithCommand(player);
+    await settle();
+    assertClean();
+    assert.ok(state.forms.at(-1).title.includes("ATLAS"));
+    assert.ok(state.forms.at(-1).buttons.some((b) => /Close/.test(b)));
+
+    // The short /atlas form is the alias players actually type in chat.
+    queue(click(/Close/));
+    openWithCommand(player, "atlas");
     await settle();
     assertClean();
     assert.ok(state.forms.at(-1).title.includes("ATLAS"));
@@ -822,6 +837,12 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.match(diagForm.body, /HUD: §eLIMITED/);
     assert.match(diagForm.body, /Settings: §aWORKING/);
     assert.match(diagForm.body, /Available \(\d+\)/);
+    // Entry points are reported from the commands the startup event accepted.
+    assert.match(diagForm.body, /Commands: .*\/atlas/);
+    assert.match(diagForm.body, /\/atlas:menu/);
+    // Registration is reported as READY; the earlier real command call makes
+    // the command feature WORKING.
+    assert.match(diagForm.body, /\/atlas and \/atlas:menu commands: §aWORKING/);
     assert.ok(diagForm.buttons.some((button) => /EXPORT DIAGNOSTICS/.test(button)));
 
     // EXPORT DIAGNOSTICS produces the real report and sends copyable chunks
@@ -842,10 +863,11 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
       form.title?.includes("Diagnostics report"),
     );
     assert.ok(exportDiagForm);
-    assert.match(exportDiagForm.body, /ATLAS DIAGNOSTICS v1\.6\.0/);
+    assert.match(exportDiagForm.body, new RegExp(`ATLAS DIAGNOSTICS v${ADDON_VERSION.replace(/\./g, "\\.")}`));
     assert.match(exportDiagForm.body, /WORKING \(\d+\): .*armor/);
+    assert.match(exportDiagForm.body, /Entry points: .*\/atlas/);
     assert.ok(
-      player.messages.some((message) => message.includes("ATLAS DIAGNOSTICS v1.6.0")),
+      player.messages.some((message) => message.includes(`ATLAS DIAGNOSTICS v${ADDON_VERSION}`)),
     );
     assert.ok(player.messages.some((message) => /Diagnostics report sent in \d+ messages/.test(message)));
 

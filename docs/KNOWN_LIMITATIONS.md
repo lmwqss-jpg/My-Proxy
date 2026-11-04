@@ -1,6 +1,6 @@
 # ATLAS CLIENT — Known Limitations
 
-**Version:** 1.6.0
+**Version:** 1.7.0
 **Platform:** Minecraft Bedrock 26.60 / `1.26.60`+
 **Status:** automated checks pass; in-game, iPhone, PS5, Realm and public-server behaviour are not verified for this build.
 
@@ -12,8 +12,8 @@ This document separates **unsupported by the official platform**, **implemented 
 
 | Request | Why it cannot be done | What ATLAS does instead |
 |---|---|---|
-| Clickable icon at the top-right | Add-ons cannot create native HUD widgets or intercept their taps | ATLAS item + `/atlas:menu` |
-| ESC opens the menu | Add-ons cannot read keyboard input or the pause menu | Item and custom command |
+| Clickable icon at the top-right | Add-ons cannot create native HUD widgets or intercept their taps | ATLAS item + `/atlas` / `/atlas:menu` |
+| ESC opens the menu | Add-ons cannot read keyboard input or the pause menu | Item and custom commands |
 | Replace or modify Ore UI / native pause menu | Ore UI is not exposed to ordinary add-ons | Native Bedrock forms, separate from the pause menu |
 | Multi-line HUD with free positioning | The only persistent text surface is the action bar | One colour-coded action-bar line with per-element toggles |
 | Per-element position, font size, transparency | Not exposed by the Script API | Compact/detailed text, accent colours, per-element toggles |
@@ -22,6 +22,7 @@ This document separates **unsupported by the official platform**, **implemented 
 | Raw keyboard, mouse or controller button stream | Not exposed to add-ons | WASD from the movement vector; CPS/LMB/RMB from game action events |
 | Counting clicks into empty air | The game does not report them | CPS counts only attacks, interactions and item uses |
 | Reading all stored tool durability | Only equipped armor and the held item are exposed | Low-durability monitoring is scoped to those items |
+| A command without a namespace (`/atlas` alone) | Bedrock requires `namespace:name` in a registered custom command; an add-on cannot register a bare name | 1.7.0 registers `atlas:atlas` so Minecraft exposes `/atlas`; `/atlas:menu` and `/menu` remain available. Commands exist only where the pack runs |
 | Finding hidden containers or reading their contents through walls | Add-ons cannot scan arbitrary hidden blocks reliably and must not invent container data | **ESPCHEST** logs only containers the player actually opens, with real type/position/distance |
 | Clipboard copy | Add-ons have no clipboard access | Settings and server addresses can be sent to chat or written down |
 | Connecting to a saved server from the ATLAS UI | The Script API has no networking, server-list or transfer API for world add-ons | SERVER MANAGER stores validated addresses and shows the official manual steps; there is no fake CONNECT button |
@@ -73,14 +74,15 @@ The following are **unverified**, not proven working:
 - Settings persistence after a real **Save & Quit** and world reopen.
 - Per-feature compatibility statuses and the `EXPORT DIAGNOSTICS` chat report on a device.
 - Entering an `ATLAS1`/`ATLAS2` code on a device keyboard.
-- Opening the menu from the item or `/atlas:menu` on PS5.
+- Opening the menu from the item, `/atlas` or `/atlas:menu` on PS5.
+- The `/atlas` chat alias on a real Minecraft client; it is verified only against mock registration so far.
 - PS5 local import, joining a packed world/Realm, or adding a custom server (PS5 has no Add Server button).
 - Bedrock Arab import workflow.
 - Mega10 or any public server.
 - Performance with many players, long HUD lines or slow devices.
 - Minecraft versions other than 26.60.
 
-The BDS evidence recorded for 1.2.0 proved script startup and event registration on a server runtime. It did not render a player UI and is not repeated for 1.6.0 in this environment.
+The BDS evidence recorded for 1.2.0 proved script startup and event registration on a server runtime. It did not render a player UI and is not repeated for 1.7.0 in this environment.
 
 ---
 
@@ -100,7 +102,7 @@ These are not “missing features”; they conflict with the official API and th
 ## 5. Platform statements
 
 - **PS5:** primary target for development, but **not tested**. The code does not use device-specific input APIs. Whether PS5 can import a local file or join a packed world is unknown. PS5 also lacks Minecraft's Add Server button, so SERVER MANAGER cannot make a custom server joinable there.
-- **iPhone:** supported target, not tested for 1.6.0. Touch item use, Arabic shaping and the native Add Server flow need a device check.
+- **iPhone:** supported target, not tested for 1.7.0. Touch item use, Arabic shaping and the native Add Server flow need a device check.
 - **Public servers:** the pack is world-bound. If the server does not contain and allow it, no feature runs.
 - **Mega10:** not tested. No compatibility is claimed.
 

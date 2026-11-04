@@ -5,11 +5,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  ADDON_VERSION,
   ARMOR_PIECES,
   DEFAULT_SETTINGS,
   HUD_COLOR_IDS,
   LANGUAGE_IDS,
   LIMITS,
+  MENU_COMMANDS,
   THEME_IDS,
   TOGGLE_PATHS,
 } from "../src/ATLAS/BP/scripts/config.js";
@@ -952,6 +954,25 @@ test("compatibility feature definitions cover every section and capability", () 
   }
 });
 
+test("menu commands expose both the namespaced name and chat alias", () => {
+  assert.equal(MENU_COMMANDS.length, 2);
+  const names = new Set();
+  const aliases = new Set();
+  for (const entry of MENU_COMMANDS) {
+    assert.match(entry.name, /^atlas:[a-z]+$/);
+    assert.match(entry.chatAlias, /^[a-z]+$/);
+    // Bedrock derives the chat alias from the part after the namespace.
+    assert.equal(entry.name.split(":")[1], entry.chatAlias);
+    assert.equal(typeof entry.primary, "boolean");
+    names.add(entry.name);
+    aliases.add(entry.chatAlias);
+  }
+  assert.equal(names.size, 2);
+  assert.equal(aliases.size, 2);
+  assert.ok(MENU_COMMANDS[0].primary);
+  assert.ok(MENU_COMMANDS.some((entry) => entry.chatAlias === "atlas"));
+});
+
 test("compatibility statuses only claim WORKING after a real success", () => {
   const allAvailable = Object.fromEntries(CAPABILITY_IDS.map((id) => [id, true]));
   const armor = featureById("armor");
@@ -1002,7 +1023,7 @@ test("compatibility report lists status, API gaps and stored counts", () => {
   const servers = buildFeatureRow(featureById("servers"), allAvailable, null);
   const summary = buildCompatibilitySummary([armor, servers]);
   const text = formatCompatibilityReport({
-    version: "1.6.0",
+    version: ADDON_VERSION,
     gameVersion: "1.26.60",
     serverModule: "2.11.0",
     uiModule: "2.3.0",
@@ -1015,6 +1036,14 @@ test("compatibility report lists status, API gaps and stored counts", () => {
       errors: { script: 1, event: 0, storage: 2, form: 0 },
       recentErrors: [{ tick: 80, category: "storage", message: "blocked" }],
     },
+    entryPoints: {
+      commands: [
+        { name: "atlas:menu", chatAlias: "menu", primary: true },
+        { name: "atlas:atlas", chatAlias: "atlas", primary: false },
+      ],
+      item: "atlas:client_token",
+      scriptEvent: "atlas:menu",
+    },
     features: [armor, servers],
     capabilities: CAPABILITY_IDS.map((id) => ({
       id,
@@ -1023,7 +1052,8 @@ test("compatibility report lists status, API gaps and stored counts", () => {
     summary,
     contextLines: ["Stored data: waypoints 3 | containers 1 | servers 2"],
   });
-  assert.match(text, /ATLAS DIAGNOSTICS v1\.6\.0/);
+  assert.match(text, new RegExp(`ATLAS DIAGNOSTICS v${ADDON_VERSION.replace(/\./g, "\\.")}`));
+  assert.match(text, /Entry points: \/atlas:menu \(chat \/menu\), \/atlas:atlas \(chat \/atlas\)/);
   assert.match(text, /WORKING \(1\): armor/);
   assert.match(text, /servers: LIMITED/);
   assert.match(text, /documented scope limit/);
