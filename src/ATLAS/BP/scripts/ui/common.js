@@ -26,30 +26,43 @@ export function waitTicks(ticks) {
 }
 
 /**
+ * A form could not be shown at all. Callers treat this as a real failure so
+ * DIAGNOSTICS cannot record the section as WORKING after the UI never opened.
+ */
+export class FormShowError extends Error {
+  constructor(message, cause) {
+    super(message);
+    this.name = "FormShowError";
+    this.cause = cause;
+  }
+}
+
+/**
  * Shows a form and retries the common "player is busy" case. A form factory is
- * used so a retry always gets a fresh builder.
+ * used so a retry always gets a fresh builder. A form that never becomes
+ * available throws FormShowError instead of looking like a user cancel.
  */
 export async function safeShow(player, formFactory) {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const response = await formFactory().show(player);
-      if (
-        response.canceled &&
-        response.cancelationReason === FormCancelationReason.UserBusy &&
-        attempt < 2
-      ) {
-        await waitTicks(10);
-        continue;
+      if (response.canceled && response.cancelationReason === FormCancelationReason.UserBusy) {
+        if (attempt < 2) {
+          await waitTicks(10);
+          continue;
+        }
+        notifyFormFailure(player);
+        throw new FormShowError("The form stayed busy after three attempts.");
       }
       return response;
     } catch (error) {
+      if (error instanceof FormShowError) throw error;
       console.warn(`[ATLAS] ${t("en", "errors.formLog", { error })}`);
       notifyFormFailure(player);
-      return undefined;
+      throw new FormShowError(`The form could not be shown: ${error}`, error);
     }
   }
-  notifyFormFailure(player);
-  return undefined;
+  throw new FormShowError("The form could not be shown.");
 }
 
 function notifyFormFailure(player) {

@@ -12,6 +12,7 @@ function createState() {
     forms: [],
     uiQueue: [],
     responses: [],
+    formFailures: 0,
     tasks: [],
     timeouts: [],
     intervals: [],
@@ -59,6 +60,7 @@ export function resetState() {
   state.forms.length = 0;
   state.uiQueue.length = 0;
   state.responses.length = 0;
+  state.formFailures = 0;
   state.tasks.length = 0;
   state.timeouts.length = 0;
   state.commands.clear();

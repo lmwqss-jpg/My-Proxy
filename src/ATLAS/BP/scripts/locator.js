@@ -162,7 +162,13 @@ export function syncLocator(player) {
 
 export function syncAllLocators() {
   for (const player of getPlayersSafe()) {
-    syncLocator(player);
+    try {
+      syncLocator(player);
+    } catch (error) {
+      // One player's invalid dimension or stale handle must not stop the
+      // remaining players from receiving their locator markers.
+      warnOnce(player, error);
+    }
   }
 }
 

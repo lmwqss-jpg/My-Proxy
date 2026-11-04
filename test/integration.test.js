@@ -871,6 +871,32 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     );
     assert.ok(player.messages.some((message) => /Diagnostics report sent in \d+ messages/.test(message)));
 
+    // A form API failure is a real error, not a user cancel. It must be
+    // recorded against the section that failed and the menu must recover.
+    queue(
+      (form) => {
+        state.formFailures = 1;
+        return click(/^\s*(?:§.)*HUD/)(form);
+      },
+      click(/Settings/),
+      click(/Diagnostics/),
+      click(/Back/),
+      click(/Back/),
+      click(/Close/),
+    );
+    const formsBeforeFormFailure = state.forms.length;
+    openWithItem(player);
+    await settle();
+    assert.deepEqual(state.errors.map(String), []);
+    assert.ok(player.messages.some((message) => /menu could not be opened/i.test(message)));
+    const failedSectionDiag = state.forms
+      .slice(formsBeforeFormFailure)
+      .find((form) => form.title?.includes("Diagnostics"));
+    assert.ok(failedSectionDiag);
+    assert.match(failedSectionDiag.body, /HUD: §cERROR/);
+    const formFailureWarnings = state.warnings.splice(0);
+    assert.ok(formFailureWarnings.some((line) => /form API failure/.test(line)));
+
     // Export produces a code; send it to chat.
     queue(
       click(/Settings/),
@@ -1126,6 +1152,75 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.ok(degradedDetail);
     assert.match(degradedDetail.body, /20 64 -5/);
     returning.getViewDirection = originalDetailView;
+
+    // Waypoint details keep the real distance and cardinal bearing when the
+    // optional view API is unavailable.
+    const originalWaypointView = returning.getViewDirection.bind(returning);
+    returning.getViewDirection = () => {
+      throw new Error("unsupported view API");
+    };
+    const formsBeforeWaypointDetail = state.forms.length;
+    queue(
+      click(/Waypoints§r/),
+      click(/Waypoints \(/),
+      click(/HQ/),
+      click(/Back/),
+      click(/Back/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(returning);
+    await settle();
+    assertClean();
+    const degradedWaypoint = state.forms
+      .slice(formsBeforeWaypointDetail)
+      .find((form) => form.title?.includes("Waypoint details"));
+    assert.ok(degradedWaypoint);
+    assert.match(degradedWaypoint.body, /Distance: §f\d+m/);
+    assert.doesNotMatch(degradedWaypoint.body, /unsupported view API/);
+    returning.getViewDirection = originalWaypointView;
+
+    // One broken player must not stop locator sync for everyone else.
+    const goodLocator = new Player("player-good-locator", "Good");
+    const badLocator = new Player("player-bad-locator", "Bad");
+    Object.defineProperty(badLocator, "dimension", {
+      configurable: true,
+      get() {
+        throw new Error("dimension unavailable");
+      },
+    });
+    state.players.push(badLocator, goodLocator);
+    const goodMarkersBefore = goodLocator.locatorBar.waypoints.size;
+    emit("worldLoad", {});
+    await settle();
+    assert.deepEqual(state.errors.map(String), []);
+    assert.ok(goodLocator.locatorBar.waypoints.size > goodMarkersBefore);
+    const locatorWarnings = state.warnings.splice(0);
+    assert.ok(locatorWarnings.some((line) => /dimension unavailable/.test(line)));
+    emit("playerLeave", { playerId: badLocator.id, playerName: badLocator.name });
+    emit("playerLeave", { playerId: goodLocator.id, playerName: goodLocator.name });
+    state.players.splice(state.players.indexOf(badLocator), 1);
+    state.players.splice(state.players.indexOf(goodLocator), 1);
+
+    // The delayed spawn setup is outside the event guard; an optional API
+    // failure there must be logged, not thrown as an unhandled script error.
+    const spawnBroken = new Player("player-spawn-broken", "SpawnBroken");
+    Object.defineProperty(spawnBroken, "dimension", {
+      configurable: true,
+      get() {
+        throw new Error("dimension unavailable");
+      },
+    });
+    state.players.push(spawnBroken);
+    emit("playerSpawn", { player: spawnBroken, initialSpawn: true });
+    advanceTicks(30);
+    await settle();
+    assert.deepEqual(state.errors.map(String), []);
+    assert.ok(spawnBroken.messages.some((message) => message.includes(`Scripts v${ADDON_VERSION}`)));
+    const spawnWarnings = state.warnings.splice(0);
+    assert.ok(spawnWarnings.some((line) => /Spawn setup failed/.test(line)));
+    emit("playerLeave", { playerId: spawnBroken.id, playerName: spawnBroken.name });
+    state.players.splice(state.players.indexOf(spawnBroken), 1);
 
     // A second worldLoad and a respawn reinitialize the relevant systems only.
     // Listener and command counts must not grow, and the HUD must keep working.

@@ -1,6 +1,6 @@
-# ATLAS CLIENT 1.7.0 — Universal Compatibility
+# ATLAS CLIENT 1.8.0 — Universal Compatibility
 
-**Version:** 1.7.0
+**Version:** 1.8.0
 **Target:** Minecraft Bedrock 26.60 / `[1, 26, 60]`
 **Script modules:** `@minecraft/server 2.11.0`, `@minecraft/server-ui 2.3.0`
 **Experiments:** none
@@ -10,10 +10,13 @@ per-feature compatibility manager and what ATLAS can and cannot do when the
 world is opened as a local world, Realm, private server, public server or
 dedicated server.
 
-> Automated and mocked checks pass for 1.7.0. **No 1.7.0 test was performed on
-> iPhone, PS5, a Realm, Mega10, a public server or inside a real Minecraft
-> client.** The tables below separate what was exercised in the harness from
-> what still needs a device check.
+> Automated and mocked checks pass for 1.8.0. The add-on was also started on a
+> real Bedrock Dedicated Server 1.26.60.6: the pack loaded, scripts and events
+> started, both commands registered, all four command names resolved, three
+> reloads stayed clean and a short soak had no add-on errors. **No 1.8.0 test was
+> performed on iPhone, PS5, a Realm, Mega10, a public server or inside a real
+> Minecraft client.** The tables below separate what was exercised in the harness
+> or BDS from what still needs a device check.
 
 ---
 
@@ -124,7 +127,7 @@ only after a player actually runs a menu command in this session.
 |---|---|---|---|
 | Local world with the pack active | expected | expected | harness only |
 | Realm with the pack installed by the owner | expected | expected | NOT TESTED |
-| Private server / BDS running the pack | expected | expected | NOT TESTED |
+| Private server / BDS running the pack | expected | expected | BDS startup/commands PASS; no player UI |
 | Public server without the pack | no | no | by design: no script, no add-on |
 | Server running the pack but blocking custom commands | no | no | item remains the fallback; NOT TESTED |
 
@@ -140,13 +143,13 @@ ATLAS is a **world-bound Behavior Pack**. It runs only where the world/server
 already has the pack installed and active. It cannot inject itself into a
 server from a player's device.
 
-| Environment | What can work when the pack is active | What may be blocked | Tested in 1.7.0 |
+| Environment | What can work when the pack is active | What may be blocked | Tested in 1.8.0 |
 |---|---|---|---|
 | Local world | All feature categories | nothing by ATLAS | Harness only |
 | Realm | HUD, settings, waypoints, container log, diagnostics | custom command, dynamic properties, locator bar, add-on policy | NOT TESTED |
 | Private server | Same as local, depending on server policy | storage, commands, event availability | NOT TESTED |
 | Public server | Only features the server allows | custom packs, `/atlas` and `/atlas:menu`, storage, locator, combat events | NOT TESTED |
-| Dedicated Bedrock Server | Same script runtime as BDS 1.26.60.6 | per-world pack activation, server settings | NOT TESTED for 1.7.0 |
+| Dedicated Bedrock Server | Same script runtime as BDS 1.26.60.6 | per-world pack activation, server settings | PASS (startup, commands, reload, soak); player UI NOT TESTED |
 | Cross-platform | Same features once the world has the pack | device UI differences, controller/touch behavior | NOT TESTED |
 | Mega10 / other named servers | No special integration | no bypass of rules, anti-cheat or login | NOT TESTED |
 
@@ -189,5 +192,6 @@ account data.
 - ESPCHEST records opened containers, never hidden containers or contents.
 - Public-server anti-cheat and pack restrictions apply. ATLAS contains no
   X-ray, ESP, aimbot, auto-clicker or combat automation.
-- No 1.7.0 device, console, Realm or public-server test was performed. Treat
-  the harness statuses as development evidence only.
+- BDS 1.26.60.6 verified startup, command registration/resolution, reload and a
+  short soak. No 1.8.0 device, console, Realm, public-server or player-UI test was
+  performed; treat harness statuses as development evidence only.

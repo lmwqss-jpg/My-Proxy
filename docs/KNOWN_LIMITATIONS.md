@@ -1,8 +1,8 @@
 # ATLAS CLIENT — Known Limitations
 
-**Version:** 1.7.0
+**Version:** 1.8.0
 **Platform:** Minecraft Bedrock 26.60 / `1.26.60`+
-**Status:** automated checks pass; in-game, iPhone, PS5, Realm and public-server behaviour are not verified for this build.
+**Status:** automated checks and BDS 1.26.60.6 startup/commands pass; the player UI, iPhone, PS5, Realm and public-server behaviour are not verified for this build.
 
 This document separates **unsupported by the official platform**, **implemented with a narrower scope**, and **not yet tested**.
 
@@ -22,7 +22,7 @@ This document separates **unsupported by the official platform**, **implemented 
 | Raw keyboard, mouse or controller button stream | Not exposed to add-ons | WASD from the movement vector; CPS/LMB/RMB from game action events |
 | Counting clicks into empty air | The game does not report them | CPS counts only attacks, interactions and item uses |
 | Reading all stored tool durability | Only equipped armor and the held item are exposed | Low-durability monitoring is scoped to those items |
-| A command without a namespace (`/atlas` alone) | Bedrock requires `namespace:name` in a registered custom command; an add-on cannot register a bare name | 1.7.0 registers `atlas:atlas` so Minecraft exposes `/atlas`; `/atlas:menu` and `/menu` remain available. Commands exist only where the pack runs |
+| A command without a namespace (`/atlas` alone) | Bedrock requires `namespace:name` in a registered custom command; an add-on cannot register a bare name | 1.7.0+ registers `atlas:atlas` so Minecraft exposes `/atlas`; `/atlas:menu` and `/menu` remain available. Commands exist only where the pack runs |
 | Finding hidden containers or reading their contents through walls | Add-ons cannot scan arbitrary hidden blocks reliably and must not invent container data | **ESPCHEST** logs only containers the player actually opens, with real type/position/distance |
 | Clipboard copy | Add-ons have no clipboard access | Settings and server addresses can be sent to chat or written down |
 | Connecting to a saved server from the ATLAS UI | The Script API has no networking, server-list or transfer API for world add-ons | SERVER MANAGER stores validated addresses and shows the official manual steps; there is no fake CONNECT button |
@@ -82,7 +82,7 @@ The following are **unverified**, not proven working:
 - Performance with many players, long HUD lines or slow devices.
 - Minecraft versions other than 26.60.
 
-The BDS evidence recorded for 1.2.0 proved script startup and event registration on a server runtime. It did not render a player UI and is not repeated for 1.7.0 in this environment.
+BDS 1.26.60.6 was run for 1.8.0: the pack loaded, scripts started, both commands registered, all four command names resolved, three reloads stayed clean and a short soak had no add-on errors. It did not render a player UI and is not a client or device test.
 
 ---
 
@@ -102,7 +102,7 @@ These are not “missing features”; they conflict with the official API and th
 ## 5. Platform statements
 
 - **PS5:** primary target for development, but **not tested**. The code does not use device-specific input APIs. Whether PS5 can import a local file or join a packed world is unknown. PS5 also lacks Minecraft's Add Server button, so SERVER MANAGER cannot make a custom server joinable there.
-- **iPhone:** supported target, not tested for 1.7.0. Touch item use, Arabic shaping and the native Add Server flow need a device check.
+- **iPhone:** supported target, not tested for 1.8.0. Touch item use, Arabic shaping and the native Add Server flow need a device check.
 - **Public servers:** the pack is world-bound. If the server does not contain and allow it, no feature runs.
 - **Mega10:** not tested. No compatibility is claimed.
 

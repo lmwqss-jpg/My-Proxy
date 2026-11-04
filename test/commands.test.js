@@ -105,22 +105,27 @@ test("registers /atlas:menu and /atlas with no-cheats permissions", async () => 
   }
 });
 
-test("the short /atlas alias opens the main menu", async () => {
+test("every accepted command name opens the main menu", async () => {
   const output = silenceConsole();
   try {
     await boot();
     const player = new Player("player-command-1", "Alex");
     state.players.push(player);
-    const result = state.commands.get("atlas").callback({
-      sourceEntity: player,
-      sourceType: "Entity",
-    });
-    assert.equal(result.status, 0);
-    advanceTicks(1);
-    assert.ok(
-      state.forms.some((form) => form.title?.includes("ATLAS CLIENT")),
-      "the main form was not opened",
-    );
+    for (const name of ["atlas:menu", "atlas:atlas", "menu", "atlas"]) {
+      const before = state.forms.length;
+      const result = state.commands.get(name).callback({
+        sourceEntity: player,
+        sourceType: "Entity",
+      });
+      assert.equal(result.status, 0, `${name} did not succeed`);
+      advanceTicks(1);
+      await new Promise((resolve) => setImmediate(resolve));
+      assert.ok(
+        state.forms.length > before,
+        `${name} did not open the main menu`,
+      );
+      assert.ok(state.forms.at(-1).title.includes("ATLAS CLIENT"));
+    }
   } finally {
     output.restore();
   }

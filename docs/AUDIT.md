@@ -1,8 +1,8 @@
-# ATLAS CLIENT — Technical Audit (1.4.0, with 1.5.0–1.7.0 addenda)
+# ATLAS CLIENT — Technical Audit (1.4.0, with 1.5.0–1.8.0 addenda)
 
 **Repository:** `lmwqss-jpg/My-Proxy`
 **Audited version:** 1.3.0 working tree, before the 1.4.0 changes
-**Delivered versions:** 1.4.0, 1.5.0, 1.6.0 and 1.7.0
+**Delivered versions:** 1.4.0, 1.5.0, 1.6.0, 1.7.0 and 1.8.0
 **Target:** Minecraft Bedrock 26.60 / `[1, 26, 60]`, stable Script API
 **Automated audit:** `npm run typecheck`, `npm test`, `npm run build`, `npm run validate`
 
@@ -245,3 +245,32 @@ A dedicated command suite bundles the real `commands.js` against the mock regist
 - `/atlas` was not typed into a real Minecraft client in this environment.
 - No Realm, private server, BDS, public server, iPhone or PS5 test.
 - The add-on cannot create commands on a server that does not run the pack.
+
+## 10. 1.8.0 addendum — verification and failure isolation
+
+The 1.8.0 work was driven by the full-test request, not by a new gameplay
+feature. The following defects were reproduced in the harness and fixed:
+
+1. **A form failure could be counted as a successful screen.** `safeShow()` used
+   to catch the error, show a message and return `undefined`, which every screen
+   interpreted as a user cancel. The router then marked the section `WORKING`
+   even though its form never opened. It now throws `FormShowError` after
+   notifying the player, so the router records `ERROR`. A form that stays
+   `UserBusy` after all retries follows the same path.
+2. **Waypoint detail failed when `getViewDirection()` was unavailable.** The
+   optional relative label is now omitted while distance and cardinal bearing
+   remain real.
+3. **`syncAllLocators()` had no per-player isolation.** A player whose dimension
+   could not be read stopped marker creation for later players; each player is
+   now handled independently.
+4. **The delayed spawn callback was outside the event guard.** A failure in the
+   30-tick post-spawn setup could become an unhandled timeout exception. It is
+   now caught, logged and recorded as an event error.
+
+The same run also exercised all four command names on a real Bedrock Dedicated
+Server 1.26.60.6, performed three `/reload` cycles with exactly 2 command
+registrations and 10 event handlers each time, and soaked the server for about
+64 seconds with stable RSS and no add-on errors. This is server-runtime
+evidence, not a player-UI or device test.
+
+See [`TEST_REPORT.md`](TEST_REPORT.md) for the complete 1.8.0 results.

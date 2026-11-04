@@ -42,6 +42,10 @@ export class ActionFormData {
   }
 
   async show(player) {
+    if (state.formFailures > 0) {
+      state.formFailures -= 1;
+      throw new Error("mock form API failure");
+    }
     const form = {
       type: "action",
       player,
@@ -126,6 +130,10 @@ export class ModalFormData {
   }
 
   async show(player) {
+    if (state.formFailures > 0) {
+      state.formFailures -= 1;
+      throw new Error("mock form API failure");
+    }
     const form = {
       type: "modal",
       player,

@@ -99,27 +99,34 @@ function handleSpawn(event) {
   getSettings(player);
   clearLowHealthState(player.id);
   system.runTimeout(() => {
-    if (!player.isValid) return;
-    const settings = getSettings(player);
-    const language = settings.language;
-    const firstTime = !hasWelcomed(player);
-    // Confirm a successful update once per add-on version. This makes a
-    // missing/old pack visible in chat even when Content Log is closed.
-    if (getBootVersion(player) !== ADDON_VERSION) {
-      markBootVersion(player, ADDON_VERSION);
-      player.sendMessage(t(language, "boot.running", { version: ADDON_VERSION }));
+    try {
+      if (!player.isValid) return;
+      const settings = getSettings(player);
+      const language = settings.language;
+      const firstTime = !hasWelcomed(player);
+      // Confirm a successful update once per add-on version. This makes a
+      // missing/old pack visible in chat even when Content Log is closed.
+      if (getBootVersion(player) !== ADDON_VERSION) {
+        markBootVersion(player, ADDON_VERSION);
+        player.sendMessage(t(language, "boot.running", { version: ADDON_VERSION }));
+      }
+      const itemState = ensureMenuItem(player);
+      if (itemState === "given" && (initialSpawn || firstTime)) {
+        player.sendMessage(t(language, "welcome.itemGiven"));
+      } else if (itemState === "full" && (initialSpawn || firstTime)) {
+        player.sendMessage(t(language, "welcome.inventoryFull"));
+      } else if (itemState === "error" && firstTime) {
+        player.sendMessage(t(language, "welcome.itemFailed"));
+      }
+      if (firstTime) welcome(player);
+      syncLocator(player);
+      updateHud(player, true);
+    } catch (error) {
+      // The delayed spawn setup is outside the event wrapper; an optional API
+      // failure here must not become an unhandled script error.
+      console.warn(`[ATLAS] Spawn setup failed: ${error}`);
+      recordEngineError("event", error);
     }
-    const itemState = ensureMenuItem(player);
-    if (itemState === "given" && (initialSpawn || firstTime)) {
-      player.sendMessage(t(language, "welcome.itemGiven"));
-    } else if (itemState === "full" && (initialSpawn || firstTime)) {
-      player.sendMessage(t(language, "welcome.inventoryFull"));
-    } else if (itemState === "error" && firstTime) {
-      player.sendMessage(t(language, "welcome.itemFailed"));
-    }
-    if (firstTime) welcome(player);
-    syncLocator(player);
-    updateHud(player, true);
   }, 30);
 }
 

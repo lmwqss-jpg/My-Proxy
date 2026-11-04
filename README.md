@@ -1,6 +1,6 @@
 # ATLAS CLIENT — Minecraft Bedrock
 
-**الإصدار / Version:** 1.7.0
+**الإصدار / Version:** 1.8.0
 **ملف التثبيت / Install file:** `ATLAS.mcaddon`
 **الهدف / Target:** Minecraft Bedrock **26.60 (1.26.60)** أو أحدث
 **المنصة الأساسية / Primary platform:** PS5 — **لم يُختبر بعد / not tested**
@@ -9,7 +9,7 @@
 **التجارب / Experiments:** لا يحتاج أي تفعيل
 **دليل التثبيت:** [`docs/INSTALL.md`](docs/INSTALL.md) · **حل المشاكل:** [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) · **السيرفرات:** [`docs/SERVERS.md`](docs/SERVERS.md) · **التوافق:** [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) · **القيود:** [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) · **التدقيق:** [`docs/AUDIT.md`](docs/AUDIT.md) · **السجل:** [`docs/CHANGELOG.md`](docs/CHANGELOG.md)
 **دليل الاختبار الفعلي / Device test plan:** [`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md)
-**حالة الاختبار:** `npm run check` يمر بالكامل لنسخة 1.7.0: typecheck، و**27 اختباراً**، و**279 مسار واجهة**، وبناء 51 ملفاً (94.5 KiB)، وتحقق (6 فحوص). **لم يُختبر 1.7.0 داخل Minecraft أو على iPhone أو PS5 أو Mega10.** النسخة 1.2.0 سبق أن حمّلت سكربتاتها وأحداثها التسعة والأمر و`worldLoad` على Bedrock Dedicated Server 1.26.60.6؛ هذا لا يُثبت عمل الواجهة أو الاستيراد على جهاز حقيقي.
+**حالة الاختبار:** `npm run check` يمر بالكامل لنسخة 1.8.0: typecheck، و**27 اختباراً**، و**292 مسار واجهة**، وبناء 51 ملفاً (95.0 KiB)، وتحقق (6 فحوص)، وأدوات Microsoft الرسمية بلا أخطاء. شُغّلت 1.8.0 فعلياً على **Bedrock Dedicated Server 1.26.60.6**: تحمّلت الحزمة، وبدأت السكربتات والأحداث العشرة، وسُجّل الأمران، ووصل `worldLoad`، وعملت الأسماء الأربعة `/atlas` و`/atlas:atlas` و`/atlas:menu` و`/menu`، ونجحت ثلاث إعادات تحميل دون أخطاء. **لم يُختبر 1.8.0 داخل واجهة لاعب حقيقية أو على iPhone أو PS5 أو Realm أو Mega10.** نجاح الخادم لا يُثبت رسم الواجهة أو اللمس أو العربية على جهاز.
 
 ---
 
@@ -114,7 +114,7 @@
 - **إصدار Minecraft أقدم من 26.60:** ملف `manifest.json` يطلب `min_engine_version` مساوياً لـ `[1, 26, 60]`، لذلك لن تُحمّل الحزمة على إصدار أقدم.
 - **إصدار API غير موجود:** الحزم تعتمد على `@minecraft/server 2.11.0` و`@minecraft/server-ui 2.3.0` (إصدارات مستقرة في 26.60).
 - **أخطاء تحميل أخرى:** فعّل **Settings → Creator → Content Log GUI**، ثم افتح العالم وابحث عن `[ATLAS] Scripts loaded`. يجب أن ترى أيضاً `Event handlers registered` و`Custom command /atlas:menu registered` و`Custom command /atlas:atlas registered` و`World loaded`. إذا توقف السجل قبلها فالسكربت لم يُحمّل؛ تحقق من إصدار اللعبة وتفعيل Behavior Pack.
-- **نسخة قديمة عالقة:** إذا كنت جرّبت 1.0.0 أو 1.1.0 أو 1.2.0 أو 1.3.0 أو 1.4.0 أو 1.5.0 أو 1.6.0، احذف الحزمتين القديمتين من العالم أولاً. النسخة الجديدة 1.7.0 لها نفس UUID لكن رقم إصدار أعلى، لذا يستبدلها Minecraft عند الاستيراد.
+- **نسخة قديمة عالقة:** إذا كنت جرّبت 1.0.0 أو 1.1.0 أو 1.2.0 أو 1.3.0 أو 1.4.0 أو 1.5.0 أو 1.6.0، احذف الحزمتين القديمتين من العالم أولاً. النسخة الجديدة 1.8.0 لها نفس UUID لكن رقم إصدار أعلى، لذا يستبدلها Minecraft عند الاستيراد.
 - **الأداة مفقودة لكن السكربت يعمل:** استخدم `/atlas` أو `/atlas:menu`، أو من القائمة **Waypoints → Restore ATLAS item**.
 - **الأمر غير موجود:** إذا لم يظهر `/atlas` أو `/atlas:menu` في الإكمال التلقائي، فالBehavior Pack غير مفعّل أو السكربت لم يُحمّل؛ راجع Content Log. على سيرفر عام يجب أن يشغّل السيرفر الحزمة بنفسه.
 
@@ -331,7 +331,7 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 | `min_engine_version` | `[1, 26, 60]` |
 | Experiments | لا شيء |
 | Script entry | `scripts/main.js` |
-| إصدار الإضافة | 1.7.0 |
+| إصدار الإضافة | 1.8.0 |
 | Behavior Pack UUID | `45ec3030-7e82-4b27-b1bc-006fc4d14de5` |
 | Resource Pack UUID | `6f7b2107-421b-480f-9a07-3acdf805714d` |
 
@@ -359,7 +359,7 @@ npm run build        # ينتج ATLAS.mcaddon
 npm run validate     # يفحص الحزم والـ ZIP
 ```
 
-الاختبارات الآلية تغطي بنية الحزم والمنطق و**279 مسار واجهة** في محاكي APIs، كما تتحقق من تسجيل `/atlas` و`/atlas:menu` ومن الاسم المختصر ومن تعارض اسم واحد دون تعطيل الآخر، ومن حفظ الإعدادات والسيرفرات بعد خروج اللاعب وعودته، واستيراد رموز `ATLAS1` القديمة، وإعادة تهيئة المحرك دون تكرار المستمعات بعد `worldLoad` وإعادة الظهور، وحالات التوافق `WORKING`/`LIMITED`/`UNAVAILABLE`/`ERROR`/`NOT TESTED`، وتصدير تقرير التشخيص، وتدهور HUD عند غياب API اختياري. لكنها **لا تغني عن التجربة داخل Minecraft**. لم يتم اختبار 1.7.0 على iPhone أو PS5 أو داخل Minecraft في بيئة البناء الحالية. راجع [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) و[`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) للتقرير الآلي، و[`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) لقوائم iPhone وPS5 والسيرفرات.
+الاختبارات الآلية تغطي بنية الحزم والمنطق و**292 مسار واجهة** في محاكي APIs، كما تتحقق من تسجيل الأسماء الأربعة `/atlas` و`/atlas:atlas` و`/atlas:menu` و`/menu` ومن تعارض اسم واحد دون تعطيل الآخر، ومن حفظ الإعدادات والسيرفرات بعد خروج اللاعب وعودته، واستيراد رموز `ATLAS1` القديمة، وإعادة تهيئة المحرك دون تكرار المستمعات بعد `worldLoad` وإعادة الظهور، وحالات التوافق `WORKING`/`LIMITED`/`UNAVAILABLE`/`ERROR`/`NOT TESTED`، وتصدير تقرير التشخيص، وتدهور HUD عند غياب API اختياري، وفشل النموذج دون تسجيل `WORKING`، وعزل لاعب تالف عن بقية اللاعبين. نُفّذت 1.8.0 أيضاً على Bedrock Dedicated Server 1.26.60.6 (تحميل، أوامر، إعادة تحميل، استقرار) لكن هذا **لا يغني عن التجربة داخل واجهة اللعبة**. لم يتم اختبار 1.8.0 على iPhone أو PS5 أو Realm أو Mega10. راجع [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) و[`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) للتقرير الكامل، و[`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) لقوائم iPhone وPS5 والسيرفرات.
 
 ### بنية المستودع
 
@@ -374,7 +374,7 @@ test/                         اختبارات Node + محاكي Minecraft
 docs/TEST_REPORT.md           تقرير الاختبار الآلي والتوافق
 docs/COMPATIBILITY.md         محرك التوافق ومصفوفة العوالم والسيرفرات
 docs/DEVICE_TESTING.md        قوائم اختبار iPhone وPS5 والسيرفرات
-docs/AUDIT.md                 التدقيق التقني وقرارات 1.4.0–1.7.0
+docs/AUDIT.md                 التدقيق التقني وقرارات 1.4.0–1.8.0
 docs/INSTALL.md               دليل التثبيت لكل منصة
 docs/SERVERS.md               حدود وطريقة عمل SERVER MANAGER والاتصال اليدوي
 docs/TROUBLESHOOTING.md       حل مشاكل التحميل وHUD والإعدادات
@@ -392,7 +392,7 @@ docs/KNOWN_LIMITATIONS.md    القيود غير المدعومة وغير ال�
 
 ### Command entry points (1.7.0)
 
-1.6.0 registered only `atlas:menu`, so `/atlas` returned **Command Not Found**. Bedrock requires a namespace in a custom command name and automatically exposes the un-namespaced alias in chat. 1.7.0 therefore registers both `atlas:menu` (`/atlas:menu`, `/menu`) and `atlas:atlas` (**`/atlas`**, `/atlas:atlas`). Each name is registered independently; a collision disables only that entry point. Cheats and operator permissions are not required. Commands exist only while ATLAS is installed and active in that world: a public server must run the pack itself. **DIAGNOSTICS** and **EXPORT DIAGNOSTICS** now list the names the game actually accepted. The `/atlas` alias is documented Bedrock behavior, verified in the mock harness but **not yet in a real Minecraft client**.
+1.6.0 registered only `atlas:menu`, so `/atlas` returned **Command Not Found**. Bedrock requires a namespace in a custom command name and automatically exposes the un-namespaced alias in chat. 1.7.0 therefore registers both `atlas:menu` (`/atlas:menu`, `/menu`) and `atlas:atlas` (**`/atlas`**, `/atlas:atlas`). Each name is registered independently; a collision disables only that entry point. Cheats and operator permissions are not required. Commands exist only while ATLAS is installed and active in that world: a public server must run the pack itself. **DIAGNOSTICS** and **EXPORT DIAGNOSTICS** now list the names the game actually accepted. The `/atlas` alias is documented Bedrock behavior, verified in the mock harness and by `/atlas` resolution on BDS 1.26.60.6; it has **not yet been typed into a real Minecraft client chat**.
 
 ### Official limits
 
@@ -411,7 +411,7 @@ ATLAS CLIENT uses only the official Bedrock Script API. A clickable top-right ov
 
 The add-on contains no X-ray, ESP, aimbot, auto-clicker, or combat automation.
 
-**Compatibility engine (introduced in 1.6.0, preserved in 1.7.0):** ATLAS probes the real Script API capabilities on world load and player join/respawn. Every section reports `WORKING`, `LIMITED`, `READY`, `UNAVAILABLE`, `ERROR` or `NOT TESTED`; `WORKING` requires a real successful operation, never a static claim. Reinitialization keeps settings, waypoints and the ESPCHEST log and does not duplicate listeners or commands. **Settings → Diagnostics → EXPORT DIAGNOSTICS** sends a copyable report to chat. Servers can still block packs, commands, storage, locator bar or events; ATLAS reports that as `UNAVAILABLE` instead of pretending support. See [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md).
+**Compatibility engine (introduced in 1.6.0, preserved in 1.8.0):** ATLAS probes the real Script API capabilities on world load and player join/respawn. Every section reports `WORKING`, `LIMITED`, `READY`, `UNAVAILABLE`, `ERROR` or `NOT TESTED`; `WORKING` requires a real successful operation, never a static claim. Reinitialization keeps settings, waypoints and the ESPCHEST log and does not duplicate listeners or commands. **Settings → Diagnostics → EXPORT DIAGNOSTICS** sends a copyable report to chat. Servers can still block packs, commands, storage, locator bar or events; ATLAS reports that as `UNAVAILABLE` instead of pretending support. See [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md).
 
 ### iPhone installation
 
@@ -444,13 +444,13 @@ If nothing appears: verify Minecraft 26.60+, verify the behavior pack is active 
 - [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) — unsupported, partially supported and untested items
 - [`docs/SERVERS.md`](docs/SERVERS.md) — Server Manager scope, validation, platform connection steps and limits
 - [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) — compatibility engine, reinitialization rules, per-feature status and world/server matrix
-- [`docs/AUDIT.md`](docs/AUDIT.md) — architecture and the 1.4.0–1.7.0 audits
+- [`docs/AUDIT.md`](docs/AUDIT.md) — architecture and the 1.4.0–1.8.0 audits
 - [`docs/CHANGELOG.md`](docs/CHANGELOG.md) — version history
 - [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) and [`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) — automated evidence and device checklists
 
 ### Testing
 
-`npm run typecheck`, `npm test` (27 tests and 279 mock UI flows), `npm run build` (51 files, 94.5 KiB), and `npm run validate` (6 checks) pass for 1.7.0. The archive is a single `ATLAS.mcaddon`. The harness also covers `/atlas` and `/atlas:menu` registration and opening, a single-name collision, settings and server-list reload after a leave/rejoin, legacy `ATLAS1` and older `ATLAS2` import, session timing, coalesced inventory refresh, server address/port validation, the compatibility status model, diagnostics export, reinitialization without duplicate listeners, and graceful degradation when an optional API is unavailable. **1.7.0 was not tested inside Minecraft, on iPhone, PS5 or Mega10.** The 1.2.0 scripts, nine event registrations, `/atlas:menu` and `worldLoad` were observed on Bedrock Dedicated Server 1.26.60.6 without script errors; that proved startup only and did not render a player UI. See `docs/TEST_REPORT.md`, `docs/COMPATIBILITY.md` for the exact scope and `docs/DEVICE_TESTING.md` for the iPhone/PS5/server checklists.
+`npm run typecheck`, `npm test` (27 tests and 292 mock UI flows), `npm run build` (51 files, 95.0 KiB), and `npm run validate` (6 checks) pass for 1.8.0, and official Creator Tools validation reports 0 errors, 0 warnings and 0 recommendations. The archive is a single `ATLAS.mcaddon`. The harness covers all four command names, a single-name collision, settings and server-list reload after a leave/rejoin, legacy `ATLAS1` and older `ATLAS2` import, session timing, coalesced inventory refresh, server address/port validation, the compatibility status model, diagnostics export, reinitialization without duplicate listeners, form-failure `ERROR` reporting and graceful degradation when an optional API is unavailable. **1.8.0 was run on Bedrock Dedicated Server 1.26.60.6**: the pack loaded, scripts started, 10 events and both commands registered, `worldLoad` arrived, `/atlas`, `/atlas:atlas`, `/atlas:menu` and `/menu` resolved, three `/reload` cycles stayed clean and a short soak had no add-on errors. That proves the server startup path only; it did not render a player UI. 1.8.0 was **not tested on iPhone, PS5, a Realm or Mega10**. See `docs/TEST_REPORT.md`, `docs/COMPATIBILITY.md` for the exact scope and `docs/DEVICE_TESTING.md` for the iPhone/PS5/server checklists.
 
 ### PS5 and public servers
 

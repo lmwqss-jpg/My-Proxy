@@ -5,7 +5,7 @@
  * settings and data model can be tested with plain Node.js.
  */
 
-export const ADDON_VERSION = "1.7.0";
+export const ADDON_VERSION = "1.8.0";
 
 export const MENU_ITEM_ID = "atlas:client_token";
 

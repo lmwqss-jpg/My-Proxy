@@ -6,7 +6,7 @@
     "uuid": "45ec3030-7e82-4b27-b1bc-006fc4d14de5",
     "version": [
       1,
-      7,
+      8,
       0
     ],
     "min_engine_version": [
@@ -22,7 +22,7 @@
       "uuid": "4631e986-dcb4-4db5-a342-6438337d1496",
       "version": [
         1,
-        7,
+        8,
         0
       ]
     },
@@ -33,7 +33,7 @@
       "uuid": "d73083b6-3d4c-4c26-be53-9b83f6450055",
       "version": [
         1,
-        7,
+        8,
         0
       ],
       "entry": "scripts/main.js"
@@ -52,7 +52,7 @@
       "uuid": "6f7b2107-421b-480f-9a07-3acdf805714d",
       "version": [
         1,
-        7,
+        8,
         0
       ]
     }
@@ -63,5 +63,5 @@
     ],
     "product_type": "addon"
   },
-  "version": "1.7.0"
+  "version": "1.8.0"
 }

@@ -61,10 +61,16 @@ function distanceLine(player, waypoint, language) {
   }
   const distance = distance3(player.location, waypoint);
   const bearing = bearingBetween(player.location, waypoint);
-  const viewBearing = bearingFromView(player.getViewDirection());
   const direction = t(language, cardinalKey(bearing, false));
-  const relative = t(language, relativeDirectionKey(bearing, viewBearing));
-  return `§7${t(language, "common.distance")}: §f${formatDistance(distance)}${t(language, "common.meters")} §8| §7${t(language, "common.direction")}: §f${direction} §8(${relative})`;
+  let relative = "";
+  try {
+    const viewBearing = bearingFromView(player.getViewDirection());
+    relative = ` §8(${t(language, relativeDirectionKey(bearing, viewBearing))})`;
+  } catch {
+    // Distance and cardinal direction are still real when the optional view
+    // API is unavailable; omit only the relative left/right label.
+  }
+  return `§7${t(language, "common.distance")}: §f${formatDistance(distance)}${t(language, "common.meters")} §8| §7${t(language, "common.direction")}: §f${direction}${relative}`;
 }
 
 function waypointSummary(player, waypoint, settings) {

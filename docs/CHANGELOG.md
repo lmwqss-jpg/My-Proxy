@@ -4,6 +4,56 @@ All notable changes to ATLAS CLIENT are recorded here. The archive is a single `
 
 ---
 
+## 1.8.0 — Verification and failure-isolation release
+
+### Fixed
+
+- **A form API failure could be recorded as `WORKING`.** `safeShow()` now throws a
+  `FormShowError` after reporting the failure, so the router records `ERROR` for
+  that section instead of treating a screen that never opened as a success.
+  A form that stays busy after all retries is handled the same way.
+- **Waypoint details failed completely when `getViewDirection()` was unavailable.**
+  The detail screen now keeps the real distance and cardinal bearing and omits
+  only the optional relative left/right label.
+- **One broken player could stop locator sync for everyone else.**
+  `syncAllLocators()` now isolates each player; the remaining players still get
+  their locator markers.
+- **The delayed spawn setup was outside the event guard.** A failure in the
+  post-spawn callback is now logged as an event error instead of escaping as an
+  unhandled timeout exception.
+
+### Added
+
+- Regression coverage for every accepted command name (`/atlas`,
+  `/atlas:atlas`, `/atlas:menu`, `/menu`), form failure/`ERROR` reporting,
+  waypoint detail without the view API, per-player locator isolation and the
+  delayed spawn guard.
+- Full 1.8.0 test report with static checks, the Node.js harness, official
+  Creator Tools validation and a real Bedrock Dedicated Server 1.26.60.6 run.
+
+### Changed
+
+- Version bumped to **1.8.0** in `package.json`, both manifests, module and
+  dependency versions and the runtime.
+- All 1.7.0 HUD, input, armor, effects, totems, waypoints, ESPCHEST, combat,
+  Server Manager, compatibility, themes, Arabic/English and settings behavior is
+  preserved. `ATLAS2`/`ATLAS1` settings remain compatible.
+
+### Verification
+
+- `npm run check` — passed: typecheck, **27 tests**, **292 mocked form flows**,
+  51-file/95.0 KiB build, 6 validation checks.
+- Official Minecraft Creator Tools `validate addon` — 0 errors, 0 warnings,
+  0 recommendations.
+- Bedrock Dedicated Server 1.26.60.6 — pack loaded as 1.8.0, scripts started,
+  10 event handlers and both commands registered, `worldLoad` received, all four
+  command names resolved, three `/reload` cycles stayed clean, and a ~64-second
+  soak kept RSS stable with no add-on errors.
+- **Not tested in a player UI, on iPhone, PS5, a Realm, Bedrock Arab or Mega10.**
+  See [`TEST_REPORT.md`](TEST_REPORT.md).
+
+---
+
 ## 1.7.0 — Command entry-point fix
 
 ### Fixed
