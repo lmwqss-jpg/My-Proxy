@@ -1,6 +1,0 @@
-node_modules/
-build/
-test/.tmp/
-.playwright-cli/
-*.log
-.DS_Store

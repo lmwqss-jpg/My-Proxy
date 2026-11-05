@@ -1,9 +1,0 @@
-{
-  "resource_pack_name": "ATLAS CLIENT",
-  "texture_name": "atlas.items",
-  "texture_data": {
-    "atlas:client_token": {
-      "textures": "textures/items/atlas_client"
-    }
-  }
-}
