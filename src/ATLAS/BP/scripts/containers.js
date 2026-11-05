@@ -13,6 +13,13 @@ import { isPlainObject, safeNumber, sanitizeName } from "./util.js";
 const DIMENSION_PATTERN = /^[a-z0-9_.:-]{1,80}$/i;
 const TYPE_PATTERN = /^[a-z0-9_.:-]{1,80}$/i;
 
+/**
+ * One physical interaction can be reported more than once (for example when
+ * the client repeats a held-use event). A matching entry inside this window is
+ * treated as the same opening and is not written, reordered or timestamped.
+ */
+export const CONTAINER_DUPLICATE_WINDOW_MS = 3000;
+
 const KNOWN_CONTAINERS = Object.freeze([
   "minecraft:barrel",
   "minecraft:blast_furnace",
@@ -121,16 +128,29 @@ export function serializeContainers(list) {
 
 /**
  * Inserts or refreshes an entry and keeps the newest first.
- * Returns the entry plus the new list; `added` is false when it was refreshed.
+ *
+ * A recent interaction with the same block, dimension and container type is
+ * suppressed. The check scans every stored entry, not just the newest one, so
+ * alternating between two nearby chests cannot create duplicate history.
+ * Older entries are refreshed (time and type update) without adding a row.
  */
 export function recordContainer(list, info, now = Date.now()) {
   const entry = normalizeContainerEntry({ ...info, seenAt: now });
-  if (!entry) return { list, entry: null, added: false };
+  if (!entry) return { list, entry: null, added: false, duplicate: false };
   const key = containerKey(entry);
+  const duplicate = list.some((candidate) => {
+    if (containerKey(candidate) !== key) return false;
+    if (candidate.typeId !== entry.typeId) return false;
+    const elapsed = now - candidate.seenAt;
+    return elapsed >= 0 && elapsed < CONTAINER_DUPLICATE_WINDOW_MS;
+  });
+  if (duplicate) {
+    return { list, entry: null, added: false, duplicate: true };
+  }
   const existing = list.find((candidate) => containerKey(candidate) === key);
   const next = [entry, ...list.filter((candidate) => containerKey(candidate) !== key)];
   while (next.length > LIMITS.containers) next.pop();
-  return { list: next, entry, added: !existing };
+  return { list: next, entry, added: !existing, duplicate: false };
 }
 
 export function removeContainer(list, key) {

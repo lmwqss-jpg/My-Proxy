@@ -113,9 +113,15 @@ export function formatEffectDuration(duration) {
   return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
+/** Roman effect level for display. Level I is amplifier 0. */
+export function formatEffectLevel(amplifier) {
+  if (!Number.isFinite(amplifier) || amplifier < 0) return "--";
+  return ROMAN_LEVELS[amplifier] ?? `x${amplifier + 1}`;
+}
+
 function effectLevel(amplifier) {
   if (!Number.isFinite(amplifier) || amplifier <= 0) return "";
-  return ` ${ROMAN_LEVELS[amplifier] ?? `x${amplifier + 1}`}`;
+  return ` ${formatEffectLevel(amplifier)}`;
 }
 
 function durabilityTone(percent, threshold) {

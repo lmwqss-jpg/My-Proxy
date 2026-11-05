@@ -88,6 +88,7 @@ export function collectEquipment(player) {
           nameKey: "hud.piece.mainhand",
           empty: false,
           typeId: item.typeId,
+          amount: Number.isFinite(item.amount) ? item.amount : null,
           durability: durabilityOf(item),
         }
       : null;
@@ -105,6 +106,7 @@ export function collectEquipment(player) {
           nameKey: "hud.piece.offhand",
           empty: false,
           typeId: item.typeId,
+          amount: Number.isFinite(item.amount) ? item.amount : null,
           durability: durabilityOf(item),
         }
       : null;
@@ -112,7 +114,71 @@ export function collectEquipment(player) {
     offhand = null;
   }
 
-  return { armor, mainhand, offhand };
+  // totalArmor/totalToughness are real official properties on the equippable
+  // component. Guard them because a custom/older entity implementation may
+  // not expose them.
+  let totalArmor = null;
+  let totalToughness = null;
+  try {
+    if (Number.isFinite(equippable.totalArmor)) totalArmor = equippable.totalArmor;
+  } catch {
+    totalArmor = null;
+  }
+  try {
+    if (Number.isFinite(equippable.totalToughness)) totalToughness = equippable.totalToughness;
+  } catch {
+    totalToughness = null;
+  }
+
+  let selectedSlot = null;
+  try {
+    if (Number.isInteger(player.selectedSlotIndex) && player.selectedSlotIndex >= 0) {
+      selectedSlot = player.selectedSlotIndex;
+    }
+  } catch {
+    selectedSlot = null;
+  }
+
+  return { armor, mainhand, offhand, totalArmor, totalToughness, selectedSlot };
+}
+
+/** Reads one optional official boolean without losing the other values. */
+function readFlag(read) {
+  try {
+    const value = read();
+    return typeof value === "boolean" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Real movement values from the official entity API. `getVelocity` is in
+ * blocks per tick; multiplying by 20 gives blocks per second. No value is
+ * invented when the API throws.
+ */
+export function collectMovement(player) {
+  let velocity;
+  try {
+    velocity = player.getVelocity();
+  } catch {
+    return null;
+  }
+  if (
+    !velocity ||
+    ![velocity.x, velocity.y, velocity.z].every((value) => Number.isFinite(value))
+  ) {
+    return null;
+  }
+  return {
+    horizontal: Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z),
+    vertical: velocity.y,
+    sprinting: readFlag(() => player.isSprinting),
+    sneaking: readFlag(() => player.isSneaking),
+    jumping: readFlag(() => player.isJumping),
+    flying: readFlag(() => player.isFlying),
+    gliding: readFlag(() => player.isGliding),
+  };
 }
 
 /** Active effects with their real remaining duration in ticks. */

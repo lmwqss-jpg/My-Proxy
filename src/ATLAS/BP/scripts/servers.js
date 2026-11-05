@@ -16,7 +16,7 @@ import {
   SERVER_CATEGORIES,
   SERVER_REGIONS,
 } from "./config.js";
-import { isPlainObject, safeNumber, sanitizeName } from "./util.js";
+import { formatTimestamp, isPlainObject, safeNumber, sanitizeName } from "./util.js";
 
 const ID_PATTERN = /^[a-zA-Z0-9_-]{1,80}$/;
 const MAX_ADDRESS_LENGTH = 253;
@@ -190,6 +190,29 @@ export function findServer(list, id) {
   return list.find((server) => server.id === id) ?? null;
 }
 
+/** Case-insensitive address-book search over the fields the UI displays. */
+export function filterServers(list, query) {
+  const needle = typeof query === "string" ? query.trim().toLowerCase() : "";
+  if (!needle) return Array.isArray(list) ? list : [];
+  if (!Array.isArray(list)) return [];
+  return list.filter((server) => {
+    if (!server) return false;
+    const haystack = [
+      server.name,
+      server.address,
+      String(server.port),
+      server.description,
+      server.category,
+      server.region,
+      server.favorite ? "favorite" : "",
+      server.current ? "current" : "",
+    ]
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(needle);
+  });
+}
+
 export function addServer(list, server) {
   if (!server) return { list, added: false, reason: "invalid" };
   if (list.length >= LIMITS.servers) return { list, added: false, reason: "limit" };
@@ -272,12 +295,5 @@ export function normalizeServerTarget(value) {
 
 /** "2026-01-31 14:05 UTC", or null when no real timestamp exists. */
 export function formatServerTimestamp(value) {
-  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return null;
-  const date = new Date(value);
-  if (!Number.isFinite(date.getTime())) return null;
-  const pad = (part) => String(part).padStart(2, "0");
-  return (
-    `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ` +
-    `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())} UTC`
-  );
+  return formatTimestamp(value);
 }

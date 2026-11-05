@@ -1,11 +1,11 @@
-# ATLAS CLIENT 1.8.0 — Full Test Report
+# ATLAS CLIENT 1.9.0 — Full Test Report
 
-**Add-on version:** 1.8.0\
-**Archive:** `ATLAS.mcaddon` (one Behavior Pack + one Resource Pack)\
+**Add-on version:** 1.9.0\
+**Archive:** `ATLAS_CLIENT.mcaddon` (one Behavior Pack + one Resource Pack); `ATLAS.mcaddon` is byte-identical\
 **Target:** Minecraft Bedrock 26.60 / `1.26.60`+\
 **Script modules:** `@minecraft/server 2.11.0`, `@minecraft/server-ui 2.3.0`\
 **Experiments:** none\
-**Report scope:** static checks, the Node.js harness, official Creator Tools validation, and a real Bedrock Dedicated Server 1.26.60.6 run. **No iPhone, PS5, Realm, public-server or player-UI test was performed.** Those rows say **NOT TESTED** on purpose.
+**Report scope:** static checks and the Node.js harness for **1.9.0**, plus the retained **1.8.0** Creator Tools and Bedrock Dedicated Server 1.26.60.6 evidence. **No 1.9.0 iPhone, PS5, Realm, public-server or player-UI test was performed.** Those rows say **NOT TESTED** on purpose.
 
 > This report separates three different things: code that was executed, a real
 > Minecraft **server** runtime, and a real Minecraft **client**. A successful
@@ -14,7 +14,32 @@
 
 ---
 
-## 1. Environment and commands actually run
+## 0. 1.9.0 verification summary (current)
+
+| Command | Result | Evidence |
+|---|---|---|
+| `npm ci` | PASS | 8 packages installed, 0 vulnerabilities |
+| `npm run typecheck` | PASS | every pack script checked against the official 2.11.0 / 2.3.0 types |
+| `npm test` | PASS | **30 tests**, including one integration test with **321 native form flows** |
+| `npm run build` | PASS | `ATLAS_CLIENT.mcaddon` + identical `ATLAS.mcaddon`, **51 files, 99.7 KiB**, 53 ZIP entries including pack roots |
+| `npm run validate` | PASS | **7 checks**: manifests, 5 JSON files, item/PNG/texture references, localisation, 34 scripts/imports, and both archives |
+| `npm run check` | PASS | typecheck + tests + build + validate, in that order |
+| `unzip -t ATLAS_CLIENT.mcaddon` | PASS | archive integrity: no compressed-data errors |
+| `unzip -l ATLAS_CLIENT.mcaddon` | PASS | `ATLAS_BP/` and `ATLAS_RP/` manifests, `scripts/main.js`, item and textures at the expected roots |
+| `sha256sum ATLAS_CLIENT.mcaddon ATLAS.mcaddon` | PASS | both files have the same SHA-256 |
+
+Changes verified by the 1.9.0 harness include: menu order, waypoint and server
+search, recent-window ESPCHEST deduplication across the whole log, world-cache
+reset on `worldLoad`, official movement velocity/state, armor totals, held-item
+amount and selected slot, potion level I, and persistence/legacy settings.
+
+**1.9.0 was not run on a Bedrock Dedicated Server, inside a real Minecraft
+client, on iPhone, PS5, a Realm, Bedrock Arab or Mega10.** The BDS and Creator
+Tools rows in the baseline sections below belong to **1.8.0**.
+
+---
+
+## 1. Environment and commands actually run (1.8.0 baseline)
 
 Linux, Node.js 24.x, npm 11.x, TypeScript 5.9.x, esbuild 0.25.x, Minecraft
 Bedrock Dedicated Server 1.26.60.6 (Linux), Minecraft Creator Tools 0.20.0.
@@ -365,13 +390,13 @@ cannot reproduce a real device render or a player's Save & Quit.
 
 ## 16. Import and first run
 
-1. Import `ATLAS.mcaddon` into Minecraft Bedrock 26.60+.
+1. Import `ATLAS_CLIENT.mcaddon` into Minecraft Bedrock 26.60+ (`ATLAS.mcaddon` is identical).
 2. Activate **ATLAS CLIENT** (Behavior Pack) and **ATLAS CLIENT Resources** in the world.
 3. Do not enable experiments.
 4. Enter the world.
 5. Open the menu with the **ATLAS CLIENT** item, `/atlas` or `/atlas:menu` (no cheats required); `/menu` is the automatic short form.
-6. Expected Content Log lines: `[ATLAS] Scripts loaded: v1.8.0`, `[ATLAS] Compatibility engine initialized`, `[ATLAS] Event handlers registered: 10`, `[ATLAS] Custom command /atlas:menu registered`, `[ATLAS] Custom command /atlas:atlas registered`, `[ATLAS] World loaded`.
-7. Expected chat line once per player/version: `Scripts v1.8.0 are running`.
+6. Expected Content Log lines: `[ATLAS] Scripts loaded: v1.9.0`, `[ATLAS] Compatibility engine initialized`, `[ATLAS] Event handlers registered: 10`, `[ATLAS] Custom command /atlas:menu registered`, `[ATLAS] Custom command /atlas:atlas registered`, `[ATLAS] World loaded`.
+7. Expected chat line once per player/version: `Scripts v1.9.0 are running`.
 
 A successful BDS boot with those lines is evidence of the same startup path, but
 still not evidence that a phone or console renders the forms.
@@ -386,6 +411,6 @@ Limits: [`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md).
 
 - **Automated/static:** PASS.
 - **Mocked Minecraft control flow:** PASS.
-- **Real Bedrock Dedicated Server 1.26.60.6:** PASS for startup, event registration, command resolution, reload and a short soak.
+- **Real Bedrock Dedicated Server 1.26.60.6:** PASS for the retained 1.8.0 startup, event registration, command resolution, reload and a short soak. 1.9.0 was not re-run on BDS.
 - **Real player UI, iPhone, PS5, Realm, Bedrock Arab, Mega10:** **NOT TESTED**.
-- **Release status:** 1.8.0 is ready for device testing. `npm run check` and a BDS startup are not a substitute for a real client render test.
+- **Release status:** 1.9.0 passes all automated checks and is ready for device testing. `npm run check` and a BDS startup are not a substitute for a real client render test.

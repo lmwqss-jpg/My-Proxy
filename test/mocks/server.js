@@ -141,6 +141,9 @@ export class Player {
     this.level = 12;
     this.health = 20;
     this.gameMode = "Survival";
+    this.selectedSlotIndex = 0;
+    this.totalArmor = 18;
+    this.totalToughness = 8;
     this.dynamic = new Map();
     this.messages = [];
     this.sounds = [];
@@ -151,6 +154,12 @@ export class Player {
     this.effects = [];
     this.equipment = new Map();
     this.input = { x: 0, y: 0 };
+    this.velocity = { x: 0, y: 0, z: 0 };
+    this.isSprinting = false;
+    this.isSneaking = false;
+    this.isJumping = false;
+    this.isFlying = false;
+    this.isGliding = false;
     this.inputInfo = {
       getMovementVector: () => ({ ...this.input }),
     };
@@ -180,6 +189,8 @@ export class Player {
     if (id === "minecraft:equippable") {
       return {
         getEquipment: (slot) => this.equipment.get(slot),
+        totalArmor: this.totalArmor,
+        totalToughness: this.totalToughness,
       };
     }
     return undefined;
@@ -187,6 +198,10 @@ export class Player {
 
   getViewDirection() {
     return { x: 0, y: 0, z: -1 };
+  }
+
+  getVelocity() {
+    return { ...this.velocity };
   }
 
   getGameMode() {

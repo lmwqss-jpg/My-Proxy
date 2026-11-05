@@ -25,6 +25,7 @@ import {
   formatCoord,
   formatKd,
   formatSessionDuration,
+  formatTimestamp,
   gameClock,
   getPath,
   relativeDirectionKey,
@@ -41,6 +42,7 @@ import {
 import {
   addWaypoint,
   createWaypoint,
+  filterWaypoints,
   findWaypoint,
   moveWaypoint,
   normalizeWaypoint,
@@ -52,6 +54,7 @@ import {
   waypointDisplayName,
 } from "../src/ATLAS/BP/scripts/waypoints.js";
 import {
+  CONTAINER_DUPLICATE_WINDOW_MS,
   containerKey,
   containerLabel,
   isContainerBlock,
@@ -67,12 +70,14 @@ import {
   dimensionLabel,
   effectLabel,
   formatEffectDuration,
+  formatEffectLevel,
   trackedWaypointSnapshot,
 } from "../src/ATLAS/BP/scripts/hudFormat.js";
 import {
   addServer,
   clearCurrent,
   createServer,
+  filterServers,
   findServer,
   formatServerTimestamp,
   markCurrent,
@@ -251,6 +256,9 @@ test("geometry, compass and clock helpers", () => {
   assert.equal(formatSessionDuration(3661), "1:01:01");
   assert.equal(formatSessionDuration(undefined), "--");
   assert.equal(formatSessionDuration(-1), "--");
+  assert.equal(formatTimestamp(1700000100000), "2023-11-14 22:15 UTC");
+  assert.equal(formatTimestamp(null), null);
+  assert.equal(formatTimestamp(Number.MAX_VALUE), null);
 });
 
 test("names are sanitised", () => {
@@ -445,6 +453,29 @@ test("waypoint model validates, caps and updates the death point", () => {
   assert.equal(duplicates.length, 1);
 });
 
+test("waypoint search matches stored fields without changing the list", () => {
+  const base = {
+    dimensionId: "minecraft:overworld",
+    y: 64,
+    z: -30,
+    createdAt: 1,
+  };
+  const list = [
+    createWaypoint({ ...base, id: "w_base", name: "Base", x: 100 }),
+    createWaypoint({ ...base, id: "w_mine", name: "Mine", x: 200, dimensionId: "minecraft:nether" }),
+    createWaypoint({ ...base, id: "w_empty", name: "", x: 300, kind: "death" }),
+  ];
+  assert.equal(filterWaypoints(list, ""), list);
+  assert.deepEqual(filterWaypoints(list, "base").map((entry) => entry.id), ["w_base"]);
+  assert.deepEqual(filterWaypoints(list, "NETHER").map((entry) => entry.id), ["w_mine"]);
+  assert.deepEqual(filterWaypoints(list, "200").map((entry) => entry.id), ["w_mine"]);
+  assert.deepEqual(filterWaypoints(list, "death").map((entry) => entry.id), ["w_empty"]);
+  assert.deepEqual(filterWaypoints(list, "missing"), []);
+  assert.deepEqual(filterWaypoints(null, "base"), []);
+  // Searching never mutates or re-orders the stored list.
+  assert.equal(list[0].id, "w_base");
+});
+
 test("automatic death waypoint is reused and can be renamed", () => {
   const first = upsertDeathWaypoint([], {
     dimensionId: "minecraft:overworld",
@@ -591,6 +622,10 @@ test("live HUD values are real and degrade honestly", () => {
   assert.equal(effectLabel("minecraft:speed", "en"), "Speed");
   assert.equal(effectLabel("minecraft:speed", "ar"), "السرعة");
   assert.equal(effectLabel("minecraft:custom_effect", "en"), "Custom Effect");
+  assert.equal(formatEffectLevel(0), "I");
+  assert.equal(formatEffectLevel(1), "II");
+  assert.equal(formatEffectLevel(12), "x13");
+  assert.equal(formatEffectLevel(undefined), "--");
 
   const unknownInput = {
     ...SNAPSHOT,
@@ -738,6 +773,45 @@ test("container log validates real container interactions and caps entries", () 
   assert.deepEqual(parseContainers([{ garbage: true }]), []);
   assert.deepEqual(parseContainers([entry, entry]).length, 1);
   assert.equal(removeContainer(list, containerKey(list[0])).length, LIMITS.containers - 1);
+});
+
+test("recent duplicate container interactions are suppressed across the list", () => {
+  const chest = {
+    typeId: "minecraft:chest",
+    dimensionId: "minecraft:overworld",
+    x: 10,
+    y: 64,
+    z: -3,
+  };
+  const barrel = { ...chest, typeId: "minecraft:barrel", x: 12 };
+  let list = recordContainer([], chest, 1000).list;
+  list = recordContainer(list, barrel, 1500).list;
+  assert.equal(list.length, 2);
+
+  // A repeated chest event is suppressed even though barrel is the newest
+  // entry; the old code only checked the newest record.
+  const repeated = recordContainer(list, chest, 2000);
+  assert.equal(repeated.added, false);
+  assert.equal(repeated.duplicate, true);
+  assert.equal(repeated.list.length, 2);
+  assert.equal(repeated.list[0].typeId, "minecraft:barrel");
+  assert.equal(repeated.list.find((entry) => entry.typeId === "minecraft:chest").seenAt, 1000);
+
+  // Outside the dedupe window the same block is a new real opening and moves
+  // to the top without creating a duplicate row.
+  const later = recordContainer(list, chest, 1000 + CONTAINER_DUPLICATE_WINDOW_MS + 1);
+  assert.equal(later.duplicate, false);
+  assert.equal(later.added, false);
+  assert.equal(later.list.length, 2);
+  assert.equal(later.list[0].typeId, "minecraft:chest");
+  assert.equal(later.list[0].seenAt, 1000 + CONTAINER_DUPLICATE_WINDOW_MS + 1);
+
+  // A different block type at the same position is not a duplicate of the
+  // old type and updates the stored row.
+  const changed = recordContainer(later.list, { ...chest, typeId: "minecraft:barrel" }, 9000);
+  assert.equal(changed.duplicate, false);
+  assert.equal(changed.list.length, 2);
+  assert.equal(changed.list[0].typeId, "minecraft:barrel");
 });
 
 test("server addresses and ports are validated, not guessed", () => {
@@ -904,6 +978,28 @@ test("server registry keeps order, favourites and one manual current entry", () 
   });
   assert.equal(normalizeServerTarget("bad json"), null);
   assert.equal(normalizeServerTarget({ address: "bad host", port: 19132 }), null);
+});
+
+test("server search matches name, address and labels without mutating order", () => {
+  const base = {
+    now: 1700000000000,
+    port: 19132,
+    category: "public",
+    region: "eu",
+  };
+  const list = [
+    createServer({ ...base, id: "s_a", name: "Alpha", address: "play.alpha.example" }),
+    createServer({ ...base, id: "s_b", name: "Beta", address: "beta.example", category: "private", region: "asia" }),
+    createServer({ ...base, id: "s_c", name: "Gamma", address: "203.0.113.10" }),
+  ];
+  assert.equal(filterServers(list, ""), list);
+  assert.deepEqual(filterServers(list, "alpha").map((entry) => entry.id), ["s_a"]);
+  assert.deepEqual(filterServers(list, "203.0.113").map((entry) => entry.id), ["s_c"]);
+  assert.deepEqual(filterServers(list, "private").map((entry) => entry.id), ["s_b"]);
+  assert.deepEqual(filterServers(list, "ASIA").map((entry) => entry.id), ["s_b"]);
+  assert.deepEqual(filterServers(list, "missing"), []);
+  assert.deepEqual(filterServers(null, "alpha"), []);
+  assert.deepEqual(list.map((entry) => entry.id), ["s_a", "s_b", "s_c"]);
 });
 
 test("compatibility feature definitions cover every section and capability", () => {

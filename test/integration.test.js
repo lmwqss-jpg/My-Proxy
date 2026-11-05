@@ -181,6 +181,29 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     await settle();
     assertClean();
     assert.ok(state.forms.some((form) => form.type === "action" && form.buttons.some((b) => /Visual/.test(b))));
+    // The main menu follows the documented section order.
+    const mainMenu = state.forms.at(-1);
+    const menuOrder = [
+      "Home",
+      "HUD",
+      "Visual",
+      "Player",
+      "Movement",
+      "Armor",
+      "Items",
+      "Potions",
+      "Totems",
+      "Combat",
+      "Waypoints",
+      "ESPCHEST",
+      "Server Manager",
+      "Settings",
+      "Diagnostics",
+      "About ATLAS CLIENT",
+    ];
+    menuOrder.forEach((label, index) => {
+      assert.match(mainMenu.buttons[index] ?? "", new RegExp(label), `menu order at ${index}`);
+    });
     const afterHud = JSON.parse(player.dynamic.get("atlas:settings"));
     assert.equal(afterHud.hud.coords, false);
     assert.ok(!(player.actionBars.at(-1) ?? "").includes("10 64 -4"));
@@ -293,7 +316,8 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.equal(containerLog.length, 2);
     assert.equal(containerLog[0].typeId, "minecraft:barrel");
 
-    // Re-opening the same chest refreshes one entry instead of duplicating it.
+    // Re-opening the same chest immediately is the same interaction, so it
+    // must not create a duplicate row or reorder the recent history.
     emit("playerInteractWithBlock", {
       player,
       isFirstEvent: true,
@@ -306,7 +330,10 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     await settle();
     const dedupedLog = JSON.parse(player.dynamic.get("atlas:containers"));
     assert.equal(dedupedLog.length, 2);
-    assert.equal(dedupedLog[0].typeId, "minecraft:chest");
+    assert.deepEqual(
+      dedupedLog.map((entry) => entry.typeId).sort(),
+      ["minecraft:barrel", "minecraft:chest"],
+    );
 
     queue(
       click(/ESPCHEST/),
@@ -389,6 +416,47 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.match(liveBar, /Night Vision§r §f∞/);
     assert.match(liveBar, /Totem §f2/);
     assert.ok(player.messages.some((message) => /Low durability/.test(message)));
+
+    // ARMOR reports the official total armor/toughness, ITEMS shows the real
+    // amount and selected hotbar slot, and POTIONS shows the effect level even
+    // for level I instead of hiding it.
+    queue(click(/Armor§r/), click(/Back/), click(/Close/));
+    openWithItem(player);
+    await settle();
+    assertClean();
+    const armorForm = state.forms.at(-2);
+    assert.match(armorForm.body, /Total armor: §f18/);
+    assert.match(armorForm.body, /Total toughness: §f8/);
+
+    queue(click(/Items§r/), click(/Back/), click(/Close/));
+    openWithItem(player);
+    await settle();
+    assertClean();
+    const itemsForm = state.forms.at(-2);
+    assert.match(itemsForm.body, /diamond sword §8× §f1/);
+    assert.match(itemsForm.body, /Selected hotbar slot: §f1/);
+
+    queue(click(/Potions§r/), click(/Back/), click(/Close/));
+    openWithItem(player);
+    await settle();
+    assertClean();
+    const potionsForm = state.forms.at(-2);
+    assert.match(potionsForm.body, /Speed §8\| §7Level §fII/);
+    assert.match(potionsForm.body, /Night Vision §8\| §7Level §fI/);
+
+    // MOVEMENT reports official velocity and state properties, not fake input.
+    player.velocity = { x: 0.2, y: 0, z: -0.1 };
+    player.isSprinting = true;
+    queue(click(/Movement§r/), click(/Back/), click(/Close/));
+    openWithItem(player);
+    await settle();
+    assertClean();
+    const movementForm = state.forms.at(-2);
+    assert.match(movementForm.body, /Horizontal speed: §f4\.47 blocks\/s/);
+    assert.match(movementForm.body, /Facing: §fNorth/);
+    assert.match(movementForm.body, /Movement state: §fSprinting/);
+    player.velocity = { x: 0, y: 0, z: 0 };
+    player.isSprinting = false;
 
     // Inventory changes rebuild the HUD immediately so the totem count cannot
     // lag behind the configured refresh interval.
@@ -574,6 +642,25 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.equal(renamed[0].name, "HQ");
     assert.ok((player.actionBars.at(-1) ?? "").includes("HQ"));
 
+    // Waypoint search filters by name/coordinates and shows the dimension.
+    queue(
+      click(/Waypoints§r/),
+      click(/Waypoints \(/),
+      click(/Search waypoints/),
+      modal("HQ"),
+      click(/Back/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    const waypointSearchForm = state.forms.find((form) => form.body?.includes("Search: HQ"));
+    assert.ok(waypointSearchForm, "waypoint search did not filter the list");
+    assert.match(waypointSearchForm.body, /1 matching waypoints/);
+    assert.ok(waypointSearchForm.buttons.some((button) => /HQ/.test(button)));
+    assert.ok(waypointSearchForm.buttons.some((button) => /minecraft:overworld|Overworld/.test(button)));
+
     // SERVER MANAGER stores validated entries. It never claims to connect:
     // Minecraft's Script API has no networking or server-list access.
     queue(
@@ -670,6 +757,22 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     savedServers = JSON.parse(player.dynamic.get("atlas:servers"));
     assert.equal(savedServers[0].name, "Second HQ");
     assert.equal(savedServers[0].description, "Edited");
+
+    // Server search filters by name/address and keeps add/edit reachable.
+    queue(
+      click(/Server Manager/),
+      click(/Search servers/),
+      modal("Second HQ"),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(player);
+    await settle();
+    assertClean();
+    const serverSearchForm = state.forms.find((form) => form.body?.includes("Search: Second HQ"));
+    assert.ok(serverSearchForm, "server search did not filter the address book");
+    assert.match(serverSearchForm.body, /1 matching servers/);
+    assert.ok(serverSearchForm.buttons.some((button) => /Second HQ/.test(button)));
 
     // Invalid addresses, ports and duplicate targets are rejected, not saved.
     queue(
@@ -1221,6 +1324,34 @@ test("ATLAS CLIENT control flow with mocked Minecraft APIs", async () => {
     assert.ok(spawnWarnings.some((line) => /Spawn setup failed/.test(line)));
     emit("playerLeave", { playerId: spawnBroken.id, playerName: spawnBroken.name });
     state.players.splice(state.players.indexOf(spawnBroken), 1);
+
+    // World-scoped caches are discarded on worldLoad. A world switch can reuse
+    // the script instance, so changing the stored waypoint must be visible
+    // without a player leave/rejoin cycle.
+    const worldWaypoints = JSON.parse(state.worldProps.get("atlas:waypoints"));
+    const trackedAfterReload = worldWaypoints.find((waypoint) => waypoint.name === "HQ");
+    assert.ok(trackedAfterReload, "the tracked waypoint is missing before the world reload");
+    trackedAfterReload.name = "AfterWorldReload";
+    state.worldProps.set("atlas:waypoints", JSON.stringify(worldWaypoints));
+    emit("worldLoad", {});
+    advanceTicks(10);
+    await settle();
+    queue(
+      click(/Waypoints§r/),
+      click(/Waypoints \(/),
+      click(/Back/),
+      click(/Back/),
+      click(/Close/),
+    );
+    openWithItem(returning);
+    await settle();
+    assertClean();
+    assert.ok(
+      state.forms.some((form) =>
+        form.buttons?.some((button) => /AfterWorldReload/.test(button)),
+      ),
+      "worldLoad kept the previous world's waypoint cache",
+    );
 
     // A second worldLoad and a respawn reinitialize the relevant systems only.
     // Listener and command counts must not grow, and the HUD must keep working.

@@ -10,6 +10,7 @@ import { system, world } from "@minecraft/server";
 import {
   addCombatHistory,
   clearSettingsCache,
+  clearWorldCache,
   getBootVersion,
   getCombatStats,
   getContainerLog,
@@ -23,7 +24,7 @@ import {
   saveWaypoints,
 } from "./store.js";
 import { ensureMenuItem } from "./items.js";
-import { openMenu } from "./menu.js";
+import { forgetMenuState, openMenu } from "./menu.js";
 import {
   clearLowHealthState,
   forgetHudState,
@@ -41,6 +42,7 @@ import { upsertDeathWaypoint } from "./waypoints.js";
 import { initInputTracking, forgetInputState } from "./input.js";
 import { isContainerBlock, recordContainer } from "./containers.js";
 import {
+  markCapabilityUnavailable,
   markFeatureSuccess,
   onPlayerDimensionChanged,
   onPlayerLeft,
@@ -62,16 +64,18 @@ function guarded(name, callback) {
   };
 }
 
-function on(signal, name, callback) {
+function on(signal, name, callback, capability = null) {
   try {
     if (!signal || typeof signal.subscribe !== "function") {
       console.warn(`[ATLAS] Event unavailable: ${name}`);
+      if (capability) markCapabilityUnavailable(capability);
       return false;
     }
     signal.subscribe(guarded(name, callback));
     return true;
   } catch (error) {
     console.warn(`[ATLAS] Could not subscribe to ${name}: ${error}`);
+    if (capability) markCapabilityUnavailable(capability);
     return false;
   }
 }
@@ -131,8 +135,8 @@ function handleSpawn(event) {
 }
 
 function handleDeath(event) {
-  const dead = event.deadEntity;
-  if (dead.typeId !== "minecraft:player") return;
+  const dead = event?.deadEntity;
+  if (!dead || dead.typeId !== "minecraft:player") return;
   const player = dead;
   const dimensionId = player.dimension.id;
   const location = player.location;
@@ -150,7 +154,7 @@ function handleDeath(event) {
   saveCombatStats(player, stats);
   clearLowHealthState(player.id);
 
-  const killerEntity = event.damageSource.damagingEntity;
+  const killerEntity = event.damageSource?.damagingEntity;
   let killerName = null;
   if (
     killerEntity &&
@@ -183,13 +187,13 @@ function handleDeath(event) {
 }
 
 function handleHurt(event) {
-  const hurt = event.hurtEntity;
-  const damage = Number.isFinite(event.damage) ? event.damage : 0;
-  if (damage <= 0) return;
+  const hurt = event?.hurtEntity;
+  const damage = Number.isFinite(event?.damage) ? event.damage : 0;
+  if (damage <= 0 || !hurt) return;
   if (hurt.typeId === "minecraft:player") {
     getCombatStats(hurt).damageTaken += damage;
   }
-  const attacker = event.damageSource.damagingEntity;
+  const attacker = event.damageSource?.damagingEntity;
   if (attacker && attacker.typeId === "minecraft:player" && attacker.id !== hurt.id) {
     getCombatStats(attacker).damageDealt += damage;
     markFeatureSuccess(attacker, "combat", "damage");
@@ -262,16 +266,20 @@ export function initEvents() {
   track(
     on(world.afterEvents.worldLoad, "worldLoad", () => {
       // Safe point for world storage and player queries in Script API v2.
+      // A world switch can reuse this script instance, so never keep the
+      // previous world's settings, waypoints or logs in memory.
+      clearWorldCache();
       onWorldLoaded();
       getWaypoints();
       syncAllLocators();
       for (const player of world.getPlayers()) updateHud(player, true);
       console.log("[ATLAS] World loaded; storage, locators and HUD initialized.");
-    }),
+    }, "events.worldLoad"),
   );
-  track(on(world.afterEvents.playerSpawn, "playerSpawn", handleSpawn));
+  track(on(world.afterEvents.playerSpawn, "playerSpawn", handleSpawn, "events.spawn"));
   track(
     on(world.afterEvents.playerLeave, "playerLeave", (event) => {
+      forgetMenuState(event.playerId);
       clearSettingsCache(event.playerId);
       forgetHudState(event.playerId);
       forgetInputState(event.playerId);
@@ -279,16 +287,16 @@ export function initEvents() {
       onPlayerLeft(event.playerId);
     }),
   );
-  track(on(world.afterEvents.itemUse, "itemUse", handleItemUse));
-  track(on(world.afterEvents.playerInteractWithBlock, "playerInteractWithBlock", handleContainerOpen));
-  track(on(world.afterEvents.entityDie, "entityDie", handleDeath));
-  track(on(world.afterEvents.entityHurt, "entityHurt", handleHurt));
+  track(on(world.afterEvents.itemUse, "itemUse", handleItemUse, "events.itemUse"));
+  track(on(world.afterEvents.playerInteractWithBlock, "playerInteractWithBlock", handleContainerOpen, "events.interact"));
+  track(on(world.afterEvents.entityDie, "entityDie", handleDeath, "events.damage"));
+  track(on(world.afterEvents.entityHurt, "entityHurt", handleHurt, "events.damage"));
   track(
     on(world.afterEvents.playerInventoryItemChange, "playerInventoryItemChange", (event) => {
       // Rebuild immediately for the totem count, but coalesce rapid inventory
       // events so dragging stacks cannot force a rebuild every tick.
       if (event.player?.isValid) updateHudAfterInventoryChange(event.player);
-    }),
+    }, "events.inventory"),
   );
   track(
     on(world.afterEvents.playerDimensionChange, "playerDimensionChange", (event) => {
@@ -297,7 +305,7 @@ export function initEvents() {
       updateHud(event.player, true);
     }),
   );
-  track(on(system.afterEvents.scriptEventReceive, "scriptEventReceive", handleScriptEvent));
+  track(on(system.afterEvents.scriptEventReceive, "scriptEventReceive", handleScriptEvent, "events.scriptEvent"));
 
   console.log(`[ATLAS] Event handlers registered: ${count}.`);
   if (count === 0) {

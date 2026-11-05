@@ -78,6 +78,20 @@ export function clearSettingsCache(playerId) {
   serverCache.delete(playerId);
 }
 
+/**
+ * Drops every world-scoped cache. A client can move between worlds without
+ * reloading scripts; dynamic properties and waypoints belong to the new world
+ * and must be read again instead of reusing the previous world's snapshot.
+ */
+export function clearWorldCache() {
+  settingsCache.clear();
+  combatCache.clear();
+  containerCache.clear();
+  serverCache.clear();
+  waypointCache = null;
+  waypointStorageWarned = false;
+}
+
 export function getWaypoints() {
   if (waypointCache) return waypointCache;
   let stored;

@@ -1,6 +1,6 @@
-# ATLAS CLIENT 1.8.0 — Universal Compatibility
+# ATLAS CLIENT 1.9.0 — Universal Compatibility
 
-**Version:** 1.8.0
+**Version:** 1.9.0
 **Target:** Minecraft Bedrock 26.60 / `[1, 26, 60]`
 **Script modules:** `@minecraft/server 2.11.0`, `@minecraft/server-ui 2.3.0`
 **Experiments:** none
@@ -10,13 +10,14 @@ per-feature compatibility manager and what ATLAS can and cannot do when the
 world is opened as a local world, Realm, private server, public server or
 dedicated server.
 
-> Automated and mocked checks pass for 1.8.0. The add-on was also started on a
-> real Bedrock Dedicated Server 1.26.60.6: the pack loaded, scripts and events
-> started, both commands registered, all four command names resolved, three
-> reloads stayed clean and a short soak had no add-on errors. **No 1.8.0 test was
-> performed on iPhone, PS5, a Realm, Mega10, a public server or inside a real
-> Minecraft client.** The tables below separate what was exercised in the harness
-> or BDS from what still needs a device check.
+> Automated and mocked checks pass for 1.9.0. The retained BDS evidence belongs
+> to 1.8.0: the pack loaded on Bedrock Dedicated Server 1.26.60.6, scripts and
+> events started, both commands registered, all four command names resolved,
+> three reloads stayed clean and a short soak had no add-on errors. **1.9.0 was
+> not re-run on BDS, and no 1.9.0 test was performed on iPhone, PS5, a Realm,
+> Mega10, a public server or inside a real Minecraft client.** The tables below
+> separate what was exercised in the harness from what still needs a device
+> check.
 
 ---
 
@@ -42,11 +43,11 @@ The DIAGNOSTICS screen shows the same states the report uses.
 | Signal | What ATLAS does |
 |---|---|
 | Script module load | Probes module/API presence only. Reads no world or player storage. |
-| `worldLoad` | Proves world APIs by calling them, clears stale player state, re-syncs locators and rebuilds the HUD. Counts one reinitialization. |
+| `worldLoad` | Proves world APIs by calling them, clears all player and world-scoped caches (settings, combat, containers, servers, waypoints), re-syncs locators and rebuilds the HUD. Counts one reinitialization. |
 | Deferred fallback (40 ticks) | If `worldLoad` never arrived, probes world APIs once. |
 | `playerSpawn` (initial) | Probes that player's APIs, reads settings, restores the menu item, starts the session timer and HUD. |
 | `playerSpawn` (respawn) | Re-probes the player, clears the low-health episode, keeps settings, waypoints and the container log. |
-| `playerLeave` | Deletes that player's cached settings, combat, container, server, input, HUD, locator and compatibility state. |
+| `playerLeave` | Deletes that player's cached settings, combat, container, server, input, HUD, locator, menu and compatibility state. |
 | Dimension change | Re-probes player APIs, updates locator markers and the HUD. No settings are reset. |
 | `DIAGNOSTICS → Refresh compatibility` | Re-probes world and player APIs and refreshes the last-check tick. |
 
@@ -143,7 +144,7 @@ ATLAS is a **world-bound Behavior Pack**. It runs only where the world/server
 already has the pack installed and active. It cannot inject itself into a
 server from a player's device.
 
-| Environment | What can work when the pack is active | What may be blocked | Tested in 1.8.0 |
+| Environment | What can work when the pack is active | What may be blocked | Tested (baseline 1.8.0) |
 |---|---|---|---|
 | Local world | All feature categories | nothing by ATLAS | Harness only |
 | Realm | HUD, settings, waypoints, container log, diagnostics | custom command, dynamic properties, locator bar, add-on policy | NOT TESTED |
@@ -193,5 +194,5 @@ account data.
 - Public-server anti-cheat and pack restrictions apply. ATLAS contains no
   X-ray, ESP, aimbot, auto-clicker or combat automation.
 - BDS 1.26.60.6 verified startup, command registration/resolution, reload and a
-  short soak. No 1.8.0 device, console, Realm, public-server or player-UI test was
+  short soak. No 1.9.0 BDS or device, console, Realm, public-server or player-UI test was
   performed; treat harness statuses as development evidence only.

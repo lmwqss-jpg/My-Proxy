@@ -1,7 +1,7 @@
 # ATLAS CLIENT — Minecraft Bedrock
 
-**الإصدار / Version:** 1.8.0
-**ملف التثبيت / Install file:** `ATLAS.mcaddon`
+**الإصدار / Version:** 1.9.0
+**ملف التثبيت / Install file:** `ATLAS_CLIENT.mcaddon` (والنسخة المطابقة `ATLAS.mcaddon` للروابط القديمة)
 **الهدف / Target:** Minecraft Bedrock **26.60 (1.26.60)** أو أحدث
 **المنصة الأساسية / Primary platform:** PS5 — **لم يُختبر بعد / not tested**
 **منصات إضافية / Also supported:** iPhone وAndroid وWindows وأي منصة Bedrock متوافقة
@@ -9,7 +9,7 @@
 **التجارب / Experiments:** لا يحتاج أي تفعيل
 **دليل التثبيت:** [`docs/INSTALL.md`](docs/INSTALL.md) · **حل المشاكل:** [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) · **السيرفرات:** [`docs/SERVERS.md`](docs/SERVERS.md) · **التوافق:** [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) · **القيود:** [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) · **التدقيق:** [`docs/AUDIT.md`](docs/AUDIT.md) · **السجل:** [`docs/CHANGELOG.md`](docs/CHANGELOG.md)
 **دليل الاختبار الفعلي / Device test plan:** [`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md)
-**حالة الاختبار:** `npm run check` يمر بالكامل لنسخة 1.8.0: typecheck، و**27 اختباراً**، و**292 مسار واجهة**، وبناء 51 ملفاً (95.0 KiB)، وتحقق (6 فحوص)، وأدوات Microsoft الرسمية بلا أخطاء. شُغّلت 1.8.0 فعلياً على **Bedrock Dedicated Server 1.26.60.6**: تحمّلت الحزمة، وبدأت السكربتات والأحداث العشرة، وسُجّل الأمران، ووصل `worldLoad`، وعملت الأسماء الأربعة `/atlas` و`/atlas:atlas` و`/atlas:menu` و`/menu`، ونجحت ثلاث إعادات تحميل دون أخطاء. **لم يُختبر 1.8.0 داخل واجهة لاعب حقيقية أو على iPhone أو PS5 أو Realm أو Mega10.** نجاح الخادم لا يُثبت رسم الواجهة أو اللمس أو العربية على جهاز.
+**حالة الاختبار:** `npm run check` يمر بالكامل لنسخة 1.9.0: typecheck، و**30 اختباراً**، و**321 مسار واجهة**، وبناء 51 ملفاً (99.7 KiB)، وتحقق (7 فحوص). **تم التحقق من 1.8.0 سابقاً على Bedrock Dedicated Server 1.26.60.6** (تحميل الحزمة، بدء السكربتات والأحداث العشرة، الأمران، `worldLoad`، ثلاث إعادات تحميل دون أخطاء)، لكن **1.9.0 لم يُعَد تشغيله على BDS**، ولم يُختبر داخل واجهة لاعب حقيقية أو على iPhone أو PS5 أو Realm أو Mega10. نجاح المحاكي لا يُثبت رسم الواجهة أو اللمس أو العربية على جهاز.
 
 ---
 
@@ -94,7 +94,7 @@
 
 ## 1. التثبيت على iPhone
 
-1. نزّل ملف **`ATLAS.mcaddon`** إلى تطبيق **الملفات (Files)** على الآيفون.
+1. نزّل ملف **`ATLAS_CLIENT.mcaddon`** إلى تطبيق **الملفات (Files)** على الآيفون. (`ATLAS.mcaddon` نسخة مطابقة بالاسم القديم.)
 2. اضغط على الملف ثم اختر **مشاركة / Share** ← **Minecraft** (أو اضغط عليه مباشرة إن فتح Minecraft).
 3. انتظر حتى تظهر رسالة أن الحزمتين تم استيرادهما. الملف الواحد يحتوي على:
    - **ATLAS CLIENT** (Behavior Pack)
@@ -114,7 +114,7 @@
 - **إصدار Minecraft أقدم من 26.60:** ملف `manifest.json` يطلب `min_engine_version` مساوياً لـ `[1, 26, 60]`، لذلك لن تُحمّل الحزمة على إصدار أقدم.
 - **إصدار API غير موجود:** الحزم تعتمد على `@minecraft/server 2.11.0` و`@minecraft/server-ui 2.3.0` (إصدارات مستقرة في 26.60).
 - **أخطاء تحميل أخرى:** فعّل **Settings → Creator → Content Log GUI**، ثم افتح العالم وابحث عن `[ATLAS] Scripts loaded`. يجب أن ترى أيضاً `Event handlers registered` و`Custom command /atlas:menu registered` و`Custom command /atlas:atlas registered` و`World loaded`. إذا توقف السجل قبلها فالسكربت لم يُحمّل؛ تحقق من إصدار اللعبة وتفعيل Behavior Pack.
-- **نسخة قديمة عالقة:** إذا كنت جرّبت 1.0.0 أو 1.1.0 أو 1.2.0 أو 1.3.0 أو 1.4.0 أو 1.5.0 أو 1.6.0، احذف الحزمتين القديمتين من العالم أولاً. النسخة الجديدة 1.8.0 لها نفس UUID لكن رقم إصدار أعلى، لذا يستبدلها Minecraft عند الاستيراد.
+- **نسخة قديمة عالقة:** إذا كنت جرّبت 1.0.0 أو 1.1.0 أو 1.2.0 أو 1.3.0 أو 1.4.0 أو 1.5.0 أو 1.6.0، احذف الحزمتين القديمتين من العالم أولاً. النسخة الجديدة 1.9.0 لها نفس UUID لكن رقم إصدار أعلى، لذا يستبدلها Minecraft عند الاستيراد.
 - **الأداة مفقودة لكن السكربت يعمل:** استخدم `/atlas` أو `/atlas:menu`، أو من القائمة **Waypoints → Restore ATLAS item**.
 - **الأمر غير موجود:** إذا لم يظهر `/atlas` أو `/atlas:menu` في الإكمال التلقائي، فالBehavior Pack غير مفعّل أو السكربت لم يُحمّل؛ راجع Content Log. على سيرفر عام يجب أن يشغّل السيرفر الحزمة بنفسه.
 
@@ -153,7 +153,7 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 
 ## 3. الأقسام
 
-القائمة الرئيسية تحتوي: **HOME، ESPCHEST، HUD، VISUAL، PLAYER، MOVEMENT، ARMOR، ITEMS، POTIONS، TOTEMS، COMBAT، WAYPOINTS، SERVER MANAGER، SETTINGS، DIAGNOSTICS، ABOUT**. كل قسم يفتح شاشة مستقلة ويعود إلى القائمة الرئيسية.
+القائمة الرئيسية تحتوي بهذا الترتيب: **HOME، HUD، VISUAL، PLAYER، MOVEMENT، ARMOR، ITEMS، POTIONS، TOTEMS، COMBAT، WAYPOINTS، ESPCHEST، SERVER MANAGER، SETTINGS، DIAGNOSTICS، ABOUT**. كل قسم يفتح شاشة مستقلة ويعود إلى القائمة الرئيسية.
 
 ### HOME
 
@@ -166,9 +166,9 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 ### ESPCHEST
 
 - سجل حقيقي للحاويات التي **تفتحها فعلاً** ضمن المدى العادي.
-- يعرض نوع الحاوية، الإحداثيات، البُعد، والمسافة والاتجاه إلى موقعك.
+- يعرض نوع الحاوية، الإحداثيات، البُعد، وقت التفاعل، والمسافة والاتجاه إلى موقعك.
 - يمكن حذف سجل واحد أو مسح السجل كله مع تأكيد.
-- السجل لكل لاعب، وبحد أقصى **20 حاوية**؛ إعادة فتح الحاوية نفسها تحدّث سجلها ولا تكرره.
+- السجل لكل لاعب، وبحد أقصى **20 حاوية**. التفاعل المكرر مع الحاوية نفسها خلال **3 ثوانٍ** يُعامل كفتح واحد ولا يضيف صفاً أو يعيد الترتيب؛ الفتح اللاحق يحدّث السجل ولا يكرره.
 - لا يقرأ المحتويات، ولا يكتشف حاويات مخفية، ولا يرى عبر الجدران. الحاويات غير المحمّلة أو البعيدة لا تظهر.
 
 ### HUD
@@ -183,12 +183,12 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 - **واجهة WASD:** تُضاء W/A/S/D من **متجه الحركة الرسمي** `Player.inputInfo.getMovementVector()`، وليس من ضغطات مفاتيح وهمية. على PS5 تمثل العصا اليسرى، وعلى الكيبورد تمثل WASD.
 - **عداد CPS:** يعرض عدد أحداث النقر التي تسجلها اللعبة خلال آخر ثانية. لا يستطيع عد النقر في الهواء لأن API لا يوفره.
 - **مؤشرا LMB / RMB:** يضيئان عند هجوم فعلي على كائن/كتلة أو تفاعل/استخدام عنصر. ليسا أزرار فأرة فيزيائية.
-- **واجهة الدروع:** الخوذة والصدرية والبنطال والحذاء، مع **المتانة المتبقية الحقيقية** ونسبتها المئوية، وتحديث تلقائي، وتمييز أحمر قرب التلف، وتشغيل/إيقاف كل قطعة. تُعرض كحروف H/C/L/B لأن رسم أيقونات العناصر غير متاح.
-- **تأثيرات الجرعات:** اسم كل تأثير ومستواه والوقت المتبقي، وتختفي التأثيرات المنتهية تلقائياً. الوقت اللانهائي يظهر `∞`.
-- **عداد التوتيم:** مجموع توتيم الخلود في الحقيبة + اليد الثانية، ويُحدَّث عند تغير الحقيبة.
+- **واجهة الدروع:** الخوذة والصدرية والبنطال والحذاء، مع **المتانة المتبقية الحقيقية** ونسبتها المئوية، وتحديث تلقائي، وتمييز أحمر قرب التلف، وتشغيل/إيقاف كل قطعة. صفحة ARMOR تعرض أيضاً `totalArmor` و`totalToughness` الرسميين عند توفرهما. تُعرض كحروف H/C/L/B لأن رسم أيقونات العناصر غير متاح.
+- **تأثيرات الجرعات:** اسم كل تأثير ومستواه والوقت المتبقي، ويظهر المستوى الأول `I` بدلاً من إخفائه، وتختفي التأثيرات المنتهية تلقائياً. الوقت اللانهائي يظهر `∞`.
+- **عداد التوتيم:** مجموع توتيم الخلود في كل خانات الحقيبة الرئيسية + اليد الثانية، ويُحدَّث عند تغير الحقيبة.
 - **تنبيه المتانة:** يراقب الدروع الأربعة والأداة المحمولة (اليد الرئيسية)، ويظهر تحذيراً (وصوتاً اختيارياً) عند النزول تحت النسبة المحددة، مرة واحدة لكل هبوط. أدوات الحقيبة غير المحمولة لا تُفحص.
 - **مؤقت الجلسة:** عنصر اختياري (`HUD → Session timer`) يعرض مدة جلوسك الحقيقية منذ الدخول، ويُعاد ضبطه عند الخروج والعودة. ليس إحصائية محفوظة.
-- **محرر HUD:** تشغيل/إيقاف كل واجهة وقطعة درع، لون تمييز سطر HUD، حد المتانة، الوضع المختصر/المفصّل، وإعادة ضبط تخطيط HUD. يشمل الآن مؤقت الجلسة وعناصر Visual وPvP أيضاً. كل تغيير يُحفظ فوراً.
+- **محرر HUD:** تشغيل/إيقاف كل واجهة وقطعة درع، لون تمييز سطر HUD، حد المتانة، الوضع المختصر/المفصّل، وإعادة ضبط تخطيط HUD. يشمل الآن مؤقت الجلسة وعناصر Visual وPvP أيضاً. صفحة HUD تعرض أيضاً مفاتيح الدروع والجرعات والتوتيم مباشرة. كل تغيير يُحفظ فوراً.
 - **تدهور آمن:** إذا لم تتوفر قراءة الصحة أو الاتجاه أو الوقت أو نمط اللعب، يختفي العنصر وحده بدلاً من عرض `0/20` أو `null` أو اتجاه وهمي.
 - **عداد التوتيم:** يتحدث فوراً عند تغير الحقيبة وليس فقط عند انتهاء فترة التحديث.
 - واجهة مختصرة أو مفصلة، ومعدل تحديث من 5 إلى 40 تكة (الافتراضي 5 لتحديث لوحات الإدخال بسرعة).
@@ -217,7 +217,8 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 
 ### MOVEMENT
 
-- حالة W/A/S/D الحية من متجه الحركة.
+- حالة W/A/S/D الحية من متجه الحركة، مع **السرعة الأفقية والعمودية الحقيقية** من `getVelocity()` (كتلة/ثانية).
+- حالة الحركة الرسمية: جري، انحناق، قفز، طيران، أو تحليق.
 - عدد CPS الحقيقي ومؤشرا LMB/RMB من أحداث اللعبة.
 - تشغيل/إيقاف كل من WASD وCPS ومؤشرات النقر.
 - يوضح الفرق بين الحركة وأحداث اللعب؛ لا يدّعي قراءة ضغطات لوحة المفاتيح أو الفأرة.
@@ -225,20 +226,21 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 ### ARMOR
 
 - قطع الدروع الأربع، نوع كل قطعة، المتانة المتبقية/القصوى والنسبة.
+- إجمالي الدروع والصلابة من الخصائص الرسمية `totalArmor` و`totalToughness`.
 - تشغيل/إيقاف واجهة الدروع وكل قطعة على حدة.
 - خيار عرض أقصى متانة، وتنبيه المتانة وصوته.
 - تغيير حد تنبيه المتانة من الشاشة نفسها.
 
 ### ITEMS
 
-- العنصر في اليد الرئيسية واليد الثانية ونوعه ومتانته إن كانت متاحة.
-- عدد توتيم الخلود الحقيقي.
+- العنصر في اليد الرئيسية واليد الثانية، نوعه، **كميته**، والخانة المحددة في شريط الأدوات، ومتانته إن كانت متاحة.
+- عدد توتيم الخلود الحقيقي عبر كل خانات الحقيبة المتاحة.
 - تشغيل/إيقاف عداد التوتيم وخيار أقصى متانة الدروع.
 - يوضح أن الفحص يقتصر على الحقيبة الرئيسية واليد الثانية، ولا يشمل صناديق الشالكير أو الحاويات.
 
 ### POTIONS
 
-- التأثيرات النشطة، الاسم، المستوى، والوقت المتبقي.
+- التأثيرات النشطة، الاسم، المستوى (بما فيه المستوى I)، والوقت المتبقي.
 - التأثيرات اللانهائية تظهر `∞`، وتختفي المنتهية تلقائياً.
 - تشغيل/إيقاف واجهة الجرعات.
 
@@ -260,7 +262,9 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 ### WAYPOINTS
 
 - إضافة الموقع الحالي كموقع محفوظ.
-- عرض قائمة المواقع والمسافة إلى كل موقع.
+- عرض قائمة المواقع والمسافة إلى كل موقع مع البُعد الذي يوجد فيه.
+- **بحث** في المواقع بالاسم أو البُعد أو الإحداثيات، مع مسح البحث.
+- عند اختيار موقع في بُعد مختلف تظهر رسالة واضحة بدلاً من حساب مسافة مضللة.
 - إعادة تسمية الموقع.
 - نقل الموقع إلى موضعك الحالي.
 - حذف الموقع مع تأكيد.
@@ -274,7 +278,7 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 ### SERVER MANAGER
 
 - دفتر عناوين لكل لاعب (حتى **40 سيرفراً**) مع الاسم والعنوان والمنفذ والوصف والتصنيف والمنطقة.
-- إضافة وتعديل وحذف وترتيب وتفضيل السيرفرات، وتحديد سيرفر حالي **يدوياً** مع وقت آخر تحديد.
+- إضافة وتعديل وحذف وترتيب وتفضيل السيرفرات، **والبحث** بالاسم أو العنوان أو المنفذ أو التصنيف أو المنطقة، وتحديد سيرفر حالي **يدوياً** مع وقت آخر تحديد.
 - تحقق حقيقي من IPv4 أو النطاق والمنفذ من 1 إلى 65535، ورفض `host:port` داخل حقل العنوان، والتكرار، والأسماء الفارغة.
 - **Direct Join:** إدخال عنوان ومنفذ فقط، حفظ آخر عنوان، ثم عرض خطوات الاتصال الرسمية.
 - **إرسال العنوان إلى الدردشة** لأن الإضافات لا تصل إلى الحافظة. لا يوجد زر «نسخ» وهمي.
@@ -331,7 +335,7 @@ ESC **غير مدعوم** لأن الإضافات لا تستطيع التقاط
 | `min_engine_version` | `[1, 26, 60]` |
 | Experiments | لا شيء |
 | Script entry | `scripts/main.js` |
-| إصدار الإضافة | 1.8.0 |
+| إصدار الإضافة | 1.9.0 |
 | Behavior Pack UUID | `45ec3030-7e82-4b27-b1bc-006fc4d14de5` |
 | Resource Pack UUID | `6f7b2107-421b-480f-9a07-3acdf805714d` |
 
@@ -355,16 +359,17 @@ npm install
 npm run check        # typecheck + tests + build + validate
 npm run typecheck    # التحقق من أنواع Script API الرسمية
 npm test             # اختبارات الوحدات + محاكي واجهة كامل
-npm run build        # ينتج ATLAS.mcaddon
+npm run build        # ينتج ATLAS_CLIENT.mcaddon + نسخة مطابقة ATLAS.mcaddon
 npm run validate     # يفحص الحزم والـ ZIP
 ```
 
-الاختبارات الآلية تغطي بنية الحزم والمنطق و**292 مسار واجهة** في محاكي APIs، كما تتحقق من تسجيل الأسماء الأربعة `/atlas` و`/atlas:atlas` و`/atlas:menu` و`/menu` ومن تعارض اسم واحد دون تعطيل الآخر، ومن حفظ الإعدادات والسيرفرات بعد خروج اللاعب وعودته، واستيراد رموز `ATLAS1` القديمة، وإعادة تهيئة المحرك دون تكرار المستمعات بعد `worldLoad` وإعادة الظهور، وحالات التوافق `WORKING`/`LIMITED`/`UNAVAILABLE`/`ERROR`/`NOT TESTED`، وتصدير تقرير التشخيص، وتدهور HUD عند غياب API اختياري، وفشل النموذج دون تسجيل `WORKING`، وعزل لاعب تالف عن بقية اللاعبين. نُفّذت 1.8.0 أيضاً على Bedrock Dedicated Server 1.26.60.6 (تحميل، أوامر، إعادة تحميل، استقرار) لكن هذا **لا يغني عن التجربة داخل واجهة اللعبة**. لم يتم اختبار 1.8.0 على iPhone أو PS5 أو Realm أو Mega10. راجع [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) و[`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) للتقرير الكامل، و[`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) لقوائم iPhone وPS5 والسيرفرات.
+الاختبارات الآلية تغطي بنية الحزم والمنطق و**321 مسار واجهة** في محاكي APIs، كما تتحقق من تسجيل الأسماء الأربعة `/atlas` و`/atlas:atlas` و`/atlas:menu` و`/menu` ومن تعارض اسم واحد دون تعطيل الآخر، ومن حفظ الإعدادات والسيرفرات بعد خروج اللاعب وعودته، واستيراد رموز `ATLAS1` القديمة، وبحث المواقع والسيرفرات، ومنع تكرار سجل ESPCHEST خلال نافذة زمنية، واستعادة السرعة/الحالة الحقيقية، وإعادة تهيئة المحرك دون تكرار المستمعات بعد `worldLoad` وإعادة الظهور، وحالات التوافق `WORKING`/`LIMITED`/`UNAVAILABLE`/`ERROR`/`NOT TESTED`، وتصدير تقرير التشخيص، وتدهور HUD عند غياب API اختياري، وفشل النموذج دون تسجيل `WORKING`، وعزل لاعب تالف عن بقية اللاعبين. نُفّذت 1.8.0 سابقاً على Bedrock Dedicated Server 1.26.60.6 (تحميل، أوامر، إعادة تحميل، استقرار) لكن هذا **لا يغني عن التجربة داخل واجهة اللعبة**، و1.9.0 لم يُعَد تشغيله على BDS. لم يتم اختبار 1.9.0 على iPhone أو PS5 أو Realm أو Mega10. راجع [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) و[`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) للتقرير الكامل، و[`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) لقوائم iPhone وPS5 والسيرفرات.
 
 ### بنية المستودع
 
 ```
-ATLAS.mcaddon                 ملف التثبيت النهائي (BP + RP)
+ATLAS_CLIENT.mcaddon          ملف التثبيت النهائي (BP + RP)
+ATLAS.mcaddon                 نسخة مطابقة بالاسم القديم (BP + RP)
 src/ATLAS/BP/                 Behavior Pack
 src/ATLAS/RP/                 Resource Pack
 scripts/build.mjs             بناء ملف mcaddon
@@ -374,7 +379,7 @@ test/                         اختبارات Node + محاكي Minecraft
 docs/TEST_REPORT.md           تقرير الاختبار الآلي والتوافق
 docs/COMPATIBILITY.md         محرك التوافق ومصفوفة العوالم والسيرفرات
 docs/DEVICE_TESTING.md        قوائم اختبار iPhone وPS5 والسيرفرات
-docs/AUDIT.md                 التدقيق التقني وقرارات 1.4.0–1.8.0
+docs/AUDIT.md                 التدقيق التقني وقرارات 1.4.0–1.9.0
 docs/INSTALL.md               دليل التثبيت لكل منصة
 docs/SERVERS.md               حدود وطريقة عمل SERVER MANAGER والاتصال اليدوي
 docs/TROUBLESHOOTING.md       حل مشاكل التحميل وHUD والإعدادات
@@ -411,11 +416,11 @@ ATLAS CLIENT uses only the official Bedrock Script API. A clickable top-right ov
 
 The add-on contains no X-ray, ESP, aimbot, auto-clicker, or combat automation.
 
-**Compatibility engine (introduced in 1.6.0, preserved in 1.8.0):** ATLAS probes the real Script API capabilities on world load and player join/respawn. Every section reports `WORKING`, `LIMITED`, `READY`, `UNAVAILABLE`, `ERROR` or `NOT TESTED`; `WORKING` requires a real successful operation, never a static claim. Reinitialization keeps settings, waypoints and the ESPCHEST log and does not duplicate listeners or commands. **Settings → Diagnostics → EXPORT DIAGNOSTICS** sends a copyable report to chat. Servers can still block packs, commands, storage, locator bar or events; ATLAS reports that as `UNAVAILABLE` instead of pretending support. See [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md).
+**Compatibility engine (introduced in 1.6.0, preserved in 1.9.0):** ATLAS probes the real Script API capabilities on world load and player join/respawn. Every section reports `WORKING`, `LIMITED`, `READY`, `UNAVAILABLE`, `ERROR` or `NOT TESTED`; `WORKING` requires a real successful operation, never a static claim. Reinitialization keeps settings, waypoints and the ESPCHEST log and does not duplicate listeners or commands. **Settings → Diagnostics → EXPORT DIAGNOSTICS** sends a copyable report to chat. Servers can still block packs, commands, storage, locator bar or events; ATLAS reports that as `UNAVAILABLE` instead of pretending support. See [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md).
 
 ### iPhone installation
 
-1. Download `ATLAS.mcaddon` to Files.
+1. Download `ATLAS_CLIENT.mcaddon` to Files.
 2. Tap it and choose **Share → Minecraft** (or open it with Minecraft).
 3. Wait for both packs to import.
 4. Create/edit a world → **Add-Ons → Behavior Packs → My Packs → ATLAS CLIENT → Activate**.
@@ -430,11 +435,13 @@ If nothing appears: verify Minecraft 26.60+, verify the behavior pack is active 
 - **HUD:** coordinates, health, player name, world day/time, dimension, compass, tracked waypoint; opt-in session timer; WASD movement panel; observed CPS and LMB/RMB indicators; real armor durability with percentages and per-piece toggles; active potion effects with remaining time; totem count; low-durability alert for equipped armor and the held item; compact/detailed modes; 5–40 tick refresh (default 5); per-element ON/OFF. Missing optional APIs remove only their own element instead of showing fake values.
 - **HUD editor:** panel, armor-piece, Visual and PvP HUD switches; accent colour for the whole HUD line; durability alert threshold/sound; session toggle; and HUD reset. Unsupported positioning/size/transparency controls are intentionally not shown.
 - **HOME / PLAYER / MOVEMENT / ARMOR / ITEMS / POTIONS / TOTEMS:** real status screens. Each shows only values the API returns and includes the toggles for its own HUD elements.
-- **ESPCHEST:** a per-player log of containers actually opened, with type, position, distance and direction. It is not a wall scanner and never reads hidden contents.
+- **ESPCHEST:** a per-player log of containers actually opened, with type, position, dimension, interaction time, distance and direction. Recent duplicate events within 3 seconds are suppressed across the whole log, not just the newest row. It is not a wall scanner and never reads hidden contents.
 - **Visual:** player details, world details, text health bar, combat stats, official locator-bar waypoints.
+- **Movement:** real velocity in blocks/s and official sprint/sneak/jump/fly/glide state, alongside the movement-vector panel.
+- **Armor/Items/Potions:** official total armor and toughness, held-item amount and selected hotbar slot, and effect level I and above.
 - **Combat:** combat health, low-health alert with threshold/sound/screen warning, automatic death point, persisted kills/deaths/K/D, session damage and recent combat log. No combat automation.
-- **Waypoints:** add/list/rename/move/delete waypoints, distances and directions, HUD tracking, death point, restore item. Up to 30 world-shared waypoints.
-- **SERVER MANAGER:** up to 40 saved servers per player with IPv4/domain and port validation, description, category, region label, favourites, ordering, one manual current mark and a last-marked timestamp. Direct Join remembers the last address and opens the official manual connection steps. Addresses can be sent to chat because the clipboard is unavailable. It never connects, pings or reports fake server status.
+- **Waypoints:** add/list/rename/move/delete/search waypoints, distances and directions with a clear cross-dimension warning, dimension labels, HUD tracking, death point, restore item. Up to 30 world-shared waypoints.
+- **SERVER MANAGER:** up to 40 saved servers per player with IPv4/domain and port validation, description, category, region label, search, favourites, ordering, one manual current mark and a last-marked timestamp. Direct Join remembers the last address and opens the official manual connection steps. Addresses can be sent to chat because the clipboard is unavailable. It never connects, pings or reports fake server status.
 - **Settings:** four themes, English/Arabic, HUD controls, short `ATLAS2-...` settings export/import code (legacy `ATLAS1-...` and older `ATLAS2` codes accepted), reset, diagnostics with real session duration, per-feature compatibility status, API gaps and a copyable **EXPORT DIAGNOSTICS** report, plus official-limits help. Legacy codes restore their original toggles while newer panels keep their defaults; settings are written to player dynamic properties on every change.
 
 ### Documentation
@@ -444,13 +451,13 @@ If nothing appears: verify Minecraft 26.60+, verify the behavior pack is active 
 - [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) — unsupported, partially supported and untested items
 - [`docs/SERVERS.md`](docs/SERVERS.md) — Server Manager scope, validation, platform connection steps and limits
 - [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) — compatibility engine, reinitialization rules, per-feature status and world/server matrix
-- [`docs/AUDIT.md`](docs/AUDIT.md) — architecture and the 1.4.0–1.8.0 audits
+- [`docs/AUDIT.md`](docs/AUDIT.md) — architecture and the 1.4.0–1.9.0 audits
 - [`docs/CHANGELOG.md`](docs/CHANGELOG.md) — version history
 - [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) and [`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) — automated evidence and device checklists
 
 ### Testing
 
-`npm run typecheck`, `npm test` (27 tests and 292 mock UI flows), `npm run build` (51 files, 95.0 KiB), and `npm run validate` (6 checks) pass for 1.8.0, and official Creator Tools validation reports 0 errors, 0 warnings and 0 recommendations. The archive is a single `ATLAS.mcaddon`. The harness covers all four command names, a single-name collision, settings and server-list reload after a leave/rejoin, legacy `ATLAS1` and older `ATLAS2` import, session timing, coalesced inventory refresh, server address/port validation, the compatibility status model, diagnostics export, reinitialization without duplicate listeners, form-failure `ERROR` reporting and graceful degradation when an optional API is unavailable. **1.8.0 was run on Bedrock Dedicated Server 1.26.60.6**: the pack loaded, scripts started, 10 events and both commands registered, `worldLoad` arrived, `/atlas`, `/atlas:atlas`, `/atlas:menu` and `/menu` resolved, three `/reload` cycles stayed clean and a short soak had no add-on errors. That proves the server startup path only; it did not render a player UI. 1.8.0 was **not tested on iPhone, PS5, a Realm or Mega10**. See `docs/TEST_REPORT.md`, `docs/COMPATIBILITY.md` for the exact scope and `docs/DEVICE_TESTING.md` for the iPhone/PS5/server checklists.
+`npm run typecheck`, `npm test` (30 tests and 321 mock UI flows), `npm run build` (51 files, 99.7 KiB), and `npm run validate` (7 checks) pass for 1.9.0. The primary archive is `ATLAS_CLIENT.mcaddon`; `ATLAS.mcaddon` is an identical compatibility copy. The harness covers all four command names, a single-name collision, settings and server-list reload after a leave/rejoin, legacy `ATLAS1` and older `ATLAS2` import, session timing, coalesced inventory refresh, server address/port validation, the compatibility status model, diagnostics export, reinitialization without duplicate listeners, form-failure `ERROR` reporting and graceful degradation when an optional API is unavailable. **1.8.0 was run on Bedrock Dedicated Server 1.26.60.6**: the pack loaded, scripts started, 10 events and both commands registered, `worldLoad` arrived, `/atlas`, `/atlas:atlas`, `/atlas:menu` and `/menu` resolved, three `/reload` cycles stayed clean and a short soak had no add-on errors. That proves the server startup path only; it did not render a player UI. 1.8.0 was **not tested on iPhone, PS5, a Realm or Mega10**. See `docs/TEST_REPORT.md` and `docs/COMPATIBILITY.md` for the exact scope and `docs/DEVICE_TESTING.md` for the iPhone/PS5/server checklists. The BDS evidence in those documents belongs to 1.8.0; 1.9.0 was not re-run on BDS.
 
 ### PS5 and public servers
 

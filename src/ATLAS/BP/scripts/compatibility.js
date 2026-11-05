@@ -294,6 +294,17 @@ export function markCommandUnavailable() {
   lastCheckTick = currentTick();
 }
 
+/**
+ * Marks a globally probed API/signal unavailable after a real failure, for
+ * example when an event signal exists but subscribing to it throws. Features
+ * that require this capability then report UNAVAILABLE instead of READY.
+ */
+export function markCapabilityUnavailable(capability) {
+  if (!CAPABILITY_IDS.includes(capability)) return;
+  globalCapabilities[capability] = false;
+  lastCheckTick = currentTick();
+}
+
 /** Real command names, chat aliases, item and scriptevent entry points. */
 export function getEntryPointStatus() {
   const registered = new Set(registeredCommandNames);

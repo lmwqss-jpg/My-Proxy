@@ -1,6 +1,6 @@
 # ATLAS CLIENT — Server Manager
 
-**Version:** 1.8.0
+**Version:** 1.9.0
 **Target:** Minecraft Bedrock 26.60 / `1.26.60`+
 **Official APIs:** `@minecraft/server 2.11.0`, `@minecraft/server-ui 2.3.0`
 
@@ -12,7 +12,7 @@ This document explains exactly what **SERVER MANAGER** does, what Minecraft does
 
 SERVER MANAGER is a **validated, persistent server address book** inside `/atlas` or `/atlas:menu`.
 
-It stores the details you type, keeps your order, favourites, category and region, and shows the exact host and port to enter in Minecraft's own server screen. It does **not** open a network connection, join a world or change the game's current server. No CONNECT button is shown because a button that cannot connect would be fake.
+It stores the details you type, keeps your order, favourites, category and region, supports search, and shows the exact host and port to enter in Minecraft's own server screen. It does **not** open a network connection, join a world or change the game's current server. No CONNECT button is shown because a button that cannot connect would be fake.
 
 | Works in ATLAS | Does not work, and why |
 |---|---|
@@ -68,7 +68,7 @@ Rejected input:
 - A duplicate address + port, or a blank name.
 - More than 40 entries.
 
-There is one deliberate omission: **IPv6 is not accepted**. Bedrock's `Add Server` field and port handling differ between platforms, so 1.8.0 validates IPv4 and domain names only instead of pretending every IPv6 form works.
+There is one deliberate omission: **IPv6 is not accepted**. Bedrock's `Add Server` field and port handling differ between platforms, so 1.9.0 validates IPv4 and domain names only instead of pretending every IPv6 form works.
 
 ---
 

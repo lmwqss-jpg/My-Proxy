@@ -19,7 +19,8 @@ import {
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const BP = path.join(ROOT, "src/ATLAS/BP");
 const RP = path.join(ROOT, "src/ATLAS/RP");
-const ARTIFACT = path.join(ROOT, "ATLAS.mcaddon");
+const ARTIFACT = path.join(ROOT, "ATLAS_CLIENT.mcaddon");
+const ARTIFACT_ALIAS = path.join(ROOT, "ATLAS.mcaddon");
 const TARGET_GAME = TARGET_GAME_VERSION;
 const SERVER_VERSION = SCRIPT_MODULES.server;
 const SERVER_UI_VERSION = SCRIPT_MODULES.serverUi;
@@ -266,54 +267,74 @@ for (const root of [BP, RP]) {
 }
 ok(`${scriptFiles.length} script files and their imports resolved`);
 
-// Final archive.
-if (!fs.existsSync(ARTIFACT)) {
-  fail("ATLAS.mcaddon is missing; run npm run build first");
-} else {
+// Final archive. ATLAS_CLIENT.mcaddon is the documented install file; the
+// older ATLAS.mcaddon name is kept as an identical compatibility copy.
+const artifacts = [
+  { path: ARTIFACT, label: "ATLAS_CLIENT.mcaddon" },
+  { path: ARTIFACT_ALIAS, label: "ATLAS.mcaddon" },
+];
+let firstArchiveBuffer = null;
+for (const artifact of artifacts) {
+  if (!fs.existsSync(artifact.path)) {
+    fail(`${artifact.label} is missing; run npm run build first`);
+    continue;
+  }
+  const buffer = fs.readFileSync(artifact.path);
+  if (firstArchiveBuffer === null) firstArchiveBuffer = buffer;
+  else if (!buffer.equals(firstArchiveBuffer)) {
+    fail("ATLAS.mcaddon must be an identical compatibility copy of ATLAS_CLIENT.mcaddon");
+  }
   let archive;
   try {
-    archive = unzipSync(fs.readFileSync(ARTIFACT));
+    archive = unzipSync(buffer);
   } catch (error) {
-    fail(`ATLAS.mcaddon is not a valid zip: ${error.message}`);
+    fail(`${artifact.label} is not a valid zip: ${error.message}`);
   }
-  if (archive) {
-    const names = Object.keys(archive);
-    for (const [root, source] of [
-      ["ATLAS_BP", BP],
-      ["ATLAS_RP", RP],
-    ]) {
-      if (!archive[`${root}/manifest.json`]) fail(`archive: missing ${root}/manifest.json`);
-      for (const relative of walk(source)) {
-        const key = `${root}/${relative}`;
-        if (!archive[key]) {
-          fail(`archive: missing ${key}`);
-          continue;
-        }
-        const sourceBuffer = fs.readFileSync(path.join(source, relative));
-        if (!Buffer.from(archive[key]).equals(sourceBuffer)) fail(`archive: stale file ${key}`);
+  if (!archive) continue;
+  const names = Object.keys(archive);
+  for (const [root, source] of [
+    ["ATLAS_BP", BP],
+    ["ATLAS_RP", RP],
+  ]) {
+    if (!archive[`${root}/manifest.json`]) fail(`${artifact.label}: missing ${root}/manifest.json`);
+    for (const relative of walk(source)) {
+      const key = `${root}/${relative}`;
+      if (!archive[key]) {
+        fail(`${artifact.label}: missing ${key}`);
+        continue;
+      }
+      const sourceBuffer = fs.readFileSync(path.join(source, relative));
+      if (!Buffer.from(archive[key]).equals(sourceBuffer)) {
+        fail(`${artifact.label}: stale file ${key}`);
       }
     }
-    const expected = new Set(["ATLAS_BP/", "ATLAS_RP/"]);
-    for (const [root, source] of [
-      ["ATLAS_BP", BP],
-      ["ATLAS_RP", RP],
-    ]) {
-      for (const relative of walk(source)) expected.add(`${root}/${relative}`);
-    }
-    for (const name of names) {
-      if (!expected.has(name)) {
-        fail(`archive: unexpected entry ${name}`);
-      }
-      if (name.includes("__MACOSX") || name.endsWith(".DS_Store")) fail(`archive: junk file ${name}`);
-    }
-    const zipBp = JSON.parse(Buffer.from(archive["ATLAS_BP/manifest.json"]).toString("utf8"));
-    const zipRp = JSON.parse(Buffer.from(archive["ATLAS_RP/manifest.json"]).toString("utf8"));
-    if (zipBp.header.uuid !== bpManifest?.header.uuid) fail("archive: BP UUID differs from source");
-    if (zipRp.header.uuid !== rpManifest?.header.uuid) fail("archive: RP UUID differs from source");
-    if (!archive["ATLAS_BP/scripts/main.js"]) fail("archive: script entry missing");
-    if (!archive["ATLAS_BP/items/atlas_client.json"]) fail("archive: item JSON missing");
-    ok(`archive has ${names.length} entries and no nested or junk paths`);
   }
+  const expected = new Set(["ATLAS_BP/", "ATLAS_RP/"]);
+  for (const [root, source] of [
+    ["ATLAS_BP", BP],
+    ["ATLAS_RP", RP],
+  ]) {
+    for (const relative of walk(source)) expected.add(`${root}/${relative}`);
+  }
+  for (const name of names) {
+    if (!expected.has(name)) {
+      fail(`${artifact.label}: unexpected entry ${name}`);
+    }
+    if (name.includes("__MACOSX") || name.endsWith(".DS_Store")) {
+      fail(`${artifact.label}: junk file ${name}`);
+    }
+  }
+  const zipBp = JSON.parse(Buffer.from(archive["ATLAS_BP/manifest.json"]).toString("utf8"));
+  const zipRp = JSON.parse(Buffer.from(archive["ATLAS_RP/manifest.json"]).toString("utf8"));
+  if (zipBp.header.uuid !== bpManifest?.header.uuid) {
+    fail(`${artifact.label}: BP UUID differs from source`);
+  }
+  if (zipRp.header.uuid !== rpManifest?.header.uuid) {
+    fail(`${artifact.label}: RP UUID differs from source`);
+  }
+  if (!archive["ATLAS_BP/scripts/main.js"]) fail(`${artifact.label}: script entry missing`);
+  if (!archive["ATLAS_BP/items/atlas_client.json"]) fail(`${artifact.label}: item JSON missing`);
+  ok(`${artifact.label}: ${names.length} entries, no nested or junk paths`);
 }
 
 if (errors.length > 0) {

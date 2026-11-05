@@ -45,7 +45,6 @@ function homeSummary(player, language) {
 function sectionsFor(language) {
   return [
     { id: "home", title: t(language, "home.title"), desc: t(language, "menu.homeDesc"), icon: ICONS.hud },
-    { id: "espchest", title: t(language, "espchest.title"), desc: t(language, "menu.espchestDesc"), icon: ICONS.utilities },
     { id: "hud", title: t(language, "hud.title"), desc: t(language, "menu.hudDesc"), icon: ICONS.hud },
     { id: "visual", title: t(language, "visual.title"), desc: t(language, "menu.visualDesc"), icon: ICONS.visual },
     { id: "player", title: t(language, "player.title"), desc: t(language, "menu.playerDesc"), icon: ICONS.visual },
@@ -56,6 +55,7 @@ function sectionsFor(language) {
     { id: "totems", title: t(language, "totems.title"), desc: t(language, "menu.totemsDesc"), icon: ICONS.utilities },
     { id: "pvp", title: t(language, "pvp.title"), desc: t(language, "menu.pvpDesc"), icon: ICONS.pvp },
     { id: "utilities", title: t(language, "utilities.title"), desc: t(language, "menu.utilitiesDesc"), icon: ICONS.utilities },
+    { id: "espchest", title: t(language, "espchest.title"), desc: t(language, "menu.espchestDesc"), icon: ICONS.utilities },
     { id: "servers", title: t(language, "servers.title"), desc: t(language, "menu.serversDesc"), icon: ICONS.servers },
     { id: "settings", title: t(language, "settings.title"), desc: t(language, "menu.settingsDesc"), icon: ICONS.settings },
     { id: "settings.diagnostics", title: t(language, "diag.title"), desc: t(language, "menu.diagnosticsDesc"), icon: ICONS.settings },

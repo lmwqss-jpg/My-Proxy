@@ -28,6 +28,7 @@ import {
   distance3,
   formatCoord,
   formatDistance,
+  formatTimestamp,
   relativeDirectionKey,
 } from "../util.js";
 
@@ -76,6 +77,7 @@ async function containerDetail(player, payload) {
       `§7${t(language, "espchest.type")}: §f${containerLabel(entry.typeId)}`,
       `§7${t(language, "espchest.location")}: §f${coordinates(entry)} §8(${dimensionLabel(entry.dimensionId, language)})`,
       `§7${t(language, "common.distance")}: ${distanceText(player, entry, language)}`,
+      `§7${t(language, "espchest.seenAt")}: ${formatTimestamp(entry.seenAt) ? `§f${formatTimestamp(entry.seenAt)}` : `§8${t(language, "common.notAvailable")}`}`,
       emptyLine(),
       `§8${t(language, "espchest.scope")}`,
     ].join("\n");

@@ -33,6 +33,7 @@ import {
 import {
   addWaypoint,
   createWaypoint,
+  filterWaypoints,
   findWaypoint,
   moveWaypoint,
   removeWaypoint,
@@ -75,11 +76,12 @@ function distanceLine(player, waypoint, language) {
 
 function waypointSummary(player, waypoint, settings) {
   const name = displayName(waypoint, settings);
+  const dimension = dimensionLabel(waypoint.dimensionId, settings.language);
   if (waypoint.dimensionId !== player.dimension.id) {
-    return `§f${name} §8| §7${t(settings.language, "common.otherDimension")}`;
+    return `§f${name} §8| §7${dimension} §8| §7${t(settings.language, "common.otherDimension")}`;
   }
   const distance = distance3(player.location, waypoint);
-  return `§f${name} §8| §7${formatDistance(distance)}${t(settings.language, "common.meters")}`;
+  return `§f${name} §8| §7${dimension} §8| §7${formatDistance(distance)}${t(settings.language, "common.meters")}`;
 }
 
 async function addWaypointFlow(player, settings) {
@@ -184,6 +186,11 @@ async function waypointDetail(player, payload) {
         dimension: dimensionLabel(waypoint.dimensionId, language),
       })}`,
       distanceLine(player, waypoint, language),
+      waypoint.dimensionId !== player.dimension.id
+        ? `§8${t(language, "utilities.otherDimensionWarning", {
+            dimension: dimensionLabel(waypoint.dimensionId, language),
+          })}`
+        : "",
       `§7${t(language, "utilities.kind")}: §f${t(language, kindKey)}`,
       emptyLine(),
       `§8${t(language, "utilities.trackHint")}`,
@@ -265,22 +272,46 @@ async function waypointDetail(player, payload) {
   }
 }
 
+async function waypointSearch(player, settings, current) {
+  const language = settings.language;
+  const form = new ModalFormData()
+    .title(formTitle(settings, t(language, "utilities.search")))
+    .textField(t(language, "utilities.searchPrompt"), t(language, "utilities.searchPlaceholder"), {
+      defaultValue: current,
+    })
+    .submitButton(t(language, "utilities.search"));
+  const response = await safeShow(player, () => form);
+  if (!response || response.canceled || !response.formValues) return null;
+  return typeof response.formValues[0] === "string" ? response.formValues[0].trim() : "";
+}
+
 async function waypointListScreen(player) {
+  let query = "";
   while (true) {
     if (!player.isValid) return;
     const settings = getSettings(player);
     const language = settings.language;
-    const list = getWaypoints();
+    const all = getWaypoints();
+    const list = filterWaypoints(all, query);
+    const body = [
+      query
+        ? `§7${t(language, "utilities.searchActive", { query })}`
+        : `§7${t(language, "utilities.limitHint", { max: LIMITS.waypoints })}`,
+      query
+        ? `§7${t(language, "utilities.searchResults", { count: list.length })}`
+        : "",
+      list.length === 0
+        ? `§8${t(language, query ? "utilities.noMatch" : "utilities.empty")}`
+        : "",
+    ].filter((line) => line.length > 0).join("\n");
     const form = new ActionFormData()
-      .title(formTitle(settings, t(language, "utilities.list", { count: list.length })))
-      .body(
-        list.length === 0
-          ? `§8${t(language, "utilities.empty")}`
-          : `§7${t(language, "utilities.limitHint", { max: LIMITS.waypoints })}`,
-      );
+      .title(formTitle(settings, t(language, "utilities.list", { count: all.length })))
+      .body(body);
     for (const waypoint of list) {
       form.button(waypointSummary(player, waypoint, settings));
     }
+    if (query) form.button(`§8${t(language, "utilities.clearSearch")}`);
+    form.button(`§b${t(language, "utilities.search")}`);
     form.button(`§a${t(language, "utilities.add")}`);
     form.button(`§8${t(language, "common.back")}`);
     const response = await safeShow(player, () => form);
@@ -290,7 +321,18 @@ async function waypointListScreen(player) {
       await openScreen("utilities.detail", player, { id: list[selection].id });
       continue;
     }
-    if (selection === list.length) {
+    let action = selection - list.length;
+    if (query && action === 0) {
+      query = "";
+      continue;
+    }
+    if (query) action -= 1;
+    if (action === 0) {
+      const next = await waypointSearch(player, settings, query);
+      if (next !== null) query = next;
+      continue;
+    }
+    if (action === 1) {
       await addWaypointFlow(player, settings);
       continue;
     }

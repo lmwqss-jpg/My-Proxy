@@ -1,8 +1,8 @@
-# ATLAS CLIENT — Technical Audit (1.4.0, with 1.5.0–1.8.0 addenda)
+# ATLAS CLIENT — Technical Audit (1.4.0, with 1.5.0–1.9.0 addenda)
 
 **Repository:** `lmwqss-jpg/My-Proxy`
 **Audited version:** 1.3.0 working tree, before the 1.4.0 changes
-**Delivered versions:** 1.4.0, 1.5.0, 1.6.0, 1.7.0 and 1.8.0
+**Delivered versions:** 1.4.0, 1.5.0, 1.6.0, 1.7.0, 1.8.0 and 1.9.0
 **Target:** Minecraft Bedrock 26.60 / `[1, 26, 60]`, stable Script API
 **Automated audit:** `npm run typecheck`, `npm test`, `npm run build`, `npm run validate`
 
@@ -13,7 +13,8 @@
 ## 1. Repository map
 
 ```text
-ATLAS.mcaddon                     single generated add-on (BP + RP)
+ATLAS_CLIENT.mcaddon              primary generated add-on (BP + RP)
+ATLAS.mcaddon                     identical compatibility copy
 src/ATLAS/BP/manifest.json        Behavior Pack: data + script modules
 src/ATLAS/BP/items/               atlas:client_token item definition
 src/ATLAS/BP/scripts/main.js      script entry point
@@ -34,7 +35,7 @@ src/ATLAS/BP/scripts/ui/          native ActionForm/ModalForm screens
 src/ATLAS/BP/scripts/ui/statusScreens.js HOME/PLAYER/MOVEMENT/ARMOR/ITEMS/POTIONS/TOTEMS
 src/ATLAS/BP/scripts/ui/espchestScreen.js ESPCHEST log, detail and clear screens
 src/ATLAS/RP/manifest.json        Resource Pack: textures and language file
-scripts/build.mjs                 produces ATLAS.mcaddon
+scripts/build.mjs                 produces ATLAS_CLIENT.mcaddon + ATLAS.mcaddon alias
 scripts/validate.mjs              static pack/archive validator
 test/                             Node unit tests + mocked Minecraft harness
 docs/                             packaging, device and test documentation
@@ -46,14 +47,14 @@ The pack has no website, no external runtime and no client injection. Everything
 
 ## 2. Current architecture
 
-1. **One import file.** `scripts/build.mjs` copies `src/ATLAS/BP` and `src/ATLAS/RP` into `ATLAS_BP/` and `ATLAS_RP/` at the root of a ZIP that is written as `ATLAS.mcaddon`. Each pack keeps `manifest.json` at its own root.
+1. **One import file.** `scripts/build.mjs` copies `src/ATLAS/BP` and `src/ATLAS/RP` into `ATLAS_BP/` and `ATLAS_RP/` at the root of a ZIP written as `ATLAS_CLIENT.mcaddon` and an identical `ATLAS.mcaddon` compatibility copy. Each pack keeps `manifest.json` at its own root.
 2. **Behavior Pack.** It contains a `data` module, the item definition and a `script` module whose entry is `scripts/main.js`. It depends on the Resource Pack and the stable `@minecraft/server 2.11.0` / `@minecraft/server-ui 2.3.0` modules.
 3. **Resource Pack.** It is world-scoped (`pack_scope: "world"`), contains the item texture, UI icons and `en_US.lang`, and depends on the Behavior Pack version.
 4. **Early execution is respected.** Module-scope code only registers subscriptions and starts the HUD loop. World storage is first touched from `worldLoad` or after a timeout, never during script loading.
 5. **HUD surface.** The only persistent text surface available to official add-ons is `Player.onScreenDisplay.setActionBar`. The HUD is composed as a colour-coded string and refreshed at a configurable 5–40 tick interval.
 6. **Input.** W/A/S/D comes from `Player.inputInfo.getMovementVector()`. CPS and LMB/RMB come from real game events (`entityHitEntity`, `entityHitBlock`, block/entity interaction, item use). No input is simulated.
 7. **Persistence.** Settings, combat totals and the last death are player dynamic properties; waypoints are world dynamic properties. Settings are validated and normalised on every read.
-8. **UI.** All menus are native Bedrock forms. There is no Ore UI modification, no clickable HUD widget and no ESC capture. The 1.4.0 main menu exposes HOME, ESPCHEST, HUD, VISUAL, PLAYER, MOVEMENT, ARMOR, ITEMS, POTIONS, TOTEMS, COMBAT, WAYPOINTS, SETTINGS, DIAGNOSTICS and ABOUT.
+8. **UI.** All menus are native Bedrock forms. There is no Ore UI modification, no clickable HUD widget and no ESC capture. The 1.9.0 main menu exposes HOME, HUD, VISUAL, PLAYER, MOVEMENT, ARMOR, ITEMS, POTIONS, TOTEMS, COMBAT, WAYPOINTS, ESPCHEST, SERVER MANAGER, SETTINGS, DIAGNOSTICS and ABOUT.
 9. **Container log.** ESPCHEST is interaction-based. `playerInteractWithBlock` records known container blocks with real coordinates in per-player dynamic properties; the screen never scans hidden blocks or contents.
 10. **Entry points.** The ATLAS item (`atlas:client_token`), `/atlas` and `/atlas:menu` (permission `Any`, `cheatsRequired: false`; Bedrock also exposes `/menu`). `/scriptevent atlas:menu` remains an optional cheats-only fallback.
 
@@ -274,3 +275,29 @@ registrations and 10 event handlers each time, and soaked the server for about
 evidence, not a player-UI or device test.
 
 See [`TEST_REPORT.md`](TEST_REPORT.md) for the complete 1.8.0 results.
+
+---
+
+## 11. 1.9.0 addendum — audit-driven corrections
+
+The 1.9.0 audit focused on the gaps between the control surfaces and the data
+they claimed to show:
+
+- **Search is real.** Waypoint and Server Manager filtering operate on stored
+  values, keep the original order and never mutate the stored arrays.
+- **ESPCHEST deduplication scans the whole log.** The previous check only looked
+  at the newest row, so alternating between two nearby containers could create
+  duplicate history. The 3-second window now matches block coordinates,
+  dimension and container type anywhere in the recent log.
+- **World cache invalidation.** `worldLoad` clears settings, combat, container,
+  server and waypoint caches, so moving to another world cannot display the
+  previous world's data.
+- **No invented metrics.** MOVEMENT reads `getVelocity()` and official state
+  flags. HUD explicitly says FPS/Ping are unavailable. ARMOR reads
+  `totalArmor`/`totalToughness`, ITEMS reads amount and `selectedSlotIndex`, and
+  POTIONS prints level I instead of hiding it.
+- **Archive naming.** `ATLAS_CLIENT.mcaddon` is the documented install file;
+  `ATLAS.mcaddon` remains an identical alias. The validator checks both.
+- **Verification.** `npm run check` passes with 30 tests, 321 mock form flows,
+  a 51-file/99.7 KiB build and 7 validation checks. 1.9.0 was not run on BDS or
+  a device; the retained BDS evidence belongs to 1.8.0.

@@ -34,6 +34,7 @@ import {
   addServer,
   clearCurrent,
   createServer,
+  filterServers,
   findServer,
   formatServerTimestamp,
   markCurrent,
@@ -485,29 +486,53 @@ async function serverDetail(player, payload) {
   }
 }
 
+async function serverSearch(player, settings, current) {
+  const language = settings.language;
+  const form = new ModalFormData()
+    .title(formTitle(settings, t(language, "servers.search")))
+    .textField(t(language, "servers.searchPrompt"), t(language, "servers.searchPlaceholder"), {
+      defaultValue: current,
+    })
+    .submitButton(t(language, "servers.search"));
+  const response = await safeShow(player, () => form);
+  if (!response || response.canceled || !response.formValues) return null;
+  return typeof response.formValues[0] === "string" ? response.formValues[0].trim() : "";
+}
+
 async function serversScreen(player) {
+  let query = "";
   while (true) {
     if (!player.isValid) return;
     const settings = getSettings(player);
     const language = settings.language;
-    const list = getServers(player);
-    const current = list.find((server) => server.current);
+    const all = getServers(player);
+    const list = filterServers(all, query);
+    const current = all.find((server) => server.current);
     const body = [
       `§7${t(language, "servers.body")}`,
       emptyLine(),
-      `§7${t(language, "servers.count", { count: list.length })}`,
+      `§7${t(language, "servers.count", { count: all.length })}`,
+      query
+        ? `§7${t(language, "servers.searchActive", { query })}`
+        : "",
+      query
+        ? `§7${t(language, "servers.searchResults", { count: list.length })}`
+        : "",
       current
         ? `§7${t(language, "servers.currentLabel", { name: current.name })}`
         : `§8${t(language, "servers.noCurrent")}`,
       emptyLine(),
       list.length === 0
-        ? `§8${t(language, "servers.empty")}\n§8${t(language, "servers.scope")}`
+        ? `§8${t(language, query ? "servers.noMatch" : "servers.empty")}\n§8${t(language, "servers.scope")}`
         : `§8${t(language, "servers.scope")}`,
-    ].join("\n");    const form = new ActionFormData()
+    ].filter((line) => line.length > 0).join("\n");
+    const form = new ActionFormData()
       .title(formTitle(settings, t(language, "servers.title")))
       .body(body);
     for (const server of list) form.button(serverButton(server));
+    if (query) form.button(`§8${t(language, "servers.clearSearch")}`);
     form
+      .button(`§b${t(language, "servers.search")}`)
       .button(`§a${t(language, "servers.add")}`)
       .button(`§b${t(language, "servers.direct")}`)
       .button(`§8${t(language, "common.back")}`);
@@ -518,11 +543,22 @@ async function serversScreen(player) {
       await openScreen("servers.detail", player, { id: list[selection].id });
       continue;
     }
-    if (selection === list.length) {
+    let action = selection - list.length;
+    if (query && action === 0) {
+      query = "";
+      continue;
+    }
+    if (query) action -= 1;
+    if (action === 0) {
+      const next = await serverSearch(player, settings, query);
+      if (next !== null) query = next;
+      continue;
+    }
+    if (action === 1) {
       await addServerFlow(player, settings);
       continue;
     }
-    if (selection === list.length + 1) {
+    if (action === 2) {
       await directJoinScreen(player);
       continue;
     }

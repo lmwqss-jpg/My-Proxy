@@ -1,4 +1,4 @@
-/** Builds the single importable ATLAS.mcaddon archive. */
+/** Builds the single importable ATLAS_CLIENT.mcaddon archive plus the old alias. */
 
 import fs from "node:fs";
 import path from "node:path";
@@ -10,7 +10,12 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const BP_SRC = path.join(ROOT, "src/ATLAS/BP");
 const RP_SRC = path.join(ROOT, "src/ATLAS/RP");
 const BUILD = path.join(ROOT, "build");
-const OUTPUT = path.join(ROOT, "ATLAS.mcaddon");
+const OUTPUTS = [
+  path.join(ROOT, "ATLAS_CLIENT.mcaddon"),
+  // Keep the previous file name as an identical copy so existing links and
+  // installation notes do not break. Both files contain the same two packs.
+  path.join(ROOT, "ATLAS.mcaddon"),
+];
 
 function walk(dir, base = dir) {
   const result = [];
@@ -28,7 +33,7 @@ execFileSync(process.execPath, [path.join(ROOT, "scripts/generate-assets.mjs")],
 });
 
 fs.rmSync(BUILD, { recursive: true, force: true });
-fs.rmSync(OUTPUT, { force: true });
+for (const output of OUTPUTS) fs.rmSync(output, { force: true });
 fs.mkdirSync(BUILD, { recursive: true });
 fs.cpSync(BP_SRC, path.join(BUILD, "ATLAS_BP"), { recursive: true });
 fs.cpSync(RP_SRC, path.join(BUILD, "ATLAS_RP"), { recursive: true });
@@ -45,9 +50,9 @@ for (const [folder, source] of [
 }
 
 const archive = zipSync(Object.fromEntries(entries), { level: 9 });
-fs.writeFileSync(OUTPUT, archive);
+for (const output of OUTPUTS) fs.writeFileSync(output, archive);
 
 const count = [...entries.keys()].filter((key) => !key.endsWith("/")).length;
 console.log(
-  `Built ${path.basename(OUTPUT)} (${count} files, ${(archive.length / 1024).toFixed(1)} KiB)`,
+  `Built ${OUTPUTS.map((output) => path.basename(output)).join(" + ")} (${count} files, ${(archive.length / 1024).toFixed(1)} KiB)`,
 );

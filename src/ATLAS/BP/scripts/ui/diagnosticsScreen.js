@@ -196,6 +196,7 @@ async function diagnosticsScreen(player) {
             error: `${recent.category}: ${recent.message}`,
           })}`
         : `§8${t(language, "diag.noErrors")}`,
+      `§8${t(language, "diag.testScope")}`,
       `§8${t(language, "diag.reportNote")}`,
       `§8${t(language, "diag.footer")}`,
     ].join("\n");

@@ -18,6 +18,7 @@ import {
 import {
   collectEffects,
   collectEquipment,
+  collectMovement,
   collectTotems,
 } from "../hudData.js";
 import { getInputSnapshot } from "../input.js";
@@ -26,9 +27,12 @@ import {
   effectLabel,
   dimensionLabel,
   formatEffectDuration,
+  formatEffectLevel,
   gameModeLabel,
 } from "../hudFormat.js";
 import {
+  bearingFromView,
+  cardinalKey,
   formatCoord,
   formatSessionDuration,
   formatKd,
@@ -73,9 +77,8 @@ function durabilityText(piece, language) {
 
 function effectLine(effect, language) {
   if (!effect) return "";
-  const amplifier = Number.isFinite(effect.amplifier) ? effect.amplifier : 0;
-  const level = amplifier > 0 ? ` ${amplifier + 1}` : "";
-  return `${effectLabel(effect.typeId, language)}${level} §8| §f${formatEffectDuration(effect.duration)}`;
+  const level = formatEffectLevel(effect.amplifier);
+  return `${effectLabel(effect.typeId, language)} §8| §7${t(language, "potions.level")} §f${level} §8| §f${formatEffectDuration(effect.duration)}`;
 }
 
 /** HOME: real summary plus shortcuts for the most used controls. */
@@ -193,6 +196,23 @@ async function playerScreen(player) {
   }
 }
 
+function movementStateText(movement, language) {
+  const states = [
+    [movement.sprinting, "movement.sprinting"],
+    [movement.sneaking, "movement.sneaking"],
+    [movement.jumping, "movement.jumping"],
+    [movement.flying, "movement.flying"],
+    [movement.gliding, "movement.gliding"],
+  ];
+  const active = states
+    .filter(([value]) => value === true)
+    .map(([, key]) => t(language, key));
+  if (active.length > 0) return active.join(", ");
+  // Every state flag unavailable: say so instead of claiming the player is idle.
+  if (states.every(([value]) => value === null)) return null;
+  return t(language, "movement.idle");
+}
+
 const MOVEMENT_TOGGLES = [
   ["hud.wasd", "hud.wasd"],
   ["hud.cps", "hud.cps"],
@@ -205,6 +225,13 @@ async function movementScreen(player) {
     const settings = getSettings(player);
     const language = settings.language;
     const input = getInputSnapshot(player, settings.hud.interval);
+    const movement = collectMovement(player);
+    let facing = null;
+    try {
+      facing = t(language, cardinalKey(bearingFromView(player.getViewDirection()), false));
+    } catch {
+      facing = null;
+    }
     const state = (active) =>
       active === null || active === undefined
         ? `§8${t(language, "common.notAvailable")}`
@@ -221,6 +248,19 @@ async function movementScreen(player) {
         language,
       )}`,
       `§7LMB: ${state(input.left)}  §7RMB: ${state(input.right)}`,
+      `§7${t(language, "movement.speed")}: ${valueOrUnavailable(
+        movement ? `${(movement.horizontal * 20).toFixed(2)} ${t(language, "movement.perSecond")}` : null,
+        language,
+      )}`,
+      `§7${t(language, "movement.verticalSpeed")}: ${valueOrUnavailable(
+        movement ? `${(movement.vertical * 20).toFixed(2)} ${t(language, "movement.perSecond")}` : null,
+        language,
+      )}`,
+      `§7${t(language, "movement.facing")}: ${valueOrUnavailable(facing, language)}`,
+      `§7${t(language, "movement.state")}: ${valueOrUnavailable(
+        movement ? movementStateText(movement, language) : null,
+        language,
+      )}`,
       emptyLine(),
       `§8${t(language, "hud.inputNote")}`,
     ].join("\n");
@@ -291,6 +331,14 @@ async function armorScreen(player) {
       `§7${t(language, "armor.body")}`,
       emptyLine(),
       ...lines,
+      `§7${t(language, "armor.total")}: ${valueOrUnavailable(
+        equipment && Number.isFinite(equipment.totalArmor) ? equipment.totalArmor : null,
+        language,
+      )}`,
+      `§7${t(language, "armor.toughness")}: ${valueOrUnavailable(
+        equipment && Number.isFinite(equipment.totalToughness) ? equipment.totalToughness : null,
+        language,
+      )}`,
       `§7${t(language, "hud.durabilityThreshold")}: §f${settings.hud.durabilityThreshold}%`,
       emptyLine(),
       `§8${t(language, "hud.editorLimits")}`,
@@ -329,16 +377,22 @@ async function itemsScreen(player) {
     const language = settings.language;
     const equipment = collectEquipment(player);
     const totems = collectTotems(player);
-    const itemLine = (item) =>
-      item
-        ? `${valueOrUnavailable(typeLabel(item.typeId), language)} §8| §f${durabilityText(item, language)}`
-        : `§8${t(language, "items.emptyHand")}`;
+    const itemLine = (item) => {
+      if (!item) return `§8${t(language, "items.emptyHand")}`;
+      const amount = Number.isFinite(item.amount) ? ` §8× §f${item.amount}` : "";
+      return `${valueOrUnavailable(typeLabel(item.typeId), language)}${amount} §8| §f${durabilityText(item, language)}`;
+    };
     const handUnavailable = `§8${t(language, "common.notAvailable")}`;
+    const selectedSlot =
+      equipment && equipment.selectedSlot !== null
+        ? equipment.selectedSlot + 1
+        : null;
     const body = [
       `§7${t(language, "items.body")}`,
       emptyLine(),
       `§7${t(language, "items.mainhand")}: ${equipment ? itemLine(equipment.mainhand) : handUnavailable}`,
       `§7${t(language, "items.offhand")}: ${equipment ? itemLine(equipment.offhand) : handUnavailable}`,
+      `§7${t(language, "items.selectedSlot")}: ${valueOrUnavailable(selectedSlot, language)}`,
       `§7${t(language, "hud.totems")}: ${valueOrUnavailable(totems, language)}`,
       emptyLine(),
       `§8${t(language, "items.scope")}`,

@@ -23,6 +23,9 @@ const TOGGLES = [
   ["hud.dimension", "hud.dimension"],
   ["hud.compass", "hud.compass"],
   ["hud.waypoint", "hud.waypoint"],
+  ["hud.armor", "hud.armor"],
+  ["hud.potions", "hud.potions"],
+  ["hud.totems", "hud.totems"],
   ["hud.session", "hud.session"],
 ];
 
@@ -70,6 +73,7 @@ async function hudScreen(player) {
       `§7${t(language, "hud.body")}`,
       `§8${t(language, "hud.menuAccess")}`,
       `§8${t(language, "hud.inputNote")}`,
+      `§8${t(language, "hud.metricsUnavailable")}`,
       emptyLine(),
       `§8${t(language, "hud.livePreview", { preview })}`,
     ].join("\n");

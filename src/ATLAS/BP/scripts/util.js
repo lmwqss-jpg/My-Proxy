@@ -123,6 +123,18 @@ export function formatKd(kills, deaths) {
   return (kills / deaths).toFixed(2);
 }
 
+/** "2026-01-31 14:05 UTC", or null when no real timestamp exists. */
+export function formatTimestamp(value) {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return null;
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return null;
+  const pad = (part) => String(part).padStart(2, "0");
+  return (
+    `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ` +
+    `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())} UTC`
+  );
+}
+
 /** Player session duration. Returns "--" when no real value is available. */
 export function formatSessionDuration(seconds) {
   if (!Number.isFinite(seconds) || seconds < 0) return "--";

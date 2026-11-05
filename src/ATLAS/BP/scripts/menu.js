@@ -8,6 +8,10 @@ import { markFeatureError } from "./compatibility.js";
 /** @type {Set<string>} */
 const activeMenus = new Set();
 
+export function forgetMenuState(playerId) {
+  activeMenus.delete(playerId);
+}
+
 export function openMenu(player) {
   if (!player || !player.isValid) return;
   if (activeMenus.has(player.id)) return;

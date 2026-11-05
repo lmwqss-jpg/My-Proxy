@@ -6,8 +6,13 @@ import { isPlainObject, safeNumber, sanitizeName } from "./util.js";
 const DIMENSION_PATTERN = /^[a-z0-9_.:-]{1,80}$/i;
 const ID_PATTERN = /^[a-zA-Z0-9_-]{1,80}$/;
 
+let idCounter = 0;
+
 function makeId() {
-  return `w_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  idCounter = (idCounter + 1) % 1296;
+  const time = Date.now().toString(36);
+  const random = Math.random().toString(36).slice(2, 8);
+  return `w_${time}_${idCounter.toString(36)}${random}`;
 }
 
 function validDimensionId(value) {
@@ -92,6 +97,31 @@ export function createWaypoint(input) {
 
 export function findWaypoint(list, id) {
   return list.find((waypoint) => waypoint.id === id) ?? null;
+}
+
+/**
+ * Case-insensitive waypoint search used by the list screen. It matches the
+ * real stored fields only: name, id, dimension, coordinates and kind.
+ */
+export function filterWaypoints(list, query) {
+  const needle = typeof query === "string" ? query.trim().toLowerCase() : "";
+  if (!needle) return Array.isArray(list) ? list : [];
+  if (!Array.isArray(list)) return [];
+  return list.filter((waypoint) => {
+    if (!waypoint) return false;
+    const haystack = [
+      waypoint.name,
+      waypoint.id,
+      waypoint.dimensionId,
+      waypoint.kind,
+      String(waypoint.x),
+      String(waypoint.y),
+      String(waypoint.z),
+    ]
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(needle);
+  });
 }
 
 export function addWaypoint(list, waypoint) {
